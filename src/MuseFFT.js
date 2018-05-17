@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
 import { channelNames, EEGReading, MuseClient } from 'muse-js';
+import { bufferFFT, alphaPower } from 'eeg-pipes';
 
 import './MuseFFT.css';
 
@@ -7,10 +8,6 @@ export class MuseFFT extends Component {
 
   constructor(props) {
     super(props);
-    // this.state = {
-    //   client: new MuseClient()
-    // };
-    //this.connect = this.connect.bind(this)
   }
 
   render() {
@@ -30,11 +27,18 @@ export class MuseFFT extends Component {
     });
 
     try {
+
       await client.connect();
       await client.start();
+
       // client.eegReadings.subscribe(reading => {
       //   console.log(reading);
       // });
+
+      client.eegReadings.pipe(bufferFFT({ bins: 256 }), alphaPower())
+        .subscribe(buffer => console.log(buffer));
+
+
     } catch (err) {
       console.error('Connection failed', err);
     }
