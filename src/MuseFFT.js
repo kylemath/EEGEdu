@@ -1,13 +1,8 @@
 import React, {Component} from 'react';
-<<<<<<< HEAD
-import { channelNames, EEGReading, MuseClient } from 'muse-js';
-import { bufferFFT, alphaPower } from 'eeg-pipes';
-=======
 import { zipSamples, channelNames, MuseClient } from 'muse-js';
 import { powerByBand, epoch, fft } from "@neurosity/pipes";
 
 import { Bar } from "react-chartjs-2";
->>>>>>> First working version
 
 import './MuseFFT.css';
 
@@ -20,11 +15,6 @@ const chartSectionStyle = {
 
 export class MuseFFT extends Component {
 
-<<<<<<< HEAD
-  constructor(props) {
-    super(props);
-  }
-=======
   state = {
     status: 'Disconnected',
     ch0: {
@@ -84,7 +74,6 @@ export class MuseFFT extends Component {
       ]
     }
   };
->>>>>>> First working version
 
   render() {
     return(
@@ -115,15 +104,6 @@ export class MuseFFT extends Component {
       await client.connect();
       await client.start();
 
-<<<<<<< HEAD
-      // client.eegReadings.subscribe(reading => {
-      //   console.log(reading);
-      // });
-
-      client.eegReadings.pipe(bufferFFT({ bins: 256 }), alphaPower())
-        .subscribe(buffer => console.log(buffer));
-
-=======
       zipSamples(client.eegReadings).pipe(
         epoch({ duration: 1024, interval: 100, samplingRate: 256 }),
         fft({ bins: 256 }),
@@ -148,7 +128,6 @@ export class MuseFFT extends Component {
           //console.log(data);
         }
       );
->>>>>>> First working version
 
     } catch (err) {
       console.error('Connection failed', err);
