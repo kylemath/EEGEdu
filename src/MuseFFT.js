@@ -17,8 +17,9 @@ export class MuseFFT extends Component {
 
   state = {
     status: 'Disconnected',
+    button_disabled: false,
     ch0: {
-	     labels: ["Alpha", "Beta", "Delta", "Gamma", "Theta"],
+	     labels: ["Delta", "Theta", "Alpha", "Beta", "Gamma"],
 	     datasets: [
     		{
     			fillColor: "rgba(220,220,220,0.2)",
@@ -32,7 +33,7 @@ export class MuseFFT extends Component {
       ]
     },
     ch1: {
-       labels: ["Alpha", "Beta", "Delta", "Gamma", "Theta"],
+       labels: ["Delta", "Theta", "Alpha", "Beta", "Gamma"],
        datasets: [
         {
           fillColor: "rgba(220,220,220,0.2)",
@@ -46,7 +47,7 @@ export class MuseFFT extends Component {
       ]
     },
     ch2: {
-       labels: ["Alpha", "Beta", "Delta", "Gamma", "Theta"],
+       labels: ["Delta", "Theta", "Alpha", "Beta", "Gamma"],
        datasets: [
         {
           fillColor: "rgba(220,220,220,0.2)",
@@ -60,7 +61,7 @@ export class MuseFFT extends Component {
       ]
     },
     ch3: {
-       labels: ["Alpha", "Beta", "Delta", "Gamma", "Theta"],
+       labels: ["Delta", "Theta", "Alpha", "Beta", "Gamma"],
        datasets: [
         {
           fillColor: "rgba(220,220,220,0.2)",
@@ -78,13 +79,13 @@ export class MuseFFT extends Component {
   render() {
     return(
         <div className='MuseFFT'>
-          <button onClick={this.connect}>Connect Muse Headband</button>
+          <button disabled={this.state.button_disabled} onClick={this.connect}>Connect Muse Headband</button>
           <p>{this.state.status}</p>
           <div style={chartSectionStyle}>
-            <Bar data={this.state.ch0} options={{title: {display: true, text: 'Channel: ' + channelNames[0]}, responsive: false, legend: {display: false}}} width={500} height={250}/>
-            <Bar data={this.state.ch1} options={{title: {display: true, text: 'Channel: ' + channelNames[1]}, responsive: false, legend: {display: false}}} width={500} height={250}/>
-            <Bar data={this.state.ch2} options={{title: {display: true, text: 'Channel: ' + channelNames[2]}, responsive: false, legend: {display: false}}} width={500} height={250}/>
-            <Bar data={this.state.ch3} options={{title: {display: true, text: 'Channel: ' + channelNames[3]}, responsive: false, legend: {display: false}}} width={500} height={250}/>
+            <Bar data={this.state.ch2} options={{title: {display: true, text: 'Channel: ' + channelNames[2]}, responsive: false, tooltips: {enabled: false}, legend: {display: false}}} width={500} height={250}/>
+            <Bar data={this.state.ch1} options={{title: {display: true, text: 'Channel: ' + channelNames[1]}, responsive: false, tooltips: {enabled: false}, legend: {display: false}}} width={500} height={250}/>
+            <Bar data={this.state.ch0} options={{title: {display: true, text: 'Channel: ' + channelNames[0]}, responsive: false, tooltips: {enabled: false}, legend: {display: false}}} width={500} height={250}/>
+            <Bar data={this.state.ch3} options={{title: {display: true, text: 'Channel: ' + channelNames[3]}, responsive: false, tooltips: {enabled: false}, legend: {display: false}}} width={500} height={250}/>
           </div>
         </div>
     );
@@ -95,7 +96,10 @@ export class MuseFFT extends Component {
     const client = new MuseClient();
 
     client.connectionStatus.subscribe((status) => {
-      this.setState({status: status ? 'Connected!' : 'Disconnected'});
+      this.setState({
+        status: status ? 'Connected!' : 'Disconnected',
+        button_disabled: status
+      });
       console.log(status ? 'Connected!' : 'Disconnected');
     });
 
@@ -112,10 +116,10 @@ export class MuseFFT extends Component {
         (data) => {
           this.setState(state => {
 
-            state.ch0.datasets[0].data = [data.alpha[0], data.beta[0], data.delta[0], data.gamma[0], data.theta[0]];
-            state.ch1.datasets[0].data = [data.alpha[1], data.beta[1], data.delta[1], data.gamma[1], data.theta[1]];
-            state.ch2.datasets[0].data = [data.alpha[2], data.beta[2], data.delta[2], data.gamma[2], data.theta[2]];
-            state.ch3.datasets[0].data = [data.alpha[3], data.beta[3], data.delta[3], data.gamma[3], data.theta[3]];
+            state.ch0.datasets[0].data = [data.delta[0], data.theta[0], data.alpha[0], data.beta[0], data.gamma[0]];
+            state.ch1.datasets[0].data = [data.delta[1], data.theta[1], data.alpha[1], data.beta[1], data.gamma[1]];
+            state.ch2.datasets[0].data = [data.delta[2], data.theta[2], data.alpha[2], data.beta[2], data.gamma[2]];
+            state.ch3.datasets[0].data = [data.delta[3], data.theta[3], data.alpha[3], data.beta[3], data.gamma[3]];
 
             return({
               ch0: state.ch0,
