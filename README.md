@@ -2,6 +2,8 @@
 
 Explore Muse headband data in frequency domain. Written with Muse.js, EEG-Pipes, React and Charts.js.
 
+![Screen Shot](screen.png)
+
 # Usage
 
 Install required packaged with:
@@ -10,4 +12,4 @@ Install required packaged with:
 
 Then run the application using:
 
-```npm start dev``` 
+```npm start dev```
