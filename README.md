@@ -12,6 +12,25 @@ https://github.com/NeuroTechX/eeg-notebooks, for data collection and analysis wi
 https://github.com/alexandrebarachant/muse-lsl - lsl support for muse headset, needs BLE dongle with windows or mac
 may need editing of some pyglatt code to connect properly
 
+# Usage
+
+Install npm:
+https://www.npmjs.com/get-npm
+
+In terminal clone the git repo and enter the folder:
+
+'''git clone https://github.com/kylemath/EEGEdu'''
+'''cd EEGEdu'''
+
+Install required packaged with:
+
+```npm install```
+
+Then run the application using:
+
+```npm start dev```
+
+# Plan
 
 I want to include chances for them to do the coding
 With p5js for example
@@ -29,6 +48,7 @@ So it's a 10 parts lesson or something
 
 10. p5js demos: https://p5js.org/
 
+# Resources
 
 * https://github.com/urish/muse-js - based toolbox for interacting with muse 
 * https://github.com/NeuroJS/angular-muse - demo with streaming data in Angular, record button, 
@@ -38,6 +58,7 @@ So it's a 10 parts lesson or something
 * https://www.chartjs.org/docs/latest/ - interactive charts
 * https://github.com/urish/muse-lsl  - maybe useful to stream to LSL
 
+# Provenance
 
 As a starting point this is Forked from tanvanch/muse-fft
 
@@ -47,12 +68,4 @@ Browser screenshot example:
 
 ![Screen Shot](screen.png)
 
-# Usage
 
-Install required packaged with:
-
-```npm install```
-
-Then run the application using:
-
-```npm start dev```
