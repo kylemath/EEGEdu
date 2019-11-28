@@ -30,10 +30,6 @@ So it's a 10 parts lesson or something
 10. p5js demos: https://p5js.org/
 
 
-As a starting point this is Forked from tanvanch/muse-fft
-
-muse-fft: Explore Muse headband data in frequency domain. Written with Muse.js, EEG-Pipes, React and Charts.js.
-
 * https://github.com/urish/muse-js - based toolbox for interacting with muse 
 * https://github.com/NeuroJS/angular-muse - demo with streaming data in Angular, record button, 
 * https://github.com/tanvach/muse-fft  - starting point react demo
@@ -41,6 +37,13 @@ muse-fft: Explore Muse headband data in frequency domain. Written with Muse.js, 
 * https://reactjs.org/  - React for web development
 * https://www.chartjs.org/docs/latest/ - interactive charts
 * https://github.com/urish/muse-lsl  - maybe useful to stream to LSL
+
+
+As a starting point this is Forked from tanvanch/muse-fft
+
+muse-fft: Explore Muse headband data in frequency domain. Written with Muse.js, EEG-Pipes, React and Charts.js.
+
+Browser screenshot example:
 
 ![Screen Shot](screen.png)
 
