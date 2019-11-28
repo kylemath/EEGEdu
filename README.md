@@ -1,15 +1,21 @@
 # EEGEdu
 
 I want this to be a educational tool
+
 To teach
-So in picturing an interactive web page that you scroll or pass through each of these demos
+
+So im picturing an interactive web page that you scroll or pass through each of these demos
+
 Like EEG 101 but on the web
+
 https://github.com/NeuroTechX/eeg-101
 
 Had been using Neurotech notebooks in python:
+
 https://github.com/NeuroTechX/eeg-notebooks, for data collection and analysis with
 
-https://github.com/alexandrebarachant/muse-lsl - lsl support for muse headset, needs BLE dongle with windows or mac
+https://github.com/alexandrebarachant/muse-lsl 
+- lsl support for muse headset, needs BLE dongle with windows or mac
 may need editing of some pyglatt code to connect properly
 
 # Usage
@@ -19,8 +25,9 @@ https://www.npmjs.com/get-npm
 
 In terminal clone the git repo and enter the folder:
 
-'''git clone https://github.com/kylemath/EEGEdu'''
-'''cd EEGEdu'''
+```git clone https://github.com/kylemath/EEGEdu```
+
+```cd EEGEdu```
 
 Install required packaged with:
 
