@@ -30,6 +30,8 @@ Then run the application using:
 
 ```npm start dev```
 
+The application will open in a browser at http://localhost:3000
+
 # Plan
 
 I want to include chances for them to do the coding
