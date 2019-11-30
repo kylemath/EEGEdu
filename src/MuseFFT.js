@@ -19,54 +19,26 @@ export class MuseFFT extends Component {
     status: 'Disconnected',
     button_disabled: false,
     ch0: {
-      // labels: ["LowDelta", "HighDelta", "LowTheta", "HighTheta", "LowAlpha", "HighAlpha", "LowBeta", "HighBeta", "LowGamma", "HighGamma"],
        datasets: [
         {
-          fillColor: "rgba(220,220,220,0.2)",
-          strokeColor: "rgba(220,220,220,1)",
-          pointColor: "rgba(220,220,220,1)",
-          pointStrokeColor: "#fff",
-          pointHighlightFill: "#fff",
-          pointHighlightStroke: "rgba(220,220,220,1)",
         }
       ]
     },
     ch1: {
-       //labels: ["LowDelta", "HighDelta", "LowTheta", "HighTheta", "LowAlpha", "HighAlpha", "LowBeta", "HighBeta", "LowGamma", "HighGamma"],
        datasets: [
         {
-          fillColor: "rgba(220,220,220,0.2)",
-          strokeColor: "rgba(220,220,220,1)",
-          pointColor: "rgba(220,220,220,1)",
-          pointStrokeColor: "#fff",
-          pointHighlightFill: "#fff",
-          pointHighlightStroke: "rgba(220,220,220,1)",
         }
       ]
     },
     ch2: {
-       //labels: ["LowDelta", "HighDelta", "LowTheta", "HighTheta", "LowAlpha", "HighAlpha", "LowBeta", "HighBeta", "LowGamma", "HighGamma"],
        datasets: [
         {
-          fillColor: "rgba(220,220,220,0.2)",
-          strokeColor: "rgba(220,220,220,1)",
-          pointColor: "rgba(220,220,220,1)",
-          pointStrokeColor: "#fff",
-          pointHighlightFill: "#fff",
-          pointHighlightStroke: "rgba(220,220,220,1)",
         }
       ]
     },
     ch3: {
-       //labels: ["LowDelta", "HighDelta", "LowTheta", "HighTheta", "LowAlpha", "HighAlpha", "LowBeta", "HighBeta", "LowGamma", "HighGamma"],
        datasets: [
         {
-          fillColor: "rgba(220,220,220,0.2)",
-          strokeColor: "rgba(220,220,220,1)",
-          pointColor: "rgba(220,220,220,1)",
-          pointStrokeColor: "#fff",
-          pointHighlightFill: "#fff",
-          pointHighlightStroke: "rgba(220,220,220,1)",
         }
       ]
     }
@@ -78,10 +50,122 @@ export class MuseFFT extends Component {
           <button disabled={this.state.button_disabled} onClick={this.connect}>Connect Muse Headband</button>
           <p>{this.state.status}</p>
           <div style={chartSectionStyle}>
-            <Line data={this.state.ch2} options={{title: {display: true, text: 'Channel: ' + channelNames[2]}, responsive: false, tooltips: {enabled: false}, legend: {display: false}}} width={500} height={250}/>
-            <Line data={this.state.ch1} options={{title: {display: true, text: 'Channel: ' + channelNames[1]}, responsive: false, tooltips: {enabled: false}, legend: {display: false}}} width={500} height={250}/>
-            <Line data={this.state.ch0} options={{title: {display: true, text: 'Channel: ' + channelNames[0]}, responsive: false, tooltips: {enabled: false}, legend: {display: false}}} width={500} height={250}/>
-            <Line data={this.state.ch3} options={{title: {display: true, text: 'Channel: ' + channelNames[3]}, responsive: false, tooltips: {enabled: false}, legend: {display: false}}} width={500} height={250}/>
+            <Line data={this.state.ch2} 
+                  options={{
+                    scales: {
+                      xAxes: [{
+                        scaleLabel: {
+                          display: true,
+                          labelString: 'Frequency (Hz)'
+                        }
+                      }],
+                      yAxes: [{
+                        scaleLabel: {
+                          display: true,
+                          labelString: 'Power (\u03BCV\u00B2)'
+                        },
+                        ticks: {
+                          max:100
+                        } 
+                      }]
+                    }, 
+                    title: {
+                      display: true, 
+                      text: 'Channel: ' + channelNames[2]
+                    }, 
+                    responsive: false, 
+                    tooltips: {enabled: false}, 
+                    legend: {display: false}
+                  }} 
+                  width={500} height={250}
+            />
+            <Line data={this.state.ch1} 
+                  options={{
+                    scales: {
+                      xAxes: [{
+                        scaleLabel: {
+                          display: true,
+                          labelString: 'Frequency (Hz)'
+                        }
+                      }],
+                      yAxes: [{
+                        scaleLabel: {
+                          display: true,
+                          labelString: 'Power (\u03BCV\u00B2)'
+                        },
+                        ticks: {
+                          max:100
+                        } 
+                      }]
+                    }, 
+                    title: {
+                      display: true, 
+                      text: 'Channel: ' + channelNames[1]
+                    }, 
+                    responsive: false, 
+                    tooltips: {enabled: false}, 
+                    legend: {display: false}
+                  }} 
+                  width={500} height={250}
+            />
+            <Line data={this.state.ch0} 
+                  options={{
+                    scales: {
+                      xAxes: [{
+                        scaleLabel: {
+                          display: true,
+                          labelString: 'Frequency (Hz)'
+                        }
+                      }],
+                      yAxes: [{
+                        scaleLabel: {
+                          display: true,
+                          labelString: 'Power (\u03BCV\u00B2)'
+                        },
+                        ticks: {
+                          max:100
+                        } 
+                      }]
+                    }, 
+                    title: {
+                      display: true, 
+                      text: 'Channel: ' + channelNames[0]
+                    }, 
+                    responsive: false, 
+                    tooltips: {enabled: false}, 
+                    legend: {display: false}
+                  }} 
+                  width={500} height={250}
+            />
+            <Line data={this.state.ch3} 
+                  options={{
+                    scales: {
+                      xAxes: [{
+                        scaleLabel: {
+                          display: true,
+                          labelString: 'Frequency (Hz)'
+                        }
+                      }],
+                      yAxes: [{
+                        scaleLabel: {
+                          display: true,
+                          labelString: 'Power (\u03BCV\u00B2)'
+                        },
+                        ticks: {
+                          max:100
+                        } 
+                      }]
+                    }, 
+                    title: {
+                      display: true, 
+                      text: 'Channel: ' + channelNames[3]
+                    }, 
+                    responsive: false, 
+                    tooltips: {enabled: false}, 
+                    legend: {display: false}
+                  }} 
+                  width={500} height={250}
+            />
           </div>
         </div>
     );
@@ -124,8 +208,7 @@ export class MuseFFT extends Component {
             state.ch3.datasets[0].data = data.psd[3];
             state.ch3.xLabels = data.freqs;
 
-            //console.log(data.psd[0].length)
-            console.log(data.freqs)
+            //console.log(data.freqs)
 
 
             return({
@@ -136,7 +219,6 @@ export class MuseFFT extends Component {
             });
 
           });
-          //console.log(data);
         }
       );
 
