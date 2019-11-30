@@ -19,29 +19,56 @@ export class MuseFFT extends Component {
     status: 'Disconnected',
     button_disabled: false,
     ch0: {
-       datasets: [
+      datasets: [
         {
         }
       ]
     },
     ch1: {
-       datasets: [
+      datasets: [
         {
         }
       ]
     },
     ch2: {
-       datasets: [
+      datasets: [
         {
         }
       ]
     },
     ch3: {
-       datasets: [
+      datasets: [
         {
         }
       ]
-    }
+    },
+    options: {
+      scales: {
+        xAxes: [{
+          scaleLabel: {
+            display: true,
+            labelString: 'Frequency (Hz)'
+          }
+        }],
+        yAxes: [{
+          scaleLabel: {
+            display: true,
+            labelString: 'Power (\u03BCV\u00B2)'
+          },
+          ticks: {
+            max:100
+          } 
+        }]
+      }, 
+      title: {
+        display: true, 
+        text: 'Channel: ' //+ channelNames[2]
+      }, 
+      responsive: false, 
+      tooltips: {enabled: false}, 
+      legend: {display: false}
+    } 
+
   };
 
   render() {
@@ -51,119 +78,19 @@ export class MuseFFT extends Component {
           <p>{this.state.status}</p>
           <div style={chartSectionStyle}>
             <Line data={this.state.ch2} 
-                  options={{
-                    scales: {
-                      xAxes: [{
-                        scaleLabel: {
-                          display: true,
-                          labelString: 'Frequency (Hz)'
-                        }
-                      }],
-                      yAxes: [{
-                        scaleLabel: {
-                          display: true,
-                          labelString: 'Power (\u03BCV\u00B2)'
-                        },
-                        ticks: {
-                          max:100
-                        } 
-                      }]
-                    }, 
-                    title: {
-                      display: true, 
-                      text: 'Channel: ' + channelNames[2]
-                    }, 
-                    responsive: false, 
-                    tooltips: {enabled: false}, 
-                    legend: {display: false}
-                  }} 
+                  options={this.state.options}
                   width={500} height={250}
             />
             <Line data={this.state.ch1} 
-                  options={{
-                    scales: {
-                      xAxes: [{
-                        scaleLabel: {
-                          display: true,
-                          labelString: 'Frequency (Hz)'
-                        }
-                      }],
-                      yAxes: [{
-                        scaleLabel: {
-                          display: true,
-                          labelString: 'Power (\u03BCV\u00B2)'
-                        },
-                        ticks: {
-                          max:100
-                        } 
-                      }]
-                    }, 
-                    title: {
-                      display: true, 
-                      text: 'Channel: ' + channelNames[1]
-                    }, 
-                    responsive: false, 
-                    tooltips: {enabled: false}, 
-                    legend: {display: false}
-                  }} 
+                  options={this.state.options}
                   width={500} height={250}
             />
             <Line data={this.state.ch0} 
-                  options={{
-                    scales: {
-                      xAxes: [{
-                        scaleLabel: {
-                          display: true,
-                          labelString: 'Frequency (Hz)'
-                        }
-                      }],
-                      yAxes: [{
-                        scaleLabel: {
-                          display: true,
-                          labelString: 'Power (\u03BCV\u00B2)'
-                        },
-                        ticks: {
-                          max:100
-                        } 
-                      }]
-                    }, 
-                    title: {
-                      display: true, 
-                      text: 'Channel: ' + channelNames[0]
-                    }, 
-                    responsive: false, 
-                    tooltips: {enabled: false}, 
-                    legend: {display: false}
-                  }} 
+                  options={this.state.options}
                   width={500} height={250}
             />
             <Line data={this.state.ch3} 
-                  options={{
-                    scales: {
-                      xAxes: [{
-                        scaleLabel: {
-                          display: true,
-                          labelString: 'Frequency (Hz)'
-                        }
-                      }],
-                      yAxes: [{
-                        scaleLabel: {
-                          display: true,
-                          labelString: 'Power (\u03BCV\u00B2)'
-                        },
-                        ticks: {
-                          max:100
-                        } 
-                      }]
-                    }, 
-                    title: {
-                      display: true, 
-                      text: 'Channel: ' + channelNames[3]
-                    }, 
-                    responsive: false, 
-                    tooltips: {enabled: false}, 
-                    legend: {display: false}
-                  }} 
+                  options={this.state.options}
                   width={500} height={250}
             />
           </div>
