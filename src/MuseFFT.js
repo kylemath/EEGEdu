@@ -124,7 +124,7 @@ export class MuseFFT extends Component {
           this.setState(state => {
 
             state.ch0.datasets[0].data = data.psd[0];
-            state.ch0.xLabels = data.freqs;
+            state.ch0.xLabels = data.freqs; // get data for x axis labels
 
             state.ch1.datasets[0].data = data.psd[1];
             state.ch1.xLabels = data.freqs;
