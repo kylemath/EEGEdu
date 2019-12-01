@@ -1,8 +1,7 @@
 import React, {Component} from 'react';
-import { zipSamples, channelNames, MuseClient } from 'muse-js';
-import { powerByBand, epoch, fft, sliceFFT } from "@neurosity/pipes";
-
-import { Bar, Line, Radar } from "react-chartjs-2";
+import {zipSamples, MuseClient} from 'muse-js';
+import {epoch, fft, sliceFFT} from "@neurosity/pipes";
+import {Line} from "react-chartjs-2";
 
 import './MuseFFT.css';
 
@@ -57,17 +56,17 @@ export class MuseFFT extends Component {
           },
           ticks: {
             max:100
-          } 
+          }
         }]
-      }, 
+      },
       title: {
-        display: true, 
+        display: true,
         text: 'Channel: ' //+ channelNames[2]
-      }, 
-      responsive: false, 
-      tooltips: {enabled: false}, 
+      },
+      responsive: false,
+      tooltips: {enabled: false},
       legend: {display: false}
-    } 
+    }
 
   };
 
@@ -77,19 +76,19 @@ export class MuseFFT extends Component {
           <button disabled={this.state.button_disabled} onClick={this.connect}>Connect Muse Headband</button>
           <p>{this.state.status}</p>
           <div style={chartSectionStyle}>
-            <Line data={this.state.ch2} 
+            <Line data={this.state.ch2}
                   options={this.state.options}
                   width={500} height={250}
             />
-            <Line data={this.state.ch1} 
+            <Line data={this.state.ch1}
                   options={this.state.options}
                   width={500} height={250}
             />
-            <Line data={this.state.ch0} 
+            <Line data={this.state.ch0}
                   options={this.state.options}
                   width={500} height={250}
             />
-            <Line data={this.state.ch3} 
+            <Line data={this.state.ch3}
                   options={this.state.options}
                   width={500} height={250}
             />
