@@ -1,19 +1,29 @@
 import React, { Component } from "react";
-import { zipSamples, MuseClient, channelNames } from "muse-js";
+import { zipSamples, MuseClient } from "muse-js";
 import { epoch, fft, sliceFFT } from "@neurosity/pipes";
 import { Line } from "react-chartjs-2";
 
 import "./MuseFFT.css";
 
-const chartSectionStyle = {
-  display: "flex",
-  flexWrap: "wrap",
-  padding: "20px"
+const chartAttributes = {
+  wrapperStyle: {
+    display: "flex",
+    flexWrap: "wrap",
+    padding: "20px"
+  },
+  chartStyle: {
+    WIDTH: 250,
+    HEIGHT: 250
+  },
+  connection: {
+    disconnected: "Disconnected",
+    connected: "Connected"
+  }
 };
 
 export class MuseFFT extends Component {
   state = {
-    status: "Disconnected",
+    status: chartAttributes.connection.disconnected,
     button_disabled: false,
     ch0: {
       datasets: [{}]
@@ -66,30 +76,30 @@ export class MuseFFT extends Component {
           Connect Muse Headband
         </button>
         <p>{this.state.status}</p>
-        <div style={chartSectionStyle}>
+        <div style={chartAttributes.wrapperStyle.style}>
           <Line
             data={this.state.ch2}
             options={this.state.options}
-            width={500}
-            height={250}
+            width={chartAttributes.chartStyle.WIDTH}
+            height={chartAttributes.chartStyle.HEIGHT}
           />
           <Line
             data={this.state.ch1}
             options={this.state.options}
-            width={500}
-            height={250}
+            width={chartAttributes.chartStyle.WIDTH}
+            height={chartAttributes.chartStyle.HEIGHT}
           />
           <Line
             data={this.state.ch0}
             options={this.state.options}
-            width={500}
-            height={250}
+            width={chartAttributes.chartStyle.WIDTH}
+            height={chartAttributes.chartStyle.HEIGHT}
           />
           <Line
             data={this.state.ch3}
             options={this.state.options}
-            width={500}
-            height={250}
+            width={chartAttributes.chartStyle.WIDTH}
+            height={chartAttributes.chartStyle.HEIGHT}
           />
         </div>
       </div>
@@ -101,10 +111,17 @@ export class MuseFFT extends Component {
 
     client.connectionStatus.subscribe(status => {
       this.setState({
-        status: status ? "Connected!" : "Disconnected",
+        status: status
+          ? chartAttributes.connection.connected
+          : chartAttributes.connection.disconnected,
         button_disabled: status
       });
-      console.log(status ? "Connected!" : "Disconnected");
+
+      console.log(
+        status
+          ? chartAttributes.connection.connected
+          : chartAttributes.connection.disconnected
+      );
     });
 
     try {
