@@ -130,19 +130,10 @@ export class MuseFFT extends Component {
         )
         .subscribe(data => {
           this.setState(state => {
-            state.channels.ch0.datasets[0].data = data.psd[0];
-            state.channels.ch0.xLabels = data.freqs; // get data for x axis labels
-
-            state.channels.ch1.datasets[0].data = data.psd[1];
-            state.channels.ch1.xLabels = data.freqs;
-
-            state.channels.ch2.datasets[0].data = data.psd[2];
-            state.channels.ch2.xLabels = data.freqs;
-
-            state.channels.ch3.datasets[0].data = data.psd[3];
-            state.channels.ch3.xLabels = data.freqs;
-
-            //console.log(data.freqs)
+            Object.values(state.channels).forEach((channel, index) => {
+              channel.datasets[0].data = data.psd[index];
+              channel.xLabels = data.freqs;
+            });
 
             return {
               ch0: state.channels.ch0,
