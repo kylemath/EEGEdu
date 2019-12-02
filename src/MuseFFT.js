@@ -23,7 +23,7 @@ const strings = {
   connectionFailed: "Connection failed",
   frequency: "Frequency (Hz)",
   power: "Power (\u03BCV\u00B2)",
-  channel: "Channel"
+  channel: "Channel: "
 };
 
 export class MuseFFT extends Component {
@@ -78,13 +78,15 @@ export class MuseFFT extends Component {
 
   renderCharts() {
     const channelData = this.state.channels;
+    let chartOptions = { ...this.state.options };
 
     return Object.values(channelData).map((channel, index) => {
+      chartOptions.title.text = strings.channel + channelNames[index];
       return (
         <Line
           key={index}
           data={channel}
-          options={this.state.options}
+          options={chartOptions}
           width={chartAttributes.chartStyle.WIDTH}
           height={chartAttributes.chartStyle.HEIGHT}
         />
