@@ -14,28 +14,35 @@ const chartAttributes = {
   chartStyle: {
     WIDTH: 250,
     HEIGHT: 250
-  },
-  connection: {
-    disconnected: "Disconnected",
-    connected: "Connected"
   }
+};
+
+const strings = {
+  connected: "Connected",
+  disconnected: "Disconnected",
+  connectionFailed: "Connection failed",
+  frequency: "Frequency (Hz)",
+  power: "Power (\u03BCV\u00B2)",
+  channel: "Channel"
 };
 
 export class MuseFFT extends Component {
   state = {
-    status: chartAttributes.connection.disconnected,
+    status: strings.disconnected,
     button_disabled: false,
-    ch0: {
-      datasets: [{}]
-    },
-    ch1: {
-      datasets: [{}]
-    },
-    ch2: {
-      datasets: [{}]
-    },
-    ch3: {
-      datasets: [{}]
+    channels: {
+      ch0: {
+        datasets: [{}]
+      },
+      ch1: {
+        datasets: [{}]
+      },
+      ch2: {
+        datasets: [{}]
+      },
+      ch3: {
+        datasets: [{}]
+      }
     },
     options: {
       scales: {
@@ -43,7 +50,7 @@ export class MuseFFT extends Component {
           {
             scaleLabel: {
               display: true,
-              labelString: "Frequency (Hz)"
+              labelString: strings.frequency
             }
           }
         ],
@@ -51,7 +58,7 @@ export class MuseFFT extends Component {
           {
             scaleLabel: {
               display: true,
-              labelString: "Power (\u03BCV\u00B2)"
+              labelString: strings.power
             },
             ticks: {
               max: 100
@@ -61,13 +68,29 @@ export class MuseFFT extends Component {
       },
       title: {
         display: true,
-        text: "Channel: " //+ channelNames[2]
+        text: strings.channel //+ channelNames[2]
       },
       responsive: false,
       tooltips: { enabled: false },
       legend: { display: false }
     }
   };
+
+  renderCharts() {
+    const channelData = this.state.channels;
+
+    return Object.values(channelData).map((channel, index) => {
+      return (
+        <Line
+          key={index}
+          data={channel}
+          options={this.state.options}
+          width={chartAttributes.chartStyle.WIDTH}
+          height={chartAttributes.chartStyle.HEIGHT}
+        />
+      );
+    });
+  }
 
   render() {
     return (
@@ -77,30 +100,7 @@ export class MuseFFT extends Component {
         </button>
         <p>{this.state.status}</p>
         <div style={chartAttributes.wrapperStyle.style}>
-          <Line
-            data={this.state.ch2}
-            options={this.state.options}
-            width={chartAttributes.chartStyle.WIDTH}
-            height={chartAttributes.chartStyle.HEIGHT}
-          />
-          <Line
-            data={this.state.ch1}
-            options={this.state.options}
-            width={chartAttributes.chartStyle.WIDTH}
-            height={chartAttributes.chartStyle.HEIGHT}
-          />
-          <Line
-            data={this.state.ch0}
-            options={this.state.options}
-            width={chartAttributes.chartStyle.WIDTH}
-            height={chartAttributes.chartStyle.HEIGHT}
-          />
-          <Line
-            data={this.state.ch3}
-            options={this.state.options}
-            width={chartAttributes.chartStyle.WIDTH}
-            height={chartAttributes.chartStyle.HEIGHT}
-          />
+          {this.renderCharts()}
         </div>
       </div>
     );
@@ -111,17 +111,11 @@ export class MuseFFT extends Component {
 
     client.connectionStatus.subscribe(status => {
       this.setState({
-        status: status
-          ? chartAttributes.connection.connected
-          : chartAttributes.connection.disconnected,
+        status: status ? strings.connected : strings.disconnected,
         button_disabled: status
       });
 
-      console.log(
-        status
-          ? chartAttributes.connection.connected
-          : chartAttributes.connection.disconnected
-      );
+      console.log(status ? strings.connected : strings.disconnected);
     });
 
     try {
@@ -136,30 +130,30 @@ export class MuseFFT extends Component {
         )
         .subscribe(data => {
           this.setState(state => {
-            state.ch0.datasets[0].data = data.psd[0];
-            state.ch0.xLabels = data.freqs; // get data for x axis labels
+            state.channels.ch0.datasets[0].data = data.psd[0];
+            state.channels.ch0.xLabels = data.freqs; // get data for x axis labels
 
-            state.ch1.datasets[0].data = data.psd[1];
-            state.ch1.xLabels = data.freqs;
+            state.channels.ch1.datasets[0].data = data.psd[1];
+            state.channels.ch1.xLabels = data.freqs;
 
-            state.ch2.datasets[0].data = data.psd[2];
-            state.ch2.xLabels = data.freqs;
+            state.channels.ch2.datasets[0].data = data.psd[2];
+            state.channels.ch2.xLabels = data.freqs;
 
-            state.ch3.datasets[0].data = data.psd[3];
-            state.ch3.xLabels = data.freqs;
+            state.channels.ch3.datasets[0].data = data.psd[3];
+            state.channels.ch3.xLabels = data.freqs;
 
             //console.log(data.freqs)
 
             return {
-              ch0: state.ch0,
-              ch1: state.ch1,
-              ch2: state.ch2,
-              ch3: state.ch3
+              ch0: state.channels.ch0,
+              ch1: state.channels.ch1,
+              ch2: state.channels.ch2,
+              ch3: state.channels.ch3
             };
           });
         });
     } catch (err) {
-      console.error("Connection failed", err);
+      console.error(strings.connectionFailed, err);
     }
   };
 }
