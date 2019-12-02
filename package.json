@@ -1,5 +1,8 @@
 {
-  "name": "muse-fft",
+  "engines": {
+    "node": "9.x"
+  },
+  "name": "eegedu",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
