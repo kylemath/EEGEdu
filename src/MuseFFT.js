@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { zipSamples, MuseClient } from "muse-js";
+import { channelNames, zipSamples, MuseClient } from "muse-js";
 import { epoch, fft, sliceFFT } from "@neurosity/pipes";
 import { Line } from "react-chartjs-2";
 
@@ -12,7 +12,7 @@ const chartAttributes = {
     padding: "20px"
   },
   chartStyle: {
-    WIDTH: 250,
+    WIDTH: 500,
     HEIGHT: 250
   }
 };
@@ -70,7 +70,7 @@ export class MuseFFT extends Component {
         display: true,
         text: strings.channel //+ channelNames[2]
       },
-      responsive: false,
+      responsive: true,
       tooltips: { enabled: false },
       legend: { display: false }
     }
