@@ -6,6 +6,7 @@
     "@neurosity/pipes": "^3.0.2",
     "chart.js": "^2.7.2",
     "muse-js": "^3.0.1",
+    "prettier": "^1.19.1",
     "react": "^16.4.1",
     "react-chartjs-2": "^2.7.2",
     "react-dom": "^16.4.1",
