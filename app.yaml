@@ -1,2 +1,2 @@
-runtime: nodejs
+runtime: nodejs10
 env: standard
