@@ -105,7 +105,7 @@ export class MuseFFT extends Component {
           {this.renderCharts()}
         </div>
         <div>
-            <center> EEGEdu - An Interactive Electrophysiology Tutorial brought to you by Mathewson Sons </center>
+            <center> EEGEdu - An Interactive Electrophysiology Tutorial with the Muse brought to you by Mathewson Sons </center>
         </div>
       </div>
     );
