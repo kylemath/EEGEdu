@@ -104,6 +104,9 @@ export class MuseFFT extends Component {
         <div style={chartAttributes.wrapperStyle.style}>
           {this.renderCharts()}
         </div>
+        <div>
+            <center> EEGEdu - An Interactive Elecrtophysiology Tutorial brought to you by Mathewson Sons </center>
+        </div>
       </div>
     );
   }
