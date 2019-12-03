@@ -20,6 +20,8 @@ may need editing of some pyglatt code to connect properly
 
 # Google Cloud App Engine Deploy
 
+visit https://eegedu.appspot.com/ for live Demo
+
 ```sh
 gcloud app deploy
 ```
