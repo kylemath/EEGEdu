@@ -18,6 +18,12 @@ https://github.com/alexandrebarachant/muse-lsl
 - lsl support for muse headset, needs BLE dongle with windows or mac
 may need editing of some pyglatt code to connect properly
 
+# Google Cloud App Engine Deploy
+
+```sh
+gcloud app deploy
+```
+
 # Usage
 
 Install npm:

@@ -1,5 +1,6 @@
 {
   "engines": {
+    "npm": "5.x",
     "node": "9.x"
   },
   "name": "eegedu",
