@@ -1,7 +1,7 @@
 {
   "engines": {
     "npm": "5.x",
-    "node": "9.x"
+    "node": "10.x"
   },
   "name": "eegedu",
   "version": "0.1.0",
