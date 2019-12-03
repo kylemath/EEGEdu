@@ -26,6 +26,37 @@ const strings = {
   channel: "Channel: "
 };
 
+const chartOptions = {
+  scales: {
+    xAxes: [
+      {
+        scaleLabel: {
+          display: true,
+          labelString: strings.frequency
+        }
+      }
+    ],
+    yAxes: [
+      {
+        scaleLabel: {
+          display: true,
+          labelString: strings.power
+        },
+        ticks: {
+          max: 100
+        }
+      }
+    ]
+  },
+  title: {
+    display: true,
+    text: strings.channel
+  },
+  responsive: true,
+  tooltips: { enabled: false },
+  legend: { display: false }
+};
+
 export class MuseFFT extends Component {
   state = {
     status: strings.disconnected,
@@ -43,50 +74,26 @@ export class MuseFFT extends Component {
       ch3: {
         datasets: [{}]
       }
-    },
-    options: {
-      scales: {
-        xAxes: [
-          {
-            scaleLabel: {
-              display: true,
-              labelString: strings.frequency
-            }
-          }
-        ],
-        yAxes: [
-          {
-            scaleLabel: {
-              display: true,
-              labelString: strings.power
-            },
-            ticks: {
-              max: 100
-            }
-          }
-        ]
-      },
-      title: {
-        display: true,
-        text: strings.channel //+ channelNames[2]
-      },
-      responsive: true,
-      tooltips: { enabled: false },
-      legend: { display: false }
     }
   };
 
   renderCharts() {
-    const channelData = this.state.channels;
-    let chartOptions = { ...this.state.options };
+    const {channels} = this.state;
 
-    return Object.values(channelData).map((channel, index) => {
-      chartOptions.title.text = strings.channel + channelNames[index];
+    return Object.values(channels).map((channel, index) => {
+      const tempOptions = {
+        ...chartOptions,
+        title: {
+          ...chartOptions.title,
+          text: strings.channel + channelNames[index],
+        },
+      };
+      
       return (
         <Line
           key={index}
           data={channel}
-          options={chartOptions}
+          options={tempOptions}
           width={chartAttributes.chartStyle.WIDTH}
           height={chartAttributes.chartStyle.HEIGHT}
         />
