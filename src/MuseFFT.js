@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { channelNames, zipSamples, MuseClient } from "muse-js";
-import { epoch, fft, sliceFFT } from "@neurosity/pipes";
+import { epoch, bandpassFilter} from "@neurosity/pipes";
 import { Line } from "react-chartjs-2";
 
 import "./MuseFFT.css";
@@ -21,8 +21,8 @@ const strings = {
   connected: "Connected",
   disconnected: "Disconnected",
   connectionFailed: "Connection failed",
-  frequency: "Frequency (Hz)",
-  power: "Power (\u03BCV\u00B2)",
+  frequency: "Time (msec)",
+  power: "Voltage (\u03BCV)",
   channel: "Channel: "
 };
 
@@ -41,13 +41,14 @@ const chartOptions = {
         scaleLabel: {
           display: true,
           labelString: strings.power
-        },
-        ticks: {
-          max: 100,
-          min: 0
         }
       }
     ]
+  },
+  elements: {
+    point: {
+      radius: 0
+    }
   },
   title: {
     display: true,
@@ -57,6 +58,11 @@ const chartOptions = {
   tooltips: { enabled: false },
   legend: { display: false }
 };
+
+function range(start, end, step = 1) {
+  const len = Math.floor((end - start) / step) + 1
+  return Array(len).fill().map((_, idx) => start + (idx * step))
+}
 
 export class MuseFFT extends Component {
   state = {
@@ -120,15 +126,19 @@ export class MuseFFT extends Component {
 
       zipSamples(client.eegReadings)
         .pipe(
-          epoch({ duration: 1024, interval: 100, samplingRate: 256 }),
-          fft({ bins: 256 }),
-          sliceFFT([1, 30])
+          bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4}),
+          epoch({ duration: 1024, interval: 100, samplingRate: 256 })
         )
         .subscribe(data => {
           this.setState(state => {
             Object.values(state.channels).forEach((channel, index) => {
-              channel.datasets[0].data = data.psd[index];
-              channel.xLabels = data.freqs;
+              channel.datasets[0].data = data.data[index];
+              var srate = data.info.samplingRate;
+              var xtimes = range(1000/srate*data.data[2].length, 1000/srate, -(1000/srate));
+              xtimes = xtimes.map(function(each_element){
+                return Number(each_element.toFixed(0))
+              })
+              channel.xLabels =  xtimes;
             });
 
             return {
@@ -168,6 +178,9 @@ export class MuseFFT extends Component {
           First we look at the raw voltage signals coming from each of the four sensors on the muse. 
           TP9 and TP10 are on the ears, AF7 and AF8 are on the forehead. In general EEG electrodes are 
           odd on the left hemisphere and even on the right, and have suffixed with z along the midline.
+          <div style={chartAttributes.wrapperStyle.style}>
+            {this.renderCharts()}
+          </div>
         </p>        
         <hr></hr>      
         <p>
@@ -177,9 +190,6 @@ export class MuseFFT extends Component {
           transform to convert the voltage values over time to the power at each frequency. To use the fft
           we pick a particular chunk of data and get an output called a spectra. Each time the chart updates 
           a new window of data is selected.
-          <div style={chartAttributes.wrapperStyle.style}>
-            {this.renderCharts()}
-          </div>
         </p>
 
         <p>
