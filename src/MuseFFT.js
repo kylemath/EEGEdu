@@ -148,6 +148,7 @@ export class MuseFFT extends Component {
     return (
       <div className="MuseFFT">
         <p>
+          <h3>EEGEdu </h3>
           Welcome to the EEGEdu live EEG tutorial. This tutorial is designed to be used with 
           the Muse and the Muse 2 headbands from Interaxon and will walk you through the basics of EEG 
           signal generation, data collection, and analysis with a focus on live control based on physiological 
@@ -163,15 +164,24 @@ export class MuseFFT extends Component {
         <p>{this.state.status}</p>
         <hr></hr>      
         <p>
+          <h3> Raw Data </h3>
+          First we look at the raw voltage signals coming from each of the four sensors on the muse. 
+          TP9 and TP10 are on the ears, AF7 and AF8 are on the forehead. In general EEG electrodes are 
+          odd on the left hemisphere and even on the right, and have suffixed with z along the midline.
+        </p>        
+        <hr></hr>      
+        <p>
+          <h3> Frequency Domain </h3>
           In the next demo we will look at the same signal in the frequency domain. We want to identify 
           the magnitude of oscillations of different frequencies in our live signal. We use the fast fourier
           transform to convert the voltage values over time to the power at each frequency. To use the fft
           we pick a particular chunk of data and get an output called a spectra. Each time the chart updates 
           a new window of data is selected.
+          <div style={chartAttributes.wrapperStyle.style}>
+            {this.renderCharts()}
+          </div>
         </p>
-        <div style={chartAttributes.wrapperStyle.style}>
-          {this.renderCharts()}
-        </div>
+
         <p>
         <hr></hr>
             EEGEdu - An Interactive Electrophysiology Tutorial with the Muse brought to you by Mathewson Sons
