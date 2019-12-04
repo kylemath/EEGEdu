@@ -43,7 +43,8 @@ const chartOptions = {
           labelString: strings.power
         },
         ticks: {
-          max: 100
+          max: 100,
+          min: 0
         }
       }
     ]
@@ -52,7 +53,7 @@ const chartOptions = {
     display: true,
     text: strings.channel
   },
-  responsive: true,
+  responsive: false,
   tooltips: { enabled: false },
   legend: { display: false }
 };
@@ -101,23 +102,6 @@ export class MuseFFT extends Component {
     });
   }
 
-  render() {
-    return (
-      <div className="MuseFFT">
-        <button disabled={this.state.button_disabled} onClick={this.connect}>
-          Connect Muse Headband
-        </button>
-        <p>{this.state.status}</p>
-        <div style={chartAttributes.wrapperStyle.style}>
-          {this.renderCharts()}
-        </div>
-        <div>
-            <center> EEGEdu - An Interactive Electrophysiology Tutorial with the Muse brought to you by Mathewson Sons </center>
-        </div>
-      </div>
-    );
-  }
-
   connect = async () => {
     const client = new MuseClient();
 
@@ -159,6 +143,52 @@ export class MuseFFT extends Component {
       console.error(strings.connectionFailed, err);
     }
   };
+
+  render() {
+    return (
+      <div className="MuseFFT">
+        <p>
+          <h3>EEGEdu </h3>
+          Welcome to the EEGEdu live EEG tutorial. This tutorial is designed to be used with 
+          the Muse and the Muse 2 headbands from Interaxon and will walk you through the basics of EEG 
+          signal generation, data collection, and analysis with a focus on live control based on physiological 
+          signals. All demos are done in this browser. The first step will be to turn on your Muse headband 
+          and click the connect button. This will open a screen and will list available Muse devices. Select 
+          the serial number written on your Muse. 
+        </p>
+        <hr></hr>
+        <button disabled={this.state.button_disabled} onClick={this.connect}>
+          Connect Muse Headband
+        </button>
+        <p> The current state of your Muse headband is: </p>
+        <p>{this.state.status}</p>
+        <hr></hr>      
+        <p>
+          <h3> Raw Data </h3>
+          First we look at the raw voltage signals coming from each of the four sensors on the muse. 
+          TP9 and TP10 are on the ears, AF7 and AF8 are on the forehead. In general EEG electrodes are 
+          odd on the left hemisphere and even on the right, and have suffixed with z along the midline.
+        </p>        
+        <hr></hr>      
+        <p>
+          <h3> Frequency Domain </h3>
+          In the next demo we will look at the same signal in the frequency domain. We want to identify 
+          the magnitude of oscillations of different frequencies in our live signal. We use the fast fourier
+          transform to convert the voltage values over time to the power at each frequency. To use the fft
+          we pick a particular chunk of data and get an output called a spectra. Each time the chart updates 
+          a new window of data is selected.
+          <div style={chartAttributes.wrapperStyle.style}>
+            {this.renderCharts()}
+          </div>
+        </p>
+
+        <p>
+        <hr></hr>
+            EEGEdu - An Interactive Electrophysiology Tutorial with the Muse brought to you by Mathewson Sons
+        </p>
+      </div>
+    );
+  }
 }
 
 export default MuseFFT;
