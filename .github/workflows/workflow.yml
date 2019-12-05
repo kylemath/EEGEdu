@@ -1,22 +1,26 @@
+# .github/workflows/nodejs.yml
+name: Node CI
 
-name: Build and Deploy
-on:
-  push:
-    branches:
-      - master
+on: [push, pull_request] # Run on Push and Pull Requests
+
 jobs:
   build:
-    name: Build and Deploy to Firebase Hosting
+
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [10.x] # Only run the 10.x build
+
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@master
-      - name: Install Dependencies
-        run: yarn install
-      - name: Build
-        run: yarn run build
-      - name: Deploy to Firebase
-        uses: lowply/deploy-firebase@v0.0.2
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE }}
-          FIREBASE_PROJECT: eegedu
+    - uses: actions/checkout@v1
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: npm install -g yarn
+    - name: yarn install, build, and test
+      run: |
+        yarn
+        yarn build
+        yarn test
