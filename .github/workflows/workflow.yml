@@ -10,18 +10,25 @@ jobs:
       matrix:
         node-version: [10.x] # Only run the 10.x build
     steps:
-    - uses: actions/checkout@master
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@master
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: npm install -g yarn
-    - name: Install Dependencies
-      run: yarn install
-    - name: Build
-    - run: yarn build
-    - name: Archive Produciton Artifacts
-      uses: actions/upload-artifact@master
-      with:
-        name: build
-        path: build
+      - name: Checkout Repo
+        uses: actions/checkout@master
+      
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@master
+        with:
+          node-version: ${{ matrix.node-version }}
+    
+      - name: Install Yarn
+        run: npm install -g yarn
+
+      - name: Install Dependencies
+        run: yarn install
+
+      - name: Build
+        run: yarn build
+
+      - name: Archive Produciton Artifacts
+        uses: actions/upload-artifact@master
+        with:
+          name: build
+          path: build
