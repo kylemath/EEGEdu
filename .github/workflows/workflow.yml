@@ -1,5 +1,5 @@
 # .github/workflows/nodejs.yml
-name: Node CI
+name: Build and Deploy to Firebase
 
 on: [push, pull_request] # Run on Push and Pull Requests
 
@@ -32,3 +32,21 @@ jobs:
         with:
           name: build
           path: build
+
+  deploy:
+    name: Deploy to Firebase
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@master
+      - name: Download Production Artifacts
+        uses: actions/download-artifact@master
+        with:
+          name: build
+      - name: Deploy to Firebase
+        uses: w9jds/firebase-action@master
+        with:
+          args: deploy --only hosting
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
