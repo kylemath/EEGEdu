@@ -5,7 +5,9 @@ import { Line } from "react-chartjs-2";
 
 import "./MuseFFT.css";
 
-var raw = true
+//This is a development feature to toggle the data streamed to the graphs
+//eventually we want to make this a switch or button on the page and only show one graph
+var raw_toggle = true;
 
 const chartAttributes = {
   wrapperStyle: {
@@ -30,19 +32,19 @@ const strings = {
 // Raw Data Chart 
 //-------------------------------------------
 
-const Raw_strings = {
+const stringsRaw = {
   xlabel: "Time (msec)",
   ylabel: "Voltage (\u03BCV)"
 };
 
 
-const Raw_chartOptions = {
+const chartOptionsRaw = {
   scales: {
     xAxes: [
       {
         scaleLabel: {
           display: true,
-          labelString: Raw_strings.xlabel
+          labelString: stringsRaw.xlabel
         }
       }
     ],
@@ -50,7 +52,7 @@ const Raw_chartOptions = {
       {
         scaleLabel: {
           display: true,
-          labelString: Raw_strings.ylabel
+          labelString: stringsRaw.ylabel
         }
       }
     ]
@@ -76,18 +78,18 @@ const Raw_chartOptions = {
 // Spectra Chart 
 //-------------------------------------------
 
-const Spectra_strings = {
+const stringsSpectra = {
   xlabel: "Frequency (Hz)",
   ylabel: "Power (\u03BCV\u00B2)",
 };
 
-const Spectra_chartOptions = {
+const chartOptionsSpectra = {
   scales: {
     xAxes: [
       {
         scaleLabel: {
           display: true,
-          labelString: Spectra_strings.xlabel
+          labelString: stringsSpectra.xlabel
         },
         ticks: {
           max: 100,
@@ -99,7 +101,7 @@ const Spectra_chartOptions = {
       {
         scaleLabel: {
           display: true,
-          labelString: Spectra_strings.ylabel
+          labelString: stringsSpectra.ylabel
         }
 
       }
@@ -147,14 +149,14 @@ export class MuseFFT extends Component {
     }
   };
 
-  Raw_renderCharts() {
+  renderChartsRaw() {
     const {channels} = this.state;
 
     return Object.values(channels).map((channel, index) => {
       const tempOptions = {
-        ...Raw_chartOptions,
+        ...chartOptionsRaw,
         title: {
-          ...Raw_chartOptions.title,
+          ...chartOptionsRaw.title,
           text: strings.channel + channelNames[index],
         },
       };
@@ -171,14 +173,14 @@ export class MuseFFT extends Component {
     });
   }
 
-  Spectra_renderCharts() {
+  renderChartsSpectra() {
     const {channels} = this.state;
 
     return Object.values(channels).map((channel, index) => {
       const tempOptions = {
-        ...Spectra_chartOptions,
+        ...chartOptionsSpectra,
         title: {
-          ...Spectra_chartOptions.title,
+          ...chartOptionsSpectra.title,
           text: strings.channel + channelNames[index],
         },
       };
@@ -211,7 +213,7 @@ export class MuseFFT extends Component {
       await client.connect();
       await client.start();
 
-      if (raw) {
+      if (raw_toggle) {
         zipSamples(client.eegReadings)
           .pipe(
             bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4}),
@@ -293,23 +295,22 @@ export class MuseFFT extends Component {
             odd on the left hemisphere and even on the right, and have suffixed with z along the midline.
           </p>        
           <div style={chartAttributes.wrapperStyle.style}>
-            {this.Raw_renderCharts()}
+            {this.renderChartsRaw()}
           </div>
         <hr></hr>   
-        {/*
-          // <h3> Frequency Domain </h3> 
-          //   <p>
-          //     In the next demo we will look at the same signal in the frequency domain. We want to identify 
-          //     the magnitude of oscillations of different frequencies in our live signal. We use the fast fourier
-          //     transform to convert the voltage values over time to the power at each frequency. To use the fft
-          //     we pick a particular chunk of data and get an output called a spectra. Each time the chart updates 
-          //     a new window of data is selected.
-          //   </p>
-          //   <div style={chartAttributes.wrapperStyle.style}>
-          //     {this.Spectra_renderCharts()}
-          //   </div>
-          // <hr></hr>
-        */}  
+          <h3> Frequency Domain </h3> 
+            <p>
+              In the next demo we will look at the same signal in the frequency domain. We want to identify 
+              the magnitude of oscillations of different frequencies in our live signal. We use the fast fourier
+              transform to convert the voltage values over time to the power at each frequency. To use the fft
+              we pick a particular chunk of data and get an output called a spectra. Each time the chart updates 
+              a new window of data is selected.
+            </p>
+            <div style={chartAttributes.wrapperStyle.style}>
+              {this.renderChartsSpectra()}
+            </div>
+          <hr></hr>
+
 
         <p>
           EEGEdu - An Interactive Electrophysiology Tutorial with the Muse brought to you by Mathewson Sons
