@@ -1,9 +1,11 @@
 import React, { Component } from "react";
 import { channelNames, zipSamples, MuseClient } from "muse-js";
-import { epoch, bandpassFilter} from "@neurosity/pipes";
+import { epoch, bandpassFilter, fft, sliceFFT} from "@neurosity/pipes";
 import { Line } from "react-chartjs-2";
 
 import "./MuseFFT.css";
+
+var raw = false
 
 const chartAttributes = {
   wrapperStyle: {
@@ -21,18 +23,26 @@ const strings = {
   connected: "Connected",
   disconnected: "Disconnected",
   connectionFailed: "Connection failed",
-  frequency: "Time (msec)",
-  power: "Voltage (\u03BCV)",
   channel: "Channel: "
 };
 
-const chartOptions = {
+//-------------------------------------------
+// Raw Data Chart 
+//-------------------------------------------
+
+const Raw_strings = {
+  xlabel: "Time (msec)",
+  ylabel: "Voltage (\u03BCV)"
+};
+
+
+const Raw_chartOptions = {
   scales: {
     xAxes: [
       {
         scaleLabel: {
           display: true,
-          labelString: strings.frequency
+          labelString: Raw_strings.xlabel
         }
       }
     ],
@@ -40,7 +50,7 @@ const chartOptions = {
       {
         scaleLabel: {
           display: true,
-          labelString: strings.power
+          labelString: Raw_strings.ylabel
         }
       }
     ]
@@ -59,6 +69,56 @@ const chartOptions = {
   legend: { display: false }
 };
 
+//-------------------------------------------
+// Spectra Chart 
+//-------------------------------------------
+
+const Spectra_strings = {
+  xlabel: "Frequency (Hz)",
+  ylabel: "Power (\u03BCV\u00B2)",
+};
+
+const Spectra_chartOptions = {
+  scales: {
+    xAxes: [
+      {
+        scaleLabel: {
+          display: true,
+          labelString: Spectra_strings.xlabel
+        },
+        ticks: {
+          max: 100,
+          min: 0
+        }
+      }
+    ],
+    yAxes: [
+      {
+        scaleLabel: {
+          display: true,
+          labelString: Spectra_strings.ylabel
+        }
+
+      }
+    ]
+  },
+  elements: {
+    point: {
+      radius: 0
+    }
+  },
+  title: {
+    display: true,
+    text: strings.channel
+  },
+  responsive: false,
+  tooltips: { enabled: false },
+  legend: { display: false }
+};
+
+//--------------------------------------------
+
+// Function to count by n to something 
 function range(start, end, step = 1) {
   const len = Math.floor((end - start) / step) + 1
   return Array(len).fill().map((_, idx) => start + (idx * step))
@@ -84,14 +144,38 @@ export class MuseFFT extends Component {
     }
   };
 
-  renderCharts() {
+  Raw_renderCharts() {
     const {channels} = this.state;
 
     return Object.values(channels).map((channel, index) => {
       const tempOptions = {
-        ...chartOptions,
+        ...Raw_chartOptions,
         title: {
-          ...chartOptions.title,
+          ...Raw_chartOptions.title,
+          text: strings.channel + channelNames[index],
+        },
+      };
+      
+      return (
+        <Line
+          key={index}
+          data={channel}
+          options={tempOptions}
+          width={chartAttributes.chartStyle.WIDTH}
+          height={chartAttributes.chartStyle.HEIGHT}
+        />
+      );
+    });
+  }
+
+  Spectra_renderCharts() {
+    const {channels} = this.state;
+
+    return Object.values(channels).map((channel, index) => {
+      const tempOptions = {
+        ...Spectra_chartOptions,
+        title: {
+          ...Spectra_chartOptions.title,
           text: strings.channel + channelNames[index],
         },
       };
@@ -124,31 +208,57 @@ export class MuseFFT extends Component {
       await client.connect();
       await client.start();
 
-      zipSamples(client.eegReadings)
-        .pipe(
-          bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4}),
-          epoch({ duration: 1024, interval: 100, samplingRate: 256 })
-        )
-        .subscribe(data => {
-          this.setState(state => {
-            Object.values(state.channels).forEach((channel, index) => {
-              channel.datasets[0].data = data.data[index];
-              var srate = data.info.samplingRate;
-              var xtimes = range(1000/srate*data.data[2].length, 1000/srate, -(1000/srate));
-              xtimes = xtimes.map(function(each_element){
-                return Number(each_element.toFixed(0))
-              })
-              channel.xLabels =  xtimes;
-            });
+      if (raw) {
+        zipSamples(client.eegReadings)
+          .pipe(
+            bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4}),
+            epoch({ duration: 1024, interval: 100, samplingRate: 256 })
+          )
+          .subscribe(data => {
+            this.setState(state => {
+              Object.values(state.channels).forEach((channel, index) => {
+                channel.datasets[0].data = data.data[index];
+                var srate = data.info.samplingRate;
+                var xtimes = range(1000/srate*data.data[2].length, 1000/srate, -(1000/srate));
+                xtimes = xtimes.map(function(each_element){
+                  return Number(each_element.toFixed(0))
+                })
+                channel.xLabels =  xtimes;
+              });
 
-            return {
-              ch0: state.channels.ch0,
-              ch1: state.channels.ch1,
-              ch2: state.channels.ch2,
-              ch3: state.channels.ch3
-            };
-          });
-        });
+              return {
+                ch0: state.channels.ch0,
+                ch1: state.channels.ch1,
+                ch2: state.channels.ch2,
+                ch3: state.channels.ch3
+              };
+            });
+          });         
+      } else {
+        zipSamples(client.eegReadings)
+          .pipe(
+            bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4}),
+            epoch({ duration: 1024, interval: 100, samplingRate: 256 }),
+            fft({ bins: 256 }),
+            sliceFFT([1, 30])
+          )
+          .subscribe(data => {
+            this.setState(state => {
+              Object.values(state.channels).forEach((channel, index) => {
+                  channel.datasets[0].data = data.psd[index];
+                  channel.xLabels = data.freqs; 
+              });
+
+              return {
+                ch0: state.channels.ch0,
+                ch1: state.channels.ch1,
+                ch2: state.channels.ch2,
+                ch3: state.channels.ch3
+              };
+            });
+          });             
+      }
+
     } catch (err) {
       console.error(strings.connectionFailed, err);
     }
@@ -179,7 +289,7 @@ export class MuseFFT extends Component {
           TP9 and TP10 are on the ears, AF7 and AF8 are on the forehead. In general EEG electrodes are 
           odd on the left hemisphere and even on the right, and have suffixed with z along the midline.
           <div style={chartAttributes.wrapperStyle.style}>
-            {this.renderCharts()}
+            {this.Raw_renderCharts()}
           </div>
         </p>        
         <hr></hr>      
@@ -190,6 +300,9 @@ export class MuseFFT extends Component {
           transform to convert the voltage values over time to the power at each frequency. To use the fft
           we pick a particular chunk of data and get an output called a spectra. Each time the chart updates 
           a new window of data is selected.
+          <div style={chartAttributes.wrapperStyle.style}>
+            {this.Spectra_renderCharts()}
+          </div>
         </p>
 
         <p>
