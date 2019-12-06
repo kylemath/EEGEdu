@@ -15,6 +15,7 @@ const header = {
     "        and will list available Muse devices. Select the serial number written\n" +
     "        on your Muse."
 };
+
 export function App() {
   return (
     <AppProvider i18n={enTranslations}>
