@@ -1,13 +1,14 @@
 import React, { Component } from "react";
 import { channelNames, zipSamples, MuseClient } from "muse-js";
-import { epoch, bandpassFilter, fft, sliceFFT } from "@neurosity/pipes";
+import { epoch, bandpassFilter } from "@neurosity/pipes";
 import { Button, TextContainer, Card, Stack } from "@shopify/polaris";
 import { Line } from "react-chartjs-2";
+import { range } from "../chartUtils";
 import { chartAttributes, strings } from "../chartOptions";
 
 const axisLabels = {
-  xlabel: "Frequency (Hz)",
-  ylabel: "Power (\u03BCV\u00B2)"
+  xlabel: "Time (msec)",
+  ylabel: "Voltage (\u03BCV)"
 };
 
 const chartOptions = {
@@ -17,10 +18,6 @@ const chartOptions = {
         scaleLabel: {
           display: true,
           labelString: axisLabels.xlabel
-        },
-        ticks: {
-          max: 100,
-          min: 0
         }
       }
     ],
@@ -32,6 +29,9 @@ const chartOptions = {
         }
       }
     ]
+  },
+  animation: {
+    duration: 0
   },
   elements: {
     point: {
@@ -47,7 +47,7 @@ const chartOptions = {
   legend: { display: false }
 };
 
-export class MuseFFTSpectra extends Component {
+export class EEGEduRaw extends Component {
   state = {
     status: strings.disconnected,
     button_disabled: false,
@@ -106,15 +106,22 @@ export class MuseFFTSpectra extends Component {
       zipSamples(client.eegReadings)
         .pipe(
           bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
-          epoch({ duration: 1024, interval: 100, samplingRate: 256 }),
-          fft({ bins: 256 }),
-          sliceFFT([1, 30])
+          epoch({ duration: 1024, interval: 50, samplingRate: 256 })
         )
         .subscribe(data => {
           this.setState(state => {
             Object.values(state.channels).forEach((channel, index) => {
-              channel.datasets[0].data = data.psd[index];
-              channel.xLabels = data.freqs;
+              channel.datasets[0].data = data.data[index];
+              var srate = data.info.samplingRate;
+              var xtimes = range(
+                (1000 / srate) * data.data[2].length,
+                1000 / srate,
+                -(1000 / srate)
+              );
+              xtimes = xtimes.map(function(each_element) {
+                return Number(each_element.toFixed(0));
+              });
+              channel.xLabels = xtimes;
             });
 
             return {
@@ -132,7 +139,7 @@ export class MuseFFTSpectra extends Component {
 
   render() {
     return (
-      <Card title={strings.spectraTitle}>
+      <Card title={strings.rawTitle}>
         <Card.Section>
           <Stack>
             <Button
@@ -145,7 +152,7 @@ export class MuseFFTSpectra extends Component {
                 : strings.buttonToConnect}
             </Button>
             <TextContainer>
-              <p>{strings.spectraDescription}</p>
+              <p>{strings.rawDescription}</p>
             </TextContainer>
           </Stack>
         </Card.Section>
@@ -159,4 +166,4 @@ export class MuseFFTSpectra extends Component {
   }
 }
 
-export default MuseFFTSpectra;
+export default EEGEduRaw;
