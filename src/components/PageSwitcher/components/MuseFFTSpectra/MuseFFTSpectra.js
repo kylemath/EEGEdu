@@ -3,49 +3,20 @@ import { channelNames, zipSamples, MuseClient } from "muse-js";
 import { epoch, bandpassFilter, fft, sliceFFT } from "@neurosity/pipes";
 import { Button, TextContainer, Card, Stack } from "@shopify/polaris";
 import { Line } from "react-chartjs-2";
+import { chartAttributes, strings } from "../chartOptions";
 
-const chartAttributes = {
-  wrapperStyle: {
-    display: "flex",
-    flexWrap: "wrap",
-    padding: "20px"
-  }
-};
-
-const strings = {
-  connected: "Connected",
-  disconnected: "Disconnected",
-  connectionFailed: "Connection failed",
-  channel: "Channel: ",
-  buttonToConnect: "Connect Muse Headband",
-  buttonConnected: "Muse Headband Connected",
-  title: "Spectra Data",
-  description:
-    "                In the next demo we will look at the same signal in the\n" +
-    "                frequency domain. We want to identify the magnitude of\n" +
-    "                oscillations of different frequencies in our live signal. We use\n" +
-    "                the fast fourier transform to convert the voltage values over\n" +
-    "                time to the power at each frequency. To use the fft we pick a\n" +
-    "                particular chunk of data and get an output called a spectra.\n" +
-    "                Each time the chart updates a new window of data is selected."
-};
-
-//-------------------------------------------
-// Spectra Chart
-//-------------------------------------------
-
-const stringsSpectra = {
+const axisLabels = {
   xlabel: "Frequency (Hz)",
   ylabel: "Power (\u03BCV\u00B2)"
 };
 
-const chartOptionsSpectra = {
+const chartOptions = {
   scales: {
     xAxes: [
       {
         scaleLabel: {
           display: true,
-          labelString: stringsSpectra.xlabel
+          labelString: axisLabels.xlabel
         },
         ticks: {
           max: 100,
@@ -57,7 +28,7 @@ const chartOptionsSpectra = {
       {
         scaleLabel: {
           display: true,
-          labelString: stringsSpectra.ylabel
+          labelString: axisLabels.ylabel
         }
       }
     ]
@@ -96,14 +67,14 @@ export class MuseFFTSpectra extends Component {
     }
   };
 
-  renderChartsSpectra() {
+  renderCharts() {
     const { channels } = this.state;
 
     return Object.values(channels).map((channel, index) => {
       const tempOptions = {
-        ...chartOptionsSpectra,
+        ...chartOptions,
         title: {
-          ...chartOptionsSpectra.title,
+          ...chartOptions.title,
           text: strings.channel + channelNames[index]
         }
       };
@@ -161,7 +132,7 @@ export class MuseFFTSpectra extends Component {
 
   render() {
     return (
-      <Card title={strings.title}>
+      <Card title={strings.spectraTitle}>
         <Card.Section>
           <Stack>
             <Button
@@ -174,13 +145,13 @@ export class MuseFFTSpectra extends Component {
                 : strings.buttonToConnect}
             </Button>
             <TextContainer>
-              <p>{strings.description}</p>
+              <p>{strings.spectraDescription}</p>
             </TextContainer>
           </Stack>
         </Card.Section>
         <Card.Section>
           <div style={chartAttributes.wrapperStyle.style}>
-            {this.renderChartsSpectra()}
+            {this.renderCharts()}
           </div>
         </Card.Section>
       </Card>

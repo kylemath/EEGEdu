@@ -3,47 +3,21 @@ import { channelNames, zipSamples, MuseClient } from "muse-js";
 import { epoch, bandpassFilter } from "@neurosity/pipes";
 import { Button, TextContainer, Card, Stack } from "@shopify/polaris";
 import { Line } from "react-chartjs-2";
+import { range } from "../chartUtils";
+import { chartAttributes, strings } from "../chartOptions";
 
-const chartAttributes = {
-  wrapperStyle: {
-    display: "flex",
-    flexWrap: "wrap",
-    padding: "20px"
-  }
-};
-
-const strings = {
-  connected: "Connected",
-  disconnected: "Disconnected",
-  connectionFailed: "Connection failed",
-  channel: "Channel: ",
-  buttonToConnect: "Connect Muse Headband",
-  buttonConnected: "Muse Headband Connected",
-  title: "Raw Data",
-  description:
-    "                First we look at the raw voltage signals coming from each of the\n" +
-    "                four sensors on the muse. TP9 and TP10 are on the ears, AF7 and\n" +
-    "                AF8 are on the forehead. In general EEG electrodes are odd on\n" +
-    "                the left hemisphere and even on the right, and have suffixed\n" +
-    "                with z along the midline."
-};
-
-//-------------------------------------------
-// Raw Data Chart
-//-------------------------------------------
-
-const stringsRaw = {
+const axisLabels = {
   xlabel: "Time (msec)",
   ylabel: "Voltage (\u03BCV)"
 };
 
-const chartOptionsRaw = {
+const chartOptions = {
   scales: {
     xAxes: [
       {
         scaleLabel: {
           display: true,
-          labelString: stringsRaw.xlabel
+          labelString: axisLabels.xlabel
         }
       }
     ],
@@ -51,7 +25,7 @@ const chartOptionsRaw = {
       {
         scaleLabel: {
           display: true,
-          labelString: stringsRaw.ylabel
+          labelString: axisLabels.ylabel
         }
       }
     ]
@@ -73,16 +47,6 @@ const chartOptionsRaw = {
   legend: { display: false }
 };
 
-//--------------------------------------------
-
-// Function to count by n to something
-function range(start, end, step = 1) {
-  const len = Math.floor((end - start) / step) + 1;
-  return Array(len)
-    .fill()
-    .map((_, idx) => start + idx * step);
-}
-
 export class MuseFFTRaw extends Component {
   state = {
     status: strings.disconnected,
@@ -103,14 +67,14 @@ export class MuseFFTRaw extends Component {
     }
   };
 
-  renderChartsRaw() {
+  renderCharts() {
     const { channels } = this.state;
 
     return Object.values(channels).map((channel, index) => {
       const tempOptions = {
-        ...chartOptionsRaw,
+        ...chartOptions,
         title: {
-          ...chartOptionsRaw.title,
+          ...chartOptions.title,
           text: strings.channel + channelNames[index]
         }
       };
@@ -175,7 +139,7 @@ export class MuseFFTRaw extends Component {
 
   render() {
     return (
-      <Card title={strings.title}>
+      <Card title={strings.rawTitle}>
         <Card.Section>
           <Stack>
             <Button
@@ -188,13 +152,13 @@ export class MuseFFTRaw extends Component {
                 : strings.buttonToConnect}
             </Button>
             <TextContainer>
-              <p>{strings.description}</p>
+              <p>{strings.rawDescription}</p>
             </TextContainer>
           </Stack>
         </Card.Section>
         <Card.Section>
           <div style={chartAttributes.wrapperStyle.style}>
-            {this.renderChartsRaw()}
+            {this.renderCharts()}
           </div>
         </Card.Section>
       </Card>
