@@ -1,6 +1,6 @@
 {
-  "short_name": "MuseFFT",
-  "name": "MuseFFT Application",
+  "short_name": "EEGEdu",
+  "name": "EEGedu Application",
   "icons": [
     {
       "src": "favicon.ico",

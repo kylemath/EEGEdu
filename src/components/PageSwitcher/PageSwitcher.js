@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { Select, Card } from "@shopify/polaris";
-import MuseFFTRaw from "./components/MuseFFTRaw/MuseFFTRaw";
-import MuseFFTSpectra from "./components/MuseFFTSpectra/MuseFFTSpectra";
+import EEGEduRaw from "./components/EEGEduRaw/EEGEduRaw";
+import EEGEduSpectra from "./components/EEGEduSpectra/EEGEduSpectra";
 
 export function PageSwitcher() {
   const [selected, setSelected] = useState("Raw");
@@ -16,9 +16,9 @@ export function PageSwitcher() {
   function renderCharts() {
     switch (selected) {
       case "Raw":
-        return <MuseFFTRaw />;
+        return <EEGEduRaw />;
       default:
-        return <MuseFFTSpectra />;
+        return <EEGEduSpectra />;
     }
   }
 
