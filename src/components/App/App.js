@@ -4,9 +4,9 @@ import { Header } from "../Header/Header";
 
 export function App() {
   return (
-    <>
+  	<div>
       <Header />
       <MuseFFT />
-    </>
+    </div>
   );
 }
