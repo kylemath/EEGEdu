@@ -2,7 +2,7 @@ import React from "react";
 
 export function Header() {
   return (
-    <>
+    <div>
       <h3>EEGEdu</h3>
       <p>
         Welcome to the EEGEdu live EEG tutorial. This tutorial is designed to be
@@ -14,6 +14,6 @@ export function Header() {
         and will list available Muse devices. Select the serial number written
         on your Muse.
       </p>
-    </>
+    </div>
   );
 }
