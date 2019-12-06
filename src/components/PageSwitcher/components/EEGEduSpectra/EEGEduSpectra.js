@@ -3,12 +3,10 @@ import { channelNames, zipSamples, MuseClient } from "muse-js";
 import { epoch, bandpassFilter, fft, sliceFFT } from "@neurosity/pipes";
 import { Button, TextContainer, Card, Stack } from "@shopify/polaris";
 import { Line } from "react-chartjs-2";
-import { chartAttributes, strings } from "../chartOptions";
+import { chartAttributes } from "../chartOptions";
 
-const axisLabels = {
-  xlabel: "Frequency (Hz)",
-  ylabel: "Power (\u03BCV\u00B2)"
-};
+import * as generalTranslations from "../translations/en";
+import * as specificTranslations from "./translations/en";
 
 const chartOptions = {
   scales: {
@@ -16,7 +14,7 @@ const chartOptions = {
       {
         scaleLabel: {
           display: true,
-          labelString: axisLabels.xlabel
+          labelString: specificTranslations.xlabel
         },
         ticks: {
           max: 100,
@@ -28,7 +26,7 @@ const chartOptions = {
       {
         scaleLabel: {
           display: true,
-          labelString: axisLabels.ylabel
+          labelString: specificTranslations.ylabel
         }
       }
     ]
@@ -40,7 +38,7 @@ const chartOptions = {
   },
   title: {
     display: true,
-    text: strings.channel
+    text: generalTranslations.channel
   },
   responsive: true,
   tooltips: { enabled: false },
@@ -49,7 +47,7 @@ const chartOptions = {
 
 export class EEGEduSpectra extends Component {
   state = {
-    status: strings.disconnected,
+    status: generalTranslations.disconnected,
     button_disabled: false,
     channels: {
       ch0: {
@@ -75,7 +73,7 @@ export class EEGEduSpectra extends Component {
         ...chartOptions,
         title: {
           ...chartOptions.title,
-          text: strings.channel + channelNames[index]
+          text: generalTranslations.channel + channelNames[index]
         }
       };
 
@@ -92,11 +90,17 @@ export class EEGEduSpectra extends Component {
 
     client.connectionStatus.subscribe(status => {
       this.setState({
-        status: status ? strings.connected : strings.disconnected,
+        status: status
+          ? generalTranslations.connected
+          : generalTranslations.disconnected,
         button_disabled: status
       });
 
-      console.log(status ? strings.connected : strings.disconnected);
+      console.log(
+        status
+          ? generalTranslations.connected
+          : generalTranslations.disconnected
+      );
     });
 
     try {
@@ -126,26 +130,26 @@ export class EEGEduSpectra extends Component {
           });
         });
     } catch (err) {
-      console.error(strings.connectionFailed, err);
+      console.error(generalTranslations.connectionFailed, err);
     }
   };
 
   render() {
     return (
-      <Card title={strings.spectraTitle}>
+      <Card title={specificTranslations.title}>
         <Card.Section>
           <Stack>
             <Button
-              primary={this.state.status === strings.disconnected}
+              primary={this.state.status === generalTranslations.disconnected}
               disabled={this.state.button_disabled}
               onClick={this.connect}
             >
-              {this.state.status === strings.connected
-                ? strings.buttonConnected
-                : strings.buttonToConnect}
+              {this.state.status === generalTranslations.connected
+                ? generalTranslations.buttonConnected
+                : generalTranslations.buttonToConnect}
             </Button>
             <TextContainer>
-              <p>{strings.spectraDescription}</p>
+              <p>{specificTranslations.description}</p>
             </TextContainer>
           </Stack>
         </Card.Section>
