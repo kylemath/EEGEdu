@@ -4,9 +4,9 @@ import { Header } from "../Header/Header";
 
 export function App() {
   return (
-    <>
+  	<React.Fragment>
       <Header />
       <MuseFFT />
-    </>
+    </React.Fragment>
   );
 }
