@@ -23,6 +23,10 @@ To start, you will need to install [Homebrew](https://brew.sh) and [yarn](https:
 # Install yarn
 # NOTE: this will also install Node.js if it is not already installed.
 brew install yarn 
+# Node.js must be version 10.x for Muse interaction
+# Thus, if you are getting version issues, install n and switch versions
+# sudo npm install -g n
+# sudo n 10.16.0
 ```
 
 Then, in terminal, clone the git repo and enter the folder:
