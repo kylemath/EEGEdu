@@ -4,7 +4,7 @@ import { AppProvider, Card, Page } from "@shopify/polaris";
 import enTranslations from "@shopify/polaris/locales/en.json";
 
 const header = {
-  title: "EEGEedu",
+  title: "EEGEdu",
   subtitle:
     "        Welcome to the EEGEdu live EEG tutorial. This tutorial is designed to be\n" +
     "        used with the Muse and the Muse 2 headbands from Interaxon and will walk\n" +
