@@ -9,10 +9,6 @@ const chartAttributes = {
     display: "flex",
     flexWrap: "wrap",
     padding: "20px"
-  },
-  chartStyle: {
-    WIDTH: 500,
-    HEIGHT: 250
   }
 };
 
@@ -75,7 +71,7 @@ const chartOptionsSpectra = {
     display: true,
     text: strings.channel
   },
-  responsive: false,
+  responsive: true,
   tooltips: { enabled: false },
   legend: { display: false }
 };
@@ -113,13 +109,9 @@ export class MuseFFTSpectra extends Component {
       };
 
       return (
-        <Line
-          key={index}
-          data={channel}
-          options={tempOptions}
-          width={chartAttributes.chartStyle.WIDTH}
-          height={chartAttributes.chartStyle.HEIGHT}
-        />
+        <Card.Section>
+          <Line key={index} data={channel} options={tempOptions} />
+        </Card.Section>
       );
     });
   }
