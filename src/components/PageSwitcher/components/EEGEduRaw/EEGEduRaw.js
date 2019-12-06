@@ -1,78 +1,24 @@
-import React, { Component } from "react";
+import React, { useState } from "react";
 import { channelNames, zipSamples, MuseClient } from "muse-js";
 import { epoch, bandpassFilter } from "@neurosity/pipes";
 import { Button, TextContainer, Card, Stack } from "@shopify/polaris";
 import { Line } from "react-chartjs-2";
 import { range } from "../chartUtils";
-import { chartAttributes } from "../chartOptions";
+import { chartAttributes, emptyChannelData, rawOptions } from "../chartOptions";
 
 import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 
-const chartOptions = {
-  scales: {
-    xAxes: [
-      {
-        scaleLabel: {
-          display: true,
-          labelString: specificTranslations.xlabel
-        }
-      }
-    ],
-    yAxes: [
-      {
-        scaleLabel: {
-          display: true,
-          labelString: specificTranslations.ylabel
-        }
-      }
-    ]
-  },
-  animation: {
-    duration: 0
-  },
-  elements: {
-    point: {
-      radius: 0
-    }
-  },
-  title: {
-    display: true,
-    text: generalTranslations.channel
-  },
-  responsive: true,
-  tooltips: { enabled: false },
-  legend: { display: false }
-};
+export default function EEGEduRaw() {
+  const [status, setStatus] = useState(generalTranslations.disconnected);
+  const [channels, setChannels] = useState(emptyChannelData);
 
-export class EEGEduRaw extends Component {
-  state = {
-    status: generalTranslations.disconnected,
-    button_disabled: false,
-    channels: {
-      ch0: {
-        datasets: [{}]
-      },
-      ch1: {
-        datasets: [{}]
-      },
-      ch2: {
-        datasets: [{}]
-      },
-      ch3: {
-        datasets: [{}]
-      }
-    }
-  };
-
-  renderCharts() {
-    const { channels } = this.state;
-
+  function renderCharts() {
     return Object.values(channels).map((channel, index) => {
       const tempOptions = {
-        ...chartOptions,
+        ...rawOptions,
         title: {
-          ...chartOptions.title,
+          ...rawOptions.title,
           text: generalTranslations.channel + channelNames[index]
         }
       };
@@ -85,26 +31,16 @@ export class EEGEduRaw extends Component {
     });
   }
 
-  connect = async () => {
+  async function connect() {
     const client = new MuseClient();
 
     client.connectionStatus.subscribe(status => {
-      this.setState({
-        status: status
-          ? generalTranslations.connected
-          : generalTranslations.disconnected,
-        button_disabled: status
-      });
-
-      console.log(
-        status
-          ? generalTranslations.connected
-          : generalTranslations.disconnected
-      );
+      console.log(status);
     });
 
     try {
       await client.connect();
+      setStatus(generalTranslations.connected);
       await client.start();
 
       zipSamples(client.eegReadings)
@@ -113,8 +49,8 @@ export class EEGEduRaw extends Component {
           epoch({ duration: 1024, interval: 50, samplingRate: 256 })
         )
         .subscribe(data => {
-          this.setState(state => {
-            Object.values(state.channels).forEach((channel, index) => {
+          setChannels(channels => {
+            Object.values(channels).forEach((channel, index) => {
               channel.datasets[0].data = data.data[index];
               var srate = data.info.samplingRate;
               var xtimes = range(
@@ -129,45 +65,39 @@ export class EEGEduRaw extends Component {
             });
 
             return {
-              ch0: state.channels.ch0,
-              ch1: state.channels.ch1,
-              ch2: state.channels.ch2,
-              ch3: state.channels.ch3
+              ch0: channels.ch0,
+              ch1: channels.ch1,
+              ch2: channels.ch2,
+              ch3: channels.ch3
             };
           });
         });
     } catch (err) {
       console.error(generalTranslations.connectionFailed, err);
     }
-  };
-
-  render() {
-    return (
-      <Card title={specificTranslations.title}>
-        <Card.Section>
-          <Stack>
-            <Button
-              primary={this.state.status === generalTranslations.disconnected}
-              disabled={this.state.button_disabled}
-              onClick={this.connect}
-            >
-              {this.state.status === generalTranslations.connected
-                ? generalTranslations.buttonConnected
-                : generalTranslations.buttonToConnect}
-            </Button>
-            <TextContainer>
-              <p>{specificTranslations.description}</p>
-            </TextContainer>
-          </Stack>
-        </Card.Section>
-        <Card.Section>
-          <div style={chartAttributes.wrapperStyle.style}>
-            {this.renderCharts()}
-          </div>
-        </Card.Section>
-      </Card>
-    );
   }
-}
 
-export default EEGEduRaw;
+  return (
+    <Card title={specificTranslations.title}>
+      <Card.Section>
+        <Stack>
+          <Button
+            primary={status === generalTranslations.disconnected}
+            disabled={status === generalTranslations.connected}
+            onClick={connect}
+          >
+            {status === generalTranslations.connected
+              ? generalTranslations.buttonConnected
+              : generalTranslations.buttonToConnect}
+          </Button>
+          <TextContainer>
+            <p>{specificTranslations.description}</p>
+          </TextContainer>
+        </Stack>
+      </Card.Section>
+      <Card.Section>
+        <div style={chartAttributes.wrapperStyle.style}>{renderCharts()}</div>
+      </Card.Section>
+    </Card>
+  );
+}
