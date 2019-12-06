@@ -3,8 +3,6 @@ import { channelNames, zipSamples, MuseClient } from "muse-js";
 import { epoch, bandpassFilter, fft, sliceFFT} from "@neurosity/pipes";
 import { Line } from "react-chartjs-2";
 
-import "./MuseFFT.css";
-
 //This is a development feature to toggle the data streamed to the graphs
 //eventually we want to make this a switch or button on the page and only show one graph
 var raw_toggle = true;
