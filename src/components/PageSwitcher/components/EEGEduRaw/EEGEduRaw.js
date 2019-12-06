@@ -78,8 +78,8 @@ export class EEGEduRaw extends Component {
       };
 
       return (
-        <Card.Section>
-          <Line key={index} data={channel} options={tempOptions} />
+        <Card.Section key={"Card_" + index}>
+          <Line key={"Line_" + index} data={channel} options={tempOptions} />
         </Card.Section>
       );
     });
