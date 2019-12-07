@@ -46,6 +46,12 @@ export default function EEGEduRaw() {
           });
         });
     }
+
+    return () => {
+      if (window.shouldUnsubscribe) {
+        console.log("dismount correct");
+      }
+    };
   });
 
   function renderCharts() {
