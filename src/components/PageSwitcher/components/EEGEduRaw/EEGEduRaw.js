@@ -59,7 +59,6 @@ export default function EEGEduRaw() {
     const client = new MuseClient();
 
     try {
-      setStatus(generalTranslations.connecting);
       await client.connect();
       await client.start();
       setStatus(generalTranslations.connected);
@@ -103,7 +102,7 @@ export default function EEGEduRaw() {
         <Stack>
           <Button
             primary={status === generalTranslations.connect}
-            disabled={status !== generalTranslations.connect}
+            disabled={status === generalTranslations.connected}
             onClick={connect}
           >
             {status}

@@ -25,10 +25,6 @@ export default function EEGEduSpectra() {
               scaleLabel: {
                 ...generalOptions.scales.xAxes[0].scaleLabel,
                 labelString: specificTranslations.xlabel
-              },
-              ticks: {
-                max: 100,
-                min: 0
               }
             }
           ],
@@ -37,6 +33,10 @@ export default function EEGEduSpectra() {
               scaleLabel: {
                 ...generalOptions.scales.yAxes[0].scaleLabel,
                 labelString: specificTranslations.ylabel
+              },
+              ticks: {
+                max: 100,
+                min: 0
               }
             }
           ]
@@ -59,9 +59,9 @@ export default function EEGEduSpectra() {
     const client = new MuseClient();
 
     try {
-      setStatus(generalTranslations.connecting);
       await client.connect();
       await client.start();
+      console.log("here");
       setStatus(generalTranslations.connected);
 
       zipSamples(client.eegReadings)
@@ -97,7 +97,7 @@ export default function EEGEduSpectra() {
         <Stack>
           <Button
             primary={status === generalTranslations.connect}
-            disabled={status !== generalTranslations.connect}
+            disabled={status === generalTranslations.connected}
             onClick={connect}
           >
             {status}
