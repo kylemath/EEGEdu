@@ -71,7 +71,7 @@ export default function EEGEduRaw() {
             Object.values(channels).forEach((channel, index) => {
               const sRate = data.info.samplingRate;
 
-              channel.datasets[0].data = data.data[index];
+              channel.dataSets[0].data = data.data[index];
               channel.xLabels = range(
                 (1000 / sRate) * data.data[2].length,
                 1000 / sRate,

@@ -74,7 +74,7 @@ export default function EEGEduSpectra() {
         .subscribe(data => {
           setChannels(channels => {
             Object.values(channels).forEach((channel, index) => {
-              channel.datasets[0].data = data.psd[index];
+              channel.dataSets[0].data = data.psd[index];
               channel.xLabels = data.freqs;
             });
 

@@ -10,16 +10,16 @@ export const chartStyles = {
 
 export const emptyChannelData = {
   ch0: {
-    datasets: [{}]
+    dataSets: [{}]
   },
   ch1: {
-    datasets: [{}]
+    dataSets: [{}]
   },
   ch2: {
-    datasets: [{}]
+    dataSets: [{}]
   },
   ch3: {
-    datasets: [{}]
+    dataSets: [{}]
   }
 };
 
@@ -56,16 +56,3 @@ export const generalOptions = {
   tooltips: { enabled: false },
   legend: { display: false }
 };
-
-// export const spectraOptions = {
-//   scales: {
-//     xAxes: [
-//       {
-//         ticks: {
-//           max: 100,
-//           min: 0
-//         }
-//       }
-//     ],
-//   }
-// };
