@@ -31,7 +31,6 @@ export function PageSwitcher() {
     window.museClient = new MuseClient();
 
     try {
-      setStatus(generalTranslations.connecting);
       await window.museClient.connect();
       await window.museClient.start();
       setStatus(generalTranslations.connected);
@@ -46,7 +45,7 @@ export function PageSwitcher() {
         <Stack>
           <Button
             primary={status === generalTranslations.connect}
-            disabled={status !== generalTranslations.connect}
+            disabled={status === generalTranslations.connected}
             onClick={connect}
           >
             {status}

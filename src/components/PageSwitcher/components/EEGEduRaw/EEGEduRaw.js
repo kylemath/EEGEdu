@@ -70,6 +70,9 @@ export default function EEGEduRaw() {
             }
           ]
         },
+        animation: {
+          duration: 0
+        },
         title: {
           ...generalOptions.title,
           text: generalTranslations.channel + channelNames[index]
