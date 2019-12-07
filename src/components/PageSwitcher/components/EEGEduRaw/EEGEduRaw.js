@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 
 import { epoch, bandpassFilter } from "@neurosity/pipes";
-import { Button, TextContainer, Card, Stack } from "@shopify/polaris";
+import { TextContainer, Card, Stack } from "@shopify/polaris";
 
 import { Line } from "react-chartjs-2";
-import { channelNames, zipSamples, MuseClient } from "muse-js";
+import { channelNames, zipSamples } from "muse-js";
 
 import { range } from "../chartUtils";
 import { chartStyles, emptyChannelData, generalOptions } from "../chartOptions";
@@ -12,8 +12,7 @@ import { chartStyles, emptyChannelData, generalOptions } from "../chartOptions";
 import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 
-export default function EEGEduRaw() {
-  const [status, setStatus] = useState(generalTranslations.connect);
+export default function EEGEduRaw(client) {
   const [channels, setChannels] = useState(emptyChannelData);
 
   function renderCharts() {
@@ -55,6 +54,7 @@ export default function EEGEduRaw() {
     });
   }
 
+<<<<<<< HEAD
   async function connect() {
     const client = new MuseClient();
 
@@ -72,34 +72,44 @@ export default function EEGEduRaw() {
           setChannels(channels => {
             Object.values(channels).forEach((channel, index) => {
               const sRate = data.info.samplingRate;
+=======
+  if (window.museClient && window.museClient.eegReadings) {
+    zipSamples(window.museClient.eegReadings)
+      .pipe(
+        bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
+        epoch({ duration: 1024, interval: 50, samplingRate: 256 })
+      )
+      .subscribe(data => {
+        setChannels(channels => {
+          Object.values(channels).forEach((channel, index) => {
+            const sRate = data.info.samplingRate;
+>>>>>>> Get bluetooth switch working
 
-              channel.datasets[0].data = data.data[index];
-              channel.xLabels = range(
-                (1000 / sRate) * data.data[2].length,
-                1000 / sRate,
-                -(1000 / sRate)
-              ).map(function(each_element) {
-                return Number(each_element.toFixed(0));
-              });
+            channel.datasets[0].data = data.data[index];
+            channel.xLabels = range(
+              (1000 / sRate) * data.data[2].length,
+              1000 / sRate,
+              -(1000 / sRate)
+            ).map(function(each_element) {
+              return Number(each_element.toFixed(0));
             });
-
-            return {
-              ch0: channels.ch0,
-              ch1: channels.ch1,
-              ch2: channels.ch2,
-              ch3: channels.ch3
-            };
           });
+
+          return {
+            ch0: channels.ch0,
+            ch1: channels.ch1,
+            ch2: channels.ch2,
+            ch3: channels.ch3
+          };
         });
-    } catch (err) {
-      console.error(generalTranslations.connectionFailed, err);
-    }
+      });
   }
 
   return (
     <Card title={specificTranslations.title}>
       <Card.Section>
         <Stack>
+<<<<<<< HEAD
           <Button
             primary={status === generalTranslations.connect}
             disabled={status === generalTranslations.connected}
@@ -107,6 +117,8 @@ export default function EEGEduRaw() {
           >
             {status}
           </Button>
+=======
+>>>>>>> Get bluetooth switch working
           <TextContainer>
             <p>{specificTranslations.description}</p>
           </TextContainer>
