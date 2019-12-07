@@ -1,8 +1,7 @@
 {
-  "connected": "Connected",
-  "disconnected": "Disconnected",
+  "connect": "Connect Muse Headband",
+  "connecting": "Connecting",
+  "connected": "Muse Headband Connected",
   "connectionFailed": "Connection failed",
-  "channel": "Channel: ",
-  "buttonToConnect": "Connect Muse Headband",
-  "buttonConnected": "Muse Headband Connected"
+  "channel": "Channel: "
 }
