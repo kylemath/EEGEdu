@@ -3,7 +3,7 @@ import { channelNames, zipSamples, MuseClient } from "muse-js";
 import { epoch, bandpassFilter, fft, sliceFFT } from "@neurosity/pipes";
 import { Button, TextContainer, Card, Stack } from "@shopify/polaris";
 import { Line } from "react-chartjs-2";
-import { chartAttributes } from "../chartOptions";
+import { chartStyles } from "../chartOptions";
 
 import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
@@ -47,7 +47,7 @@ const chartOptions = {
 
 export class EEGEduSpectra extends Component {
   state = {
-    status: generalTranslations.disconnected,
+    status: generalTranslations.connect,
     button_disabled: false,
     channels: {
       ch0: {
@@ -92,14 +92,12 @@ export class EEGEduSpectra extends Component {
       this.setState({
         status: status
           ? generalTranslations.connected
-          : generalTranslations.disconnected,
+          : generalTranslations.connect,
         button_disabled: status
       });
 
       console.log(
-        status
-          ? generalTranslations.connected
-          : generalTranslations.disconnected
+        status ? generalTranslations.connected : generalTranslations.connect
       );
     });
 
@@ -121,6 +119,12 @@ export class EEGEduSpectra extends Component {
               channel.xLabels = data.freqs;
             });
 
+            console.log({
+              ch0: state.channels.ch0,
+              ch1: state.channels.ch1,
+              ch2: state.channels.ch2,
+              ch3: state.channels.ch3
+            });
             return {
               ch0: state.channels.ch0,
               ch1: state.channels.ch1,
@@ -140,13 +144,13 @@ export class EEGEduSpectra extends Component {
         <Card.Section>
           <Stack>
             <Button
-              primary={this.state.status === generalTranslations.disconnected}
+              primary={this.state.status === generalTranslations.connect}
               disabled={this.state.button_disabled}
               onClick={this.connect}
             >
               {this.state.status === generalTranslations.connected
-                ? generalTranslations.buttonConnected
-                : generalTranslations.buttonToConnect}
+                ? generalTranslations.connected
+                : generalTranslations.connect}
             </Button>
             <TextContainer>
               <p>{specificTranslations.description}</p>
@@ -154,7 +158,7 @@ export class EEGEduSpectra extends Component {
           </Stack>
         </Card.Section>
         <Card.Section>
-          <div style={chartAttributes.wrapperStyle.style}>
+          <div style={chartStyles.wrapperStyle.style}>
             {this.renderCharts()}
           </div>
         </Card.Section>

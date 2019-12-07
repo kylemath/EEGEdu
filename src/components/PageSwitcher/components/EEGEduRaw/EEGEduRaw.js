@@ -1,31 +1,52 @@
 import React, { useState } from "react";
-import { channelNames, zipSamples, MuseClient } from "muse-js";
+
 import { epoch, bandpassFilter } from "@neurosity/pipes";
 import { Button, TextContainer, Card, Stack } from "@shopify/polaris";
+
 import { Line } from "react-chartjs-2";
+import { channelNames, zipSamples, MuseClient } from "muse-js";
+
 import { range } from "../chartUtils";
-import { chartAttributes, emptyChannelData, rawOptions } from "../chartOptions";
+import { chartStyles, emptyChannelData, generalOptions } from "../chartOptions";
 
 import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 
 export default function EEGEduRaw() {
-  const [status, setStatus] = useState(generalTranslations.disconnected);
+  const [status, setStatus] = useState(generalTranslations.connect);
   const [channels, setChannels] = useState(emptyChannelData);
 
   function renderCharts() {
     return Object.values(channels).map((channel, index) => {
-      const tempOptions = {
-        ...rawOptions,
+      const options = {
+        ...generalOptions,
+        scales: {
+          xAxes: [
+            {
+              scaleLabel: {
+                ...generalOptions.scales.xAxes[0].scaleLabel,
+                labelString: specificTranslations.xlabel
+              }
+            }
+          ],
+          yAxes: [
+            {
+              scaleLabel: {
+                ...generalOptions.scales.yAxes[0].scaleLabel,
+                labelString: specificTranslations.ylabel
+              }
+            }
+          ]
+        },
         title: {
-          ...rawOptions.title,
+          ...generalOptions.title,
           text: generalTranslations.channel + channelNames[index]
         }
       };
 
       return (
         <Card.Section key={"Card_" + index}>
-          <Line key={"Line_" + index} data={channel} options={tempOptions} />
+          <Line key={"Line_" + index} data={channel} options={options} />
         </Card.Section>
       );
     });
@@ -34,14 +55,11 @@ export default function EEGEduRaw() {
   async function connect() {
     const client = new MuseClient();
 
-    client.connectionStatus.subscribe(status => {
-      console.log(status);
-    });
-
     try {
+      setStatus(generalTranslations.connecting);
       await client.connect();
-      setStatus(generalTranslations.connected);
       await client.start();
+      setStatus(generalTranslations.connected);
 
       zipSamples(client.eegReadings)
         .pipe(
@@ -51,17 +69,16 @@ export default function EEGEduRaw() {
         .subscribe(data => {
           setChannels(channels => {
             Object.values(channels).forEach((channel, index) => {
+              const sRate = data.info.samplingRate;
+
               channel.datasets[0].data = data.data[index];
-              var srate = data.info.samplingRate;
-              var xtimes = range(
-                (1000 / srate) * data.data[2].length,
-                1000 / srate,
-                -(1000 / srate)
-              );
-              xtimes = xtimes.map(function(each_element) {
+              channel.xLabels = range(
+                (1000 / sRate) * data.data[2].length,
+                1000 / sRate,
+                -(1000 / sRate)
+              ).map(function(each_element) {
                 return Number(each_element.toFixed(0));
               });
-              channel.xLabels = xtimes;
             });
 
             return {
@@ -82,13 +99,11 @@ export default function EEGEduRaw() {
       <Card.Section>
         <Stack>
           <Button
-            primary={status === generalTranslations.disconnected}
-            disabled={status === generalTranslations.connected}
+            primary={status === generalTranslations.connect}
+            disabled={status !== generalTranslations.connect}
             onClick={connect}
           >
-            {status === generalTranslations.connected
-              ? generalTranslations.buttonConnected
-              : generalTranslations.buttonToConnect}
+            {status}
           </Button>
           <TextContainer>
             <p>{specificTranslations.description}</p>
@@ -96,7 +111,7 @@ export default function EEGEduRaw() {
         </Stack>
       </Card.Section>
       <Card.Section>
-        <div style={chartAttributes.wrapperStyle.style}>{renderCharts()}</div>
+        <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
       </Card.Section>
     </Card>
   );
