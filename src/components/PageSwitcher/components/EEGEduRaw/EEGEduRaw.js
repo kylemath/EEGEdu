@@ -1,22 +1,73 @@
-import React, { useState } from "react";
-
+import React, { Component } from "react";
+import { channelNames, zipSamples, MuseClient } from "muse-js";
 import { epoch, bandpassFilter } from "@neurosity/pipes";
 import { Button, TextContainer, Card, Stack } from "@shopify/polaris";
-
 import { Line } from "react-chartjs-2";
-import { channelNames, zipSamples, MuseClient } from "muse-js";
-
 import { range } from "../chartUtils";
-import { chartStyles, emptyChannelData, generalOptions } from "../chartOptions";
+import { chartAttributes } from "../chartOptions";
 
 import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 
-export default function EEGEduRaw() {
-  const [status, setStatus] = useState(generalTranslations.connect);
-  const [channels, setChannels] = useState(emptyChannelData);
+const chartOptions = {
+  scales: {
+    xAxes: [
+      {
+        scaleLabel: {
+          display: true,
+          labelString: specificTranslations.xlabel
+        }
+      }
+    ],
+    yAxes: [
+      {
+        scaleLabel: {
+          display: true,
+          labelString: specificTranslations.ylabel
+        }
+      }
+    ]
+  },
+  animation: {
+    duration: 0
+  },
+  elements: {
+    point: {
+      radius: 0
+    }
+  },
+  title: {
+    display: true,
+    text: generalTranslations.channel
+  },
+  responsive: true,
+  tooltips: { enabled: false },
+  legend: { display: false }
+};
 
-  function renderCharts() {
+export class EEGEduRaw extends Component {
+  state = {
+    status: generalTranslations.disconnected,
+    button_disabled: false,
+    channels: {
+      ch0: {
+        datasets: [{}]
+      },
+      ch1: {
+        datasets: [{}]
+      },
+      ch2: {
+        datasets: [{}]
+      },
+      ch3: {
+        datasets: [{}]
+      }
+    }
+  };
+
+  renderCharts() {
+    const { channels } = this.state;
+
     return Object.values(channels).map((channel, index) => {
       const options = {
         ...generalOptions,
@@ -41,28 +92,43 @@ export default function EEGEduRaw() {
         animation: {
           duration: 0
         },
+      const tempOptions = {
+        ...chartOptions,
         title: {
-          ...generalOptions.title,
+          ...chartOptions.title,
           text: generalTranslations.channel + channelNames[index]
         }
       };
 
       return (
         <Card.Section key={"Card_" + index}>
-          <Line key={"Line_" + index} data={channel} options={options} />
+          <Line key={"Line_" + index} data={channel} options={tempOptions} />
         </Card.Section>
       );
     });
   }
 
-  async function connect() {
+  connect = async () => {
     const client = new MuseClient();
 
+    client.connectionStatus.subscribe(status => {
+      this.setState({
+        status: status
+          ? generalTranslations.connected
+          : generalTranslations.disconnected,
+        button_disabled: status
+      });
+
+      console.log(
+        status
+          ? generalTranslations.connected
+          : generalTranslations.disconnected
+      );
+    });
+
     try {
-      setStatus(generalTranslations.connecting);
       await client.connect();
       await client.start();
-      setStatus(generalTranslations.connected);
 
       zipSamples(client.eegReadings)
         .pipe(
@@ -70,52 +136,61 @@ export default function EEGEduRaw() {
           epoch({ duration: 1024, interval: 50, samplingRate: 256 })
         )
         .subscribe(data => {
-          setChannels(channels => {
-            Object.values(channels).forEach((channel, index) => {
-              const sRate = data.info.samplingRate;
-
+          this.setState(state => {
+            Object.values(state.channels).forEach((channel, index) => {
               channel.datasets[0].data = data.data[index];
-              channel.xLabels = range(
-                (1000 / sRate) * data.data[2].length,
-                1000 / sRate,
-                -(1000 / sRate)
-              ).map(function(each_element) {
+              var srate = data.info.samplingRate;
+              var xtimes = range(
+                (1000 / srate) * data.data[2].length,
+                1000 / srate,
+                -(1000 / srate)
+              );
+              xtimes = xtimes.map(function(each_element) {
                 return Number(each_element.toFixed(0));
               });
+              channel.xLabels = xtimes;
             });
 
             return {
-              ch0: channels.ch0,
-              ch1: channels.ch1,
-              ch2: channels.ch2,
-              ch3: channels.ch3
+              ch0: state.channels.ch0,
+              ch1: state.channels.ch1,
+              ch2: state.channels.ch2,
+              ch3: state.channels.ch3
             };
           });
         });
     } catch (err) {
       console.error(generalTranslations.connectionFailed, err);
     }
-  }
+  };
 
-  return (
-    <Card title={specificTranslations.title}>
-      <Card.Section>
-        <Stack>
-          <Button
-            primary={status === generalTranslations.connect}
-            disabled={status !== generalTranslations.connect}
-            onClick={connect}
-          >
-            {status}
-          </Button>
-          <TextContainer>
-            <p>{specificTranslations.description}</p>
-          </TextContainer>
-        </Stack>
-      </Card.Section>
-      <Card.Section>
-        <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
-      </Card.Section>
-    </Card>
-  );
+  render() {
+    return (
+      <Card title={specificTranslations.title}>
+        <Card.Section>
+          <Stack>
+            <Button
+              primary={this.state.status === generalTranslations.disconnected}
+              disabled={this.state.button_disabled}
+              onClick={this.connect}
+            >
+              {this.state.status === generalTranslations.connected
+                ? generalTranslations.buttonConnected
+                : generalTranslations.buttonToConnect}
+            </Button>
+            <TextContainer>
+              <p>{specificTranslations.description}</p>
+            </TextContainer>
+          </Stack>
+        </Card.Section>
+        <Card.Section>
+          <div style={chartAttributes.wrapperStyle.style}>
+            {this.renderCharts()}
+          </div>
+        </Card.Section>
+      </Card>
+    );
+  }
 }
+
+export default EEGEduRaw;

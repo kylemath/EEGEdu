@@ -1,6 +1,4 @@
-import * as generalTranslations from "./translations/en";
-
-export const chartStyles = {
+export const chartAttributes = {
   wrapperStyle: {
     display: "flex",
     flexWrap: "wrap",
