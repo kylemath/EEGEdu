@@ -40,9 +40,6 @@ export const generalOptions = {
       }
     ]
   },
-  animation: {
-    duration: 0
-  },
   elements: {
     point: {
       radius: 0

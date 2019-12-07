@@ -38,13 +38,14 @@ export default function EEGEduRaw() {
             }
           ]
         },
+        animation: {
+          duration: 0
+        },
         title: {
           ...generalOptions.title,
           text: generalTranslations.channel + channelNames[index]
         }
       };
-
-      console.log(channel);
 
       return (
         <Card.Section key={"Card_" + index}>
