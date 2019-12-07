@@ -1,5 +1,6 @@
 {
   "connect": "Connect Muse Headband",
+  "connecting": "Connecting",
   "connected": "Muse Headband Connected",
   "connectionFailed": "Connection failed",
   "channel": "Channel: "
