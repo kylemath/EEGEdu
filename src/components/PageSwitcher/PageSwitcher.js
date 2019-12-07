@@ -1,7 +1,10 @@
 import React, { useState, useCallback } from "react";
+
 import { Select, Card } from "@shopify/polaris";
+
 import EEGEduRaw from "./components/EEGEduRaw/EEGEduRaw";
 import EEGEduSpectra from "./components/EEGEduSpectra/EEGEduSpectra";
+
 import * as translations from "./translations/en.json";
 
 export function PageSwitcher() {
