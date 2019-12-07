@@ -15,10 +15,6 @@ const chartOptions = {
         scaleLabel: {
           display: true,
           labelString: specificTranslations.xlabel
-        },
-        ticks: {
-          max: 100,
-          min: 0
         }
       }
     ],
@@ -27,6 +23,10 @@ const chartOptions = {
         scaleLabel: {
           display: true,
           labelString: specificTranslations.ylabel
+        },
+        ticks: {
+          max: 50,
+          min: 0
         }
       }
     ]
