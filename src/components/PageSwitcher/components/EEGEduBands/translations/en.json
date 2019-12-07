@@ -1,0 +1,10 @@
+{
+  "title": "Frequency Bands",
+  "description": [
+  	"In the next demo we will look at the same signal in the frequency domain. ",
+  	"We want to identify the magnitude of oscillations of different frequencies in our live signal. ",
+  	"... "
+  ],
+  "xlabel": "Frequency Band",
+  "ylabel": "Power (\u03BCV\u00B2)"
+}
