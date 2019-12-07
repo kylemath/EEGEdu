@@ -1,5 +1,7 @@
 import React, { useState, useCallback } from "react";
+
 import { Select, Card } from "@shopify/polaris";
+
 import EEGEduRaw from "./components/EEGEduRaw/EEGEduRaw";
 import EEGEduSpectra from "./components/EEGEduSpectra/EEGEduSpectra";
 import EEGEduBands from "./components/EEGEduBands/EEGEduBands";
