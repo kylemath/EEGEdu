@@ -10,16 +10,16 @@ export const chartStyles = {
 
 export const emptyChannelData = {
   ch0: {
-    dataSets: [{}]
+    datasets: [{}]
   },
   ch1: {
-    dataSets: [{}]
+    datasets: [{}]
   },
   ch2: {
-    dataSets: [{}]
+    datasets: [{}]
   },
   ch3: {
-    dataSets: [{}]
+    datasets: [{}]
   }
 };
 
