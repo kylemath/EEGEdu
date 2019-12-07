@@ -125,10 +125,13 @@ export class EEGEduBands extends Component {
         .subscribe(data => {
           this.setState(state => {
             Object.values(state.channels).forEach((channel, index) => {
-              channel.ch0.datasets[0].data = [data.delta[0], data.theta[0], data.alpha[0], data.beta[0], data.gamma[0]];
-              channel.ch1.datasets[0].data = [data.delta[1], data.theta[1], data.alpha[1], data.beta[1], data.gamma[1]];
-              channel.ch2.datasets[0].data = [data.delta[2], data.theta[2], data.alpha[2], data.beta[2], data.gamma[2]];
-              channel.ch3.datasets[0].data = [data.delta[3], data.theta[3], data.alpha[3], data.beta[3], data.gamma[3]];
+              channel.datasets[0].data = [
+                data.delta[index], 
+                data.theta[index], 
+                data.alpha[index], 
+                data.beta[index], 
+                data.gamma[index]
+              ];
             });
 
             return {
