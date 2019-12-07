@@ -12,13 +12,17 @@ import * as generalTranslations from "./components/translations/en";
 export function PageSwitcher() {
   const [status, setStatus] = useState(generalTranslations.connect);
   const [selected, setSelected] = useState(translations.types.raw);
-  const handleSelectChange = useCallback(value => setSelected(value), []);
+  const handleSelectChange = useCallback(value => {
+    console.log((window.shouldUnsubscribe = true));
+    setSelected(value);
+  }, []);
   const options = [
     { label: translations.types.raw, value: translations.types.raw },
     { label: translations.types.spectra, value: translations.types.spectra }
   ];
 
   function renderCharts() {
+    window.shouldUnsubscribe = false;
     switch (selected) {
       case translations.types.raw:
         return <EEGEduRaw />;

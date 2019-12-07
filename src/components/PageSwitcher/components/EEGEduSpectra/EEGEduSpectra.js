@@ -39,6 +39,11 @@ export default function EEGEduSpectra() {
           });
         });
     }
+    return () => {
+      if (window.shouldUnsubscribe) {
+        console.log("dismount correct");
+      }
+    };
   });
 
   function renderCharts() {
