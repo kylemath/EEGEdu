@@ -67,7 +67,7 @@ export function PageSwitcher() {
           // Build the data source from the data source
           console.log('Build the data pipes from the data source.')
           // need to zipSamples 
-          window.pipedDataRaw$ = zipSamples(window.source$).pipe(
+          window.pipedDataRaw$ = zipSamples(window.source$.eegReadings).pipe(
             // implement the eeg operations 
             bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
             epoch({ duration: 1024, interval: 50, samplingRate: 256 }),
@@ -79,7 +79,7 @@ export function PageSwitcher() {
           );
 
           // need to zipSamples here
-          window.pipedDataSpectra$ = zipSamples(window.source$).pipe(
+          window.pipedDataSpectra$ = zipSamples(window.source$.eegReadings).pipe(
             // implement the fft operations here
             bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
             epoch({ duration: 1024, interval: 100, samplingRate: 256 }),
