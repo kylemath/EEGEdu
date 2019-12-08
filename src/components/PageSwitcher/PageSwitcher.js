@@ -46,23 +46,21 @@ export function PageSwitcher() {
     setStatus(generalTranslations.connecting);
     
     try {
-      // TODO(kylemath): fix the source here
       // 1) create real eeg data source
-      // window.museClient = new MuseClient();
+      window.source$ = new MuseClient();
       // window.source$ = window.museClient.eegReadings;
       
       // 2) For debugging
-      window.source$ = interval(1000);
+      // window.source$ = interval(1000);
 
-      // TODO(kylemath) wait for the appropriate client connections to start
+      // wait for the appropriate client connections to start
       // TODO(keyfer): these awaits is why we need THIS funciton to be async
-      // await window.museClient.connect();
-      // await window.museClient.start();
-      // setStatus(generalTranslations.connected);
+      await window.source$.connect();
+      await window.source$.start();
+      setStatus(generalTranslations.connected);
 
       // TODO: ensure that the client is connected and eegReadings are coming in
-      // if (window.museClient && window.museClient.eegReadings) {
-      if (window.source$) {
+      if (window.source$ && window.source$.eegReadings) {
         console.log('Successfully connected to data source Observable.')
         setStatus(generalTranslations.connected);
 
@@ -70,11 +68,13 @@ export function PageSwitcher() {
         console.log('Build the data pipes from the data source.')
 
         // RAW DATA HANDLED HERE
-        // // TODO: need to zipSamples here
-        window.pipeRaw$ = window.source$.pipe(
-          // TODO: implement the eeg operations here
-          // bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
-          // epoch({ duration: 1024, interval: 50, samplingRate: 256 }),
+        // zipSamples here
+        window.pipeRaw$ = zipSamples(
+          window.source$.eegReadings
+        ).pipe(
+          // implement the eeg operations here
+          bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
+          epoch({ duration: 1024, interval: 50, samplingRate: 256 }),
           catchError(err => {
             console.log(err);
           }),
@@ -82,12 +82,14 @@ export function PageSwitcher() {
 
         // SPECTRA DATA HANDLED HERE
         // TODO: need to zipSamples here
-        window.pipeSpectra$ = window.source$.pipe(
-          // TODO: implement the fft operations here
-          // bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
-          // epoch({ duration: 1024, interval: 100, samplingRate: 256 }),
-          // fft({ bins: 256 }),
-          // sliceFFT([1, 30]),
+        window.pipeSpectra$ = zipSamples(
+          window.source$.eegReadings
+        ).pipe(
+          // implement the fft operations here
+          bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
+          epoch({ duration: 1024, interval: 100, samplingRate: 256 }),
+          fft({ bins: 256 }),
+          sliceFFT([1, 30]),
           catchError(err => {
             console.log(err);
           }),
