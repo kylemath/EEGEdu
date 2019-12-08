@@ -47,75 +47,77 @@ export function PageSwitcher() {
     
     try {
       // create real eeg data source
-      // window.museClient = new MuseClient();
+      window.source$ = new MuseClient();
       // create mock eeg data source
       // window.source$ = createEEG();
       // For debugging
-      window.source$ = interval(1000);
+      // window.source$ = interval(1000);
 
-      // TODO: wait for the appropriate client connections to start
-      //     await window.museClient.connect();
-      //     await window.museClient.start();
-      //     setStatus(generalTranslations.connected);
+      // wait for the appropriate client connections to start
+      await window.source$.connect();
+      await window.source$.start();
+      setStatus(generalTranslations.connected);
 
-      // TODO: ensure that the client is connected and eegReadings are coming in
-      // if (window.museClient && window.museClient.eegReadings) {
-      if (window.source$) {
-        console.log('Successfully connected to createEEG Observable.')
-        setStatus(generalTranslations.connected);
+      // ensure that the client is connected and eegReadings are coming in
+      if (window.source$ && window.source$.eegReadings) {
+        if (window.source$) {
+          console.log('Successfully connected to createEEG Observable.')
+          setStatus(generalTranslations.connected);
 
-        // Build the data source from the data source
-        console.log('Build the data pipes from the data source.')
-        // TODO: need to zipSamples here
-        window.pipedDataRaw$ = window.source$.pipe(
-          // TODO: implement the eeg operations here
-          // bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
-          // epoch({ duration: 1024, interval: 50, samplingRate: 256 }),
-          
-          // ensure we are catching errors correctly, and logging
-          catchError(err => {
-            throw 'Error in pipedData. Details: ' + err;
-          }),
-        );
+          // Build the data source from the data source
+          console.log('Build the data pipes from the data source.')
+          // need to zipSamples 
+          window.pipedDataRaw$ = zipSamples(window.source$).pipe(
+            // implement the eeg operations 
+            bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
+            epoch({ duration: 1024, interval: 50, samplingRate: 256 }),
+            
+            // ensure we are catching errors correctly, and logging
+            catchError(err => {
+              throw 'Error in pipedData. Details: ' + err;
+            }),
+          );
 
-        // TODO: need to zipSamples here
-        window.pipedDataSpectra$ = window.source$.pipe(
-          // TODO: implement the fft operations here
-          // bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
-          // epoch({ duration: 1024, interval: 100, samplingRate: 256 }),
-          // fft({ bins: 256 }),
-          // sliceFFT([1, 30]),
-          // ensure we are catching errors correctly, and logging
-          catchError(err => {
-            throw 'Error in pipedData. Details: ' + err;
-          }),
-        );
+          // need to zipSamples here
+          window.pipedDataSpectra$ = zipSamples(window.source$).pipe(
+            // implement the fft operations here
+            bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
+            epoch({ duration: 1024, interval: 100, samplingRate: 256 }),
+            fft({ bins: 256 }),
+            sliceFFT([1, 30]),
+            // ensure we are catching errors correctly, and logging
+            catchError(err => {
+              throw 'Error in pipedData. Details: ' + err;
+            }),
+          );
 
-        switch (selected) {
-          case translations.types.spectra:
-            // Subscribe to observable with spectra data view
-            console.log('spectra view subscribed');
-            window.subscriptionSpectra$ = window.pipedDataSpectra$.subscribe(
-              (v) => console.log('spectra view: ' + v),
-              (err) => console.log(err)
-            );
-            break;
-          case translations.types.raw:
-            // Subscribe to observable with raw data view
-            console.log('raw view subscribed');
-            window.subscriptionRaw$ = window.pipedDataRaw$.subscribe(
-              (v) => console.log('raw view: ' + v)
-            );
-            break;
-          default:
-            console.log('Error on first subscription switch.')
-          }
-        } 
+          switch (selected) {
+            case translations.types.spectra:
+              // Subscribe to observable with spectra data view
+              console.log('spectra view subscribed');
+              window.subscriptionSpectra$ = window.pipedDataSpectra$.subscribe(
+                (v) => console.log('spectra view: ' + v),
+                (err) => console.log(err)
+              );
+              break;
+            case translations.types.raw:
+              // Subscribe to observable with raw data view
+              console.log('raw view subscribed');
+              window.subscriptionRaw$ = window.pipedDataRaw$.subscribe(
+                (v) => console.log('raw view: ' + v)
+              );
+              break;
+            default:
+              console.log('Error on first subscription switch.')
+            }
+          } 
+        }
       } catch (err) {
         // Catch the connection error here.
         setStatus(generalTranslations.connect);
         console.log(err);
-    }
+      }
+  
   }
 
   function handleSubscriptions(switchToward) {
