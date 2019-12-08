@@ -59,7 +59,7 @@ export function PageSwitcher() {
       await window.source$.start();
       setStatus(generalTranslations.connected);
 
-      // TODO: ensure that the client is connected and eegReadings are coming in
+      // ensure that the client is connected and eegReadings are coming in
       if (window.source$ && window.source$.eegReadings) {
         console.log('Successfully connected to data source Observable.')
         setStatus(generalTranslations.connected);
@@ -108,17 +108,69 @@ export function PageSwitcher() {
             // Subscribe to observable with spectra data view
             console.log('spectra view subscribed');
             window.subscriptionSpectra$ = window.multiCastSpectra$.subscribe(
-              (v) => console.log('spectra view: ' + v),
-              (err) => console.log(err)
+              data => {
+                setSpectraData(spectraData => {
+                  Object.values(spectraData).forEach((channel, index) => {
+                    if (index < 4) {
+                      channel.datasets[0].data = data.psd[index];
+                      channel.xLabels = data.freqs;
+                    }
+                  });
+
+                  return {
+                    ch0: spectraData.ch0,
+                    ch1: spectraData.ch1,
+                    ch2: spectraData.ch2,
+                    ch3: spectraData.ch3
+                  };
+                });
+              }
             );
             break;
+            // window.subscriptionSpectra$ = window.multiCastSpectra$.subscribe(
+            //   (v) => console.log('spectra view: ' + v),
+            //   (err) => console.log(err)
+            // );
+            // break;
           case translations.types.raw:
             // Subscribe to observable with raw data view
             console.log('raw view subscribed');
-            window.subscriptionRaw$ = window.multiCastRaw$.subscribe(
-              (v) => console.log('raw view: ' + v)
-            );
+            window.subscriptionRaw$ = window.multiCastRaw$.subscribe(data => {
+              setRawData(rawData => {
+                Object.values(rawData).forEach(
+                  (channel, index) => {
+                    if (index < 4) {
+                      const sRate = data.info.samplingRate;
+
+                      channel.datasets[0].data = data.data[index];
+                      channel.xLabels = customCount(
+                        (1000 / sRate) * data.data[2].length,
+                        1000 / sRate,
+                        -(1000 / sRate)
+                      ).map(function(each_element) {
+                        return Number(each_element.toFixed(0));
+                      });
+                    }
+                  },
+                  err => {
+                    console.log(err);
+                  }
+                );
+
+                return {
+                  ch0: rawData.ch0,
+                  ch1: rawData.ch1,
+                  ch2: rawData.ch2,
+                  ch3: rawData.ch3
+                };
+              });
+            });
             break;
+
+            // window.subscriptionRaw$ = window.multiCastRaw$.subscribe(
+            //   (v) => console.log('raw view: ' + v)
+            // );
+            // break;
           default:
             console.log('Error on first subscription switch.')
           }
