@@ -92,7 +92,7 @@ export function PageSwitcher() {
         );
 
         // SPECTRA DATA HANDLED HERE
-        // TODO: need to zipSamples here
+        // zipSamples here
         window.pipeSpectra$ = zipSamples(
           window.source$.eegReadings
         ).pipe(
