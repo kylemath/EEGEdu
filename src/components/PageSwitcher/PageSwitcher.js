@@ -65,7 +65,7 @@ export function PageSwitcher() {
       // window.source$ = interval(1000);
 
       // wait for the appropriate client connections to start
-      // TODO(keyfer): these awaits is why we need THIS funciton to be async
+      // these awaits is why we need THIS funciton to be async
       await window.source$.connect();
       await window.source$.start();
       setStatus(generalTranslations.connected);
