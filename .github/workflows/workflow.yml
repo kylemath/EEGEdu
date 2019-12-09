@@ -1,8 +1,11 @@
 # .github/workflows/nodejs.yml
 name: Build and Deploy to Firebase
 
-on: [push, pull_request] # Run on Push and Pull Requests
-
+on: 
+  push: # Run on Push Requests
+    branches:
+      - master
+  
 jobs:
   build:
     runs-on: ubuntu-latest
