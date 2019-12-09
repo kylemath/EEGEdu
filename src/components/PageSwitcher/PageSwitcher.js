@@ -2,7 +2,7 @@ import React, { useState, useCallback } from "react";
 
 import { Select, Card, Stack, Button } from "@shopify/polaris";
 import { bandpassFilter, epoch, fft, sliceFFT } from "@neurosity/pipes";
-import { interval, Subject, of } from "rxjs";
+import { Subject } from "rxjs";
 import { catchError, multicast } from "rxjs/operators";
 
 import EEGEduRaw from "./components/EEGEduRaw/EEGEduRaw";
