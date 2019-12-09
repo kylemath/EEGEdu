@@ -141,11 +141,6 @@ export function PageSwitcher() {
               }
             );
             break;
-            // window.subscriptionSpectra$ = window.multiCastSpectra$.subscribe(
-            //   (v) => console.log('spectra view: ' + v),
-            //   (err) => console.log(err)
-            // );
-            // break;
           case translations.types.raw:
             // Subscribe to observable with raw data view
             console.log('raw view subscribed');
@@ -172,11 +167,6 @@ export function PageSwitcher() {
               });
             });
             break;
-
-            // window.subscriptionRaw$ = window.multiCastRaw$.subscribe(
-            //   (v) => console.log('raw view: ' + v)
-            // );
-            // break;
           default:
             console.log('Error on first subscription switch.')
           }
@@ -203,8 +193,25 @@ export function PageSwitcher() {
           
           // Resubscribe to observable with raw data view
           window.subscriptionRaw$ = window.multiCastRaw$.subscribe(
-            (v) => console.log('raw view: ' + v)
-          );
+            data => {
+              setRawData(rawData => {
+                Object.values(rawData).forEach(
+                  (channel, index) => {
+                    if (index < 4) {
+                      channel.datasets[0].data = data.data[index];
+                      channel.xLabels = xTics;
+                    }
+                  }
+                );
+
+                return {
+                  ch0: rawData.ch0,
+                  ch1: rawData.ch1,
+                  ch2: rawData.ch2,
+                  ch3: rawData.ch3
+                };
+              });
+            });
            console.log('Resubscribed to Raw');
           
           // Ensure that the raw is connected
@@ -220,11 +227,27 @@ export function PageSwitcher() {
           
           // Subscribe to observable with spectra data view
           window.subscriptionSpectra$ = window.multiCastSpectra$.subscribe(
-            (v) => console.log('spectra view: ' + v),
-            (err) => console.log(err)
+            data => {
+              setSpectraData(spectraData => {
+                Object.values(spectraData).forEach(
+                  (channel, index) => {
+                    if (index < 4) {
+                      channel.datasets[0].data = data.psd[index];
+                      channel.xLabels = data.freqs;
+                    }
+                  }
+                );
+
+                return {
+                  ch0: spectraData.ch0,
+                  ch1: spectraData.ch1,
+                  ch2: spectraData.ch2,
+                  ch3: spectraData.ch3
+                };
+              });
+            }
           );
           console.log('Resubscribed to Spectra');
-
           // Ensure that the spectra is connected
           window.multiCastSpectra$.connect();
         }
