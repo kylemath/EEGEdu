@@ -21,10 +21,6 @@ export default function EEGEduSpectra(channels) {
               scaleLabel: {
                 ...generalOptions.scales.xAxes[0].scaleLabel,
                 labelString: specificTranslations.xlabel
-              },
-              ticks: {
-                max: 100,
-                min: 0
               }
             }
           ],
@@ -33,6 +29,10 @@ export default function EEGEduSpectra(channels) {
               scaleLabel: {
                 ...generalOptions.scales.yAxes[0].scaleLabel,
                 labelString: specificTranslations.ylabel
+              },
+              ticks: {
+                max: 100,
+                min: 0
               }
             }
           ]
