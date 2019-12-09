@@ -27,6 +27,17 @@ export function PageSwitcher() {
     { label: translations.types.raw, value: translations.types.raw },
     { label: translations.types.spectra, value: translations.types.spectra },
   ];
+  const numOptions = {
+    srate: 256, 
+    duration: 1024, 
+  }; 
+  const xTics = customCount(
+                  (1000 / numOptions.srate) * numOptions.duration,
+                  1000 / numOptions.srate,
+                  -(1000 / numOptions.srate)
+                ).map(function(each_element) {
+                  return Number(each_element.toFixed(0));
+                });
 
   function renderCharts() {
     switch (selected) {
@@ -74,7 +85,7 @@ export function PageSwitcher() {
         ).pipe(
           // implement the eeg operations here
           bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
-          epoch({ duration: 1024, interval: 50, samplingRate: 256 }),
+          epoch({ duration: numOptions.duration, interval: 50, samplingRate: numOptions.srate }),
           catchError(err => {
             console.log(err);
           }),
@@ -87,7 +98,7 @@ export function PageSwitcher() {
         ).pipe(
           // implement the fft operations here
           bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
-          epoch({ duration: 1024, interval: 100, samplingRate: 256 }),
+          epoch({ duration: numOptions.duration, interval: 100, samplingRate: numOptions.srate }),
           fft({ bins: 256 }),
           sliceFFT([1, 30]),
           catchError(err => {
@@ -103,6 +114,7 @@ export function PageSwitcher() {
           multicast(() => new Subject())
         );
 
+        console.log(selected)
         switch (selected) {
           case translations.types.spectra:
             // Subscribe to observable with spectra data view
@@ -110,12 +122,14 @@ export function PageSwitcher() {
             window.subscriptionSpectra$ = window.multiCastSpectra$.subscribe(
               data => {
                 setSpectraData(spectraData => {
-                  Object.values(spectraData).forEach((channel, index) => {
-                    if (index < 4) {
-                      channel.datasets[0].data = data.psd[index];
-                      channel.xLabels = data.freqs;
+                  Object.values(spectraData).forEach(
+                    (channel, index) => {
+                      if (index < 4) {
+                        channel.datasets[0].data = data.psd[index];
+                        channel.xLabels = data.freqs;
+                      }
                     }
-                  });
+                  );
 
                   return {
                     ch0: spectraData.ch0,
@@ -140,16 +154,8 @@ export function PageSwitcher() {
                 Object.values(rawData).forEach(
                   (channel, index) => {
                     if (index < 4) {
-                      const sRate = data.info.samplingRate;
-
                       channel.datasets[0].data = data.data[index];
-                      channel.xLabels = customCount(
-                        (1000 / sRate) * data.data[2].length,
-                        1000 / sRate,
-                        -(1000 / sRate)
-                      ).map(function(each_element) {
-                        return Number(each_element.toFixed(0));
-                      });
+                      channel.xLabels = xTics;
                     }
                   },
                   err => {
@@ -199,7 +205,7 @@ export function PageSwitcher() {
           window.subscriptionRaw$ = window.multiCastRaw$.subscribe(
             (v) => console.log('raw view: ' + v)
           );
-          console.log('Resubscribed to Raw');
+           console.log('Resubscribed to Raw');
           
           // Ensure that the raw is connected
           window.multiCastRaw$.connect();
