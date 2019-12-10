@@ -45,7 +45,7 @@ export default function EEGEduBands(channels) {
 
       return (
         <Card.Section key={"Card_" + index}>
-          <Line key={"Line_" + index} data={channel} options={options} />
+          <Bar key={"Line_" + index} data={channel} options={options} />
         </Card.Section>
       );
     });

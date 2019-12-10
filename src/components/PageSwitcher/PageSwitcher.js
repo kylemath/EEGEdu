@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 
 import { Select, Card, Stack, Button } from "@shopify/polaris";
-import { bandpassFilter, epoch, fft, sliceFFT } from "@neurosity/pipes";
+import { bandpassFilter, epoch, fft, sliceFFT, powerByBand } from "@neurosity/pipes";
 import { Subject } from "rxjs";
 import { catchError, multicast } from "rxjs/operators";
 
@@ -246,8 +246,11 @@ export function PageSwitcher() {
       case 'Raw':
         if (window.subscriptionSpectra$ || window.subscriptionBands$) {
           console.log('Unsubscribing from Spectra and Bands subscription...');
-          window.subscriptionSpectra$.unsubscribe();
-          window.subscriptionBands$.unsubscribe();
+          if (window.subscriptionSpectra$) {
+            window.subscriptionSpectra$.unsubscribe();
+          } else {
+            window.subscriptionBands$.unsubscribe();         
+          }
           console.log('Successfully unsubscribed from Spectra and Bands');
           
           // Resubscribe to observable with raw data view
@@ -281,8 +284,11 @@ export function PageSwitcher() {
       case 'Spectra':
         if (window.subscriptionRaw$ || window.subscriptionBands$) {
           console.log('Unsubscribing from Raw and Bands subscription...');
-          window.subscriptionRaw$.unsubscribe();
-          window.subscriptionBands$.unsubscribe();
+          if (window.subscriptionRaw$) {
+            window.subscriptionRaw$.unsubscribe();
+          } else {
+            window.subscriptionBands$.unsubscribe();         
+          }
           console.log('Successfully unsubscribed from Raw and Bands');
           
           // Subscribe to observable with spectra data view
@@ -316,8 +322,11 @@ export function PageSwitcher() {
       case 'Bands':
         if (window.subscriptionRaw$ || window.subscriptionSpectra$) {
           console.log('Unsubscribing from Raw and Spectra subscription...');
-          window.subscriptionRaw$.unsubscribe();
-          window.subscriptionSpectra$.unsubscribe();         
+          if (window.subscriptionRaw$) {
+            window.subscriptionRaw$.unsubscribe();
+          } else {
+            window.subscriptionSpectra$.unsubscribe();         
+          }
           console.log('Successfully unsubscribed from Raw and Spectra');
           
           // Subscribe to observable with bands data view
