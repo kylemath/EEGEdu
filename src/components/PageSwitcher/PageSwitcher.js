@@ -1,7 +1,13 @@
 import React, { useState, useCallback } from "react";
 
 import { Select, Card, Stack, Button } from "@shopify/polaris";
-import { bandpassFilter, epoch, fft, sliceFFT, powerByBand } from "@neurosity/pipes";
+import {
+  bandpassFilter,
+  epoch,
+  fft,
+  sliceFFT,
+  powerByBand
+} from "@neurosity/pipes";
 import { Subject } from "rxjs";
 import { catchError, multicast } from "rxjs/operators";
 
@@ -78,64 +84,65 @@ export function PageSwitcher() {
 
   function setupRaw() {
     console.log("Subscribing to Raw");
-    window.subscriptionRaw$ = window.multicastRaw$.subscribe(data => {
-      setRawData(rawData => {
-        Object.values(rawData).forEach(
-          (channel, index) => {
+
+    if (window.multicastRaw$) {
+      window.subscriptionRaw$ = window.multicastRaw$.subscribe(data => {
+        setRawData(rawData => {
+          Object.values(rawData).forEach((channel, index) => {
             if (index < 4) {
               channel.datasets[0].data = data.data[index];
               channel.xLabels = xTics;
             }
-          }
-        );
+          });
 
-        return {
-          ch0: rawData.ch0,
-          ch1: rawData.ch1,
-          ch2: rawData.ch2,
-          ch3: rawData.ch3
-        };
+          return {
+            ch0: rawData.ch0,
+            ch1: rawData.ch1,
+            ch2: rawData.ch2,
+            ch3: rawData.ch3
+          };
+        });
       });
-    });
 
-    window.multicastRaw$.connect();
-
-    console.log("Subscribed to Raw");
+      window.multicastRaw$.connect();
+      console.log("Subscribed to Raw");
+    }
   }
 
   function setupSpectra() {
     console.log("Subscribing to Spectra");
-    window.subscriptionSpectra$ = window.multicastSpectra$.subscribe(data => {
-      setSpectraData(spectraData => {
-        Object.values(spectraData).forEach(
-          (channel, index) => {
+
+    if (window.multicastSpectra$) {
+      window.subscriptionSpectra$ = window.multicastSpectra$.subscribe(data => {
+        setSpectraData(spectraData => {
+          Object.values(spectraData).forEach((channel, index) => {
             if (index < 4) {
               channel.datasets[0].data = data.psd[index];
               channel.xLabels = data.freqs;
             }
-          }
-        );
+          });
 
-        return {
-          ch0: spectraData.ch0,
-          ch1: spectraData.ch1,
-          ch2: spectraData.ch2,
-          ch3: spectraData.ch3
-        };
+          return {
+            ch0: spectraData.ch0,
+            ch1: spectraData.ch1,
+            ch2: spectraData.ch2,
+            ch3: spectraData.ch3
+          };
+        });
       });
-    });
 
-    window.multicastSpectra$.connect();
-
-    console.log("Subscribed to Spectra");
+      window.multicastSpectra$.connect();
+      console.log("Subscribed to Spectra");
+    }
   }
 
   function setupBands() {
     console.log("Subscribing to Bands");
-    window.subscriptionBands$ = window.multicastBands$.subscribe(data => {
-      setBandsData(bandsData => {
-        Object.values(bandsData).forEach(
-          (channel, index) => {
+
+    if (window.multicastBands$) {
+      window.subscriptionBands$ = window.multicastBands$.subscribe(data => {
+        setBandsData(bandsData => {
+          Object.values(bandsData).forEach((channel, index) => {
             if (index < 4) {
               channel.datasets[0].data = [
                 data.delta[index],
@@ -146,21 +153,20 @@ export function PageSwitcher() {
               ];
               channel.xLabels = bandLabels;
             }
-          }
-        );
+          });
 
-        return {
-          ch0: bandsData.ch0,
-          ch1: bandsData.ch1,
-          ch2: bandsData.ch2,
-          ch3: bandsData.ch3
-        }; 
+          return {
+            ch0: bandsData.ch0,
+            ch1: bandsData.ch1,
+            ch2: bandsData.ch2,
+            ch3: bandsData.ch3
+          };
+        });
       });
-    });
 
-    window.multicastBands$.connect();
-
-    console.log("Subscribed to Bands");
+      window.multicastBands$.connect();
+      console.log("Subscribed to Bands");
+    }
   }
 
   async function connect() {
@@ -229,10 +235,10 @@ export function PageSwitcher() {
             interval: 100,
             samplingRate: numOptions.srate
           }),
-          fft({ bins: 256 }), 
+          fft({ bins: 256 }),
           powerByBand(),
           catchError(err => {
-            console.log(err);  
+            console.log(err);
           })
         );
         window.multicastBands$ = window.pipeBands$.pipe(
