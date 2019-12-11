@@ -1,10 +1,10 @@
 {
   "title": "Frequency Bands Data",
   "description": [
-  	"In the next demo we look at the traditional frequency bands. ", 
-  	"We take the same spectra that was computed in Spectra and divide into four bands. ",
-  	"Delta (1-4 Hz), Theta (4-7 Hz), Alpha (7-12 Hz), Beta (12-30 Hz), and Gamme (30+ Hz). ",
-  	"See if you can pick one of the bars and try to control its height by relaxing."
+    "In the next demo we look at the traditional frequency bands. ",
+    "We take the same spectra that was computed in Spectra and divide into four bands. ",
+    "Delta (1-4 Hz), Theta (4-7 Hz), Alpha (7-12 Hz), Beta (12-30 Hz), and Gamme (30+ Hz). ",
+    "See if you can pick one of the bars and try to control its height by relaxing."
   ],
   "xlabel": "Frequency (Hz)",
   "ylabel": "Power (\u03BCV\u00B2)"
