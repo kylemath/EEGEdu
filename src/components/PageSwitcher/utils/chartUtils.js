@@ -12,6 +12,8 @@ export const numOptions = {
   duration: 1024
 };
 
+export const bandLabels = ["Delta", "Theta", "Alpha", "Beta", "Gamma"];
+
 // Generate xTics
 export function generateXTics() {
   return customCount(
