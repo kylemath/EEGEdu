@@ -2,6 +2,7 @@
   "title": "Choose your data type",
   "types": {
     "raw": "Raw",
-    "spectra": "Spectra"
+    "spectra": "Spectra",
+    "bands": "Bands"
   }
 }
