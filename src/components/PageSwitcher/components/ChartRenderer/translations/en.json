@@ -1,0 +1,16 @@
+{
+  "charts": {
+    "raw": {
+      "title": "Raw data",
+      "description": "First we look at the raw voltage signals coming from each of the four sensors on the muse. TP9 and TP10 are on the ears, AF7 and AF8 are on the forehead. In general EEG electrodes are odd on the left hemisphere and even on the right, and have suffixed with z along the midline.",
+      "xlabel": "Time (msec)",
+      "ylabel": "Voltage (\u03BCV)"
+    },
+    "spectra": {
+      "title": "Spectra Data",
+      "description": "In the next demo we will look at the same signal in the frequency domain. We want to identify the magnitude of oscillations of different frequencies in our live signal. We use the fast fourier transform to convert the voltage values over time to the power at each frequency. To use the fft we pick a particular chunk of data and get an output called a spectra. Each time the chart updates a new window of data is selected.",
+      "xlabel": "Frequency (Hz)",
+      "ylabel": "Power (\u03BCV\u00B2)"
+    }
+  }
+}

@@ -1,5 +1,10 @@
 {
+  "connect": "Connect Muse Headband",
+  "connecting": "Connecting",
+  "connected": "Muse Headband Connected",
+  "connectionFailed": "Connection failed",
   "title": "Choose your data type",
+  "channel": "Channel: ",
   "types": {
     "raw": "Raw",
     "spectra": "Spectra"

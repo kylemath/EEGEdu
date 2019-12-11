@@ -1,6 +1,0 @@
-{
-  "title": "Raw data",
-  "description": "First we look at the raw voltage signals coming from each of the four sensors on the muse. TP9 and TP10 are on the ears, AF7 and AF8 are on the forehead. In general EEG electrodes are odd on the left hemisphere and even on the right, and have suffixed with z along the midline.",
-  "xlabel": "Time (msec)",
-  "ylabel": "Voltage (\u03BCV)"
-}

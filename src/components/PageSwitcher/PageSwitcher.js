@@ -5,26 +5,24 @@ import { bandpassFilter, epoch, fft, sliceFFT } from "@neurosity/pipes";
 import { Subject } from "rxjs";
 import { catchError, multicast } from "rxjs/operators";
 
-import EEGEduRaw from "./components/EEGEduRaw/EEGEduRaw";
-import EEGEduSpectra from "./components/EEGEduSpectra/EEGEduSpectra";
+import ChartRenderer from "./components/ChartRenderer/ChartRenderer";
+
+import { MuseClient, zipSamples } from "muse-js";
+import { emptyChannelData } from "./components/ChartRenderer/options";
+import { generateXTics, numOptions } from "./utils/chartUtils";
 
 import * as translations from "./translations/en.json";
-import { MuseClient, zipSamples } from "muse-js";
-import * as generalTranslations from "./components/translations/en";
-import { emptyChannelData } from "./components/chartOptions";
-import { generateXTics, numOptions } from "./utils/chartUtils";
 
 export function PageSwitcher() {
   const [rawData, setRawData] = useState(emptyChannelData);
   const [spectraData, setSpectraData] = useState(emptyChannelData);
-  const [status, setStatus] = useState(generalTranslations.connect);
+  const [status, setStatus] = useState(translations.connect);
   const [selected, setSelected] = useState(translations.types.raw);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 
     console.log("Switching to: " + value);
 
-    // Unsubscribe from all possible subscriptions
     if (window.subscriptionRaw$) window.subscriptionRaw$.unsubscribe();
     if (window.subscriptionSpectra$) window.subscriptionSpectra$.unsubscribe();
 
@@ -57,10 +55,10 @@ export function PageSwitcher() {
     switch (selected) {
       case translations.types.raw:
         console.log("Rendering Raw Component");
-        return <EEGEduRaw data={rawData} />;
+        return <ChartRenderer type={selected} channels={rawData} />;
       case translations.types.spectra:
         console.log("Rendering Spectra Component");
-        return <EEGEduSpectra data={spectraData} />;
+        return <ChartRenderer type={selected} channels={spectraData} />;
       default:
         console.log("Error on renderCharts switch.");
     }
@@ -118,29 +116,24 @@ export function PageSwitcher() {
 
   async function connect() {
     console.log("Connecting to data source observable...");
-    setStatus(generalTranslations.connecting);
+    setStatus(translations.connecting);
 
     try {
-      // 1) create real eeg data source
       window.source$ = new MuseClient();
-
-      // 2) For debugging
-      // window.source$ = interval(1000);
 
       await window.source$.connect();
       await window.source$.start();
-      setStatus(generalTranslations.connected);
+      setStatus(translations.connected);
 
       if (
         window.source$.connectionStatus.value === true &&
         window.source$.eegReadings
       ) {
         console.log("Connected to data source observable");
-        setStatus(generalTranslations.connected);
+        setStatus(translations.connected);
 
         console.log("Starting to build the data pipes from the data source...");
 
-        //Build Pipe Raw
         window.pipeRaw$ = zipSamples(window.source$.eegReadings).pipe(
           bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
           epoch({
@@ -152,12 +145,11 @@ export function PageSwitcher() {
             console.log(err);
           })
         );
-        
+
         window.multicastRaw$ = window.pipeRaw$.pipe(
           multicast(() => new Subject())
         );
 
-        //Build Pipe Spectra
         window.pipeSpectra$ = zipSamples(window.source$.eegReadings).pipe(
           bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
           epoch({
@@ -171,18 +163,17 @@ export function PageSwitcher() {
             console.log(err);
           })
         );
-        
+
         window.multicastSpectra$ = window.pipeSpectra$.pipe(
           multicast(() => new Subject())
         );
 
-        // Build the data source from the data source
         console.log("Finished building the data pipes from the data source");
 
         subscriptionSetup(selected);
       }
     } catch (err) {
-      setStatus(generalTranslations.connect);
+      setStatus(translations.connect);
       console.log("Connection error: " + err);
     }
   }
@@ -192,8 +183,8 @@ export function PageSwitcher() {
       <Card sectioned>
         <Stack>
           <Button
-            primary={status === generalTranslations.connect}
-            disabled={status !== generalTranslations.connect}
+            primary={status === translations.connect}
+            disabled={status !== translations.connect}
             onClick={connect}
           >
             {status}
@@ -206,6 +197,7 @@ export function PageSwitcher() {
           options={chartTypes}
           onChange={handleSelectChange}
           value={selected}
+          disabled={!(window.source$ && window.source$.connectionStatus.value)}
         />
       </Card>
 
