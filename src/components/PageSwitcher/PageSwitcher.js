@@ -25,8 +25,8 @@ export function PageSwitcher() {
     console.log("Switching to: " + value);
 
     // Unsubscribe from all possible subscriptions
-    if (window.subscriptionSpectra$) window.subscriptionSpectra$.unsubscribe();
     if (window.subscriptionRaw$) window.subscriptionRaw$.unsubscribe();
+    if (window.subscriptionSpectra$) window.subscriptionSpectra$.unsubscribe();
 
     subscriptionSetup(value);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -55,12 +55,12 @@ export function PageSwitcher() {
 
   function renderCharts() {
     switch (selected) {
-      case translations.types.spectra:
-        console.log("Rendering Spectra Component");
-        return <EEGEduSpectra data={spectraData} />;
       case translations.types.raw:
         console.log("Rendering Raw Component");
         return <EEGEduRaw data={rawData} />;
+      case translations.types.spectra:
+        console.log("Rendering Spectra Component");
+        return <EEGEduSpectra data={spectraData} />;
       default:
         console.log("Error on renderCharts switch.");
     }
@@ -140,6 +140,7 @@ export function PageSwitcher() {
 
         console.log("Starting to build the data pipes from the data source...");
 
+        //Build Pipe Raw
         window.pipeRaw$ = zipSamples(window.source$.eegReadings).pipe(
           bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
           epoch({
@@ -151,7 +152,12 @@ export function PageSwitcher() {
             console.log(err);
           })
         );
+        
+        window.multicastRaw$ = window.pipeRaw$.pipe(
+          multicast(() => new Subject())
+        );
 
+        //Build Pipe Spectra
         window.pipeSpectra$ = zipSamples(window.source$.eegReadings).pipe(
           bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
           epoch({
@@ -165,11 +171,7 @@ export function PageSwitcher() {
             console.log(err);
           })
         );
-
-        window.multicastRaw$ = window.pipeRaw$.pipe(
-          multicast(() => new Subject())
-        );
-
+        
         window.multicastSpectra$ = window.pipeSpectra$.pipe(
           multicast(() => new Subject())
         );
