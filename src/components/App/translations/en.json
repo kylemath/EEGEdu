@@ -4,7 +4,7 @@
     "Welcome to the EEGEdu live EEG tutorial. ",
     "This tutorial is designed to be used with the Muse and the Muse 2 headbands from Interaxon. ",
     "Muse with two auxillary ports made in 2014 will not work. ",
-    "This tutorial has been tested in Mac OSX with the latest chrome browser. ",
+    "This tutorial has been tested on Android Pixels (Mobile) and Mac OSX (laptop) with the latest chrome browser. ",
     "The tutorial will walk you through the basics of EEG signal generation, data collection, and analysis with a focus on live control based on physiological signals. ",
     "All demos are done in this browser. ",
     "The first step will be to select one of the available modules below. ",
