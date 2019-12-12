@@ -11,6 +11,8 @@ import {
 import { Subject } from "rxjs";
 import { catchError, multicast } from "rxjs/operators";
 
+import { mockMuseEEG } from "./utils/mockMuseEEG";
+
 import EEGEduRaw from "./components/EEGEduRaw/EEGEduRaw";
 import EEGEduSpectra from "./components/EEGEduSpectra/EEGEduSpectra";
 import EEGEduBands from "./components/EEGEduBands/EEGEduBands";
@@ -173,15 +175,23 @@ export function PageSwitcher() {
     console.log("Connecting to data source observable...");
     setStatus(generalTranslations.connecting);
 
+    let debugWithMock = true;
+
     try {
-      // 1) create real eeg data source
-      window.source$ = new MuseClient();
+      if (!debugWithMock) {
+        // Connect with the Muse EEG Client
+        window.source$ = new MuseClient();
+        await window.source$.connect();
+        await window.source$.start();
+      } else {
+        // Debug with Mock EEG Data
+        // Initialize the mockMuseEEG data stream with sampleRate
+        window.source$ = {};
+        window.source$.connectionStatus = {};
+        window.source$.connectionStatus.value = true;
+        window.source$.eegReadings = mockMuseEEG(256);
+      }
 
-      // 2) For debugging
-      // window.source$ = interval(1000);
-
-      await window.source$.connect();
-      await window.source$.start();
       setStatus(generalTranslations.connected);
 
       if (
