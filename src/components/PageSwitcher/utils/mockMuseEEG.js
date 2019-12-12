@@ -4,7 +4,7 @@ const { map, flatMap } = require('rxjs/operators');
 const samples = () => {
  return Array(12)
   .fill()
-  .map(_ => Math.random())
+  .map(_ => Math.random()).map(function(x) {return x * 1000});
 };
 
 const transform = (index) => {
