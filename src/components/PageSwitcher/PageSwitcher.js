@@ -175,7 +175,7 @@ export function PageSwitcher() {
     console.log("Connecting to data source observable...");
     setStatus(generalTranslations.connecting);
 
-    let debugWithMock = true;
+    let debugWithMock = false;
 
     try {
       if (!debugWithMock) {
