@@ -1,7 +1,11 @@
 {
   "connect": "Connect Muse Headband",
-  "connecting": "Connecting",
+  "connectMock": "Connect Mock Data",
+  "connecting": "Connecting to Muse",
+  "connectingMock": "Connecting to Mock Data",
   "connected": "Muse Headband Connected",
+  "connectedMock": "Mock Data Connected",
   "connectionFailed": "Connection failed",
+  "disconnect": "Disconnect",
   "channel": "Channel: "
 }
