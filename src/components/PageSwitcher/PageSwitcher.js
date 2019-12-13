@@ -28,6 +28,7 @@ export function PageSwitcher() {
   const [spectraData, setSpectraData] = useState(emptyChannelData);
   const [bandsData, setBandsData] = useState(emptyChannelData);
   const [status, setStatus] = useState(generalTranslations.connect);
+  const [statusMock, setStatusMock] = useState(generalTranslations.connectMock);
   const [selected, setSelected] = useState(translations.types.raw);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
@@ -171,35 +172,54 @@ export function PageSwitcher() {
     }
   }
 
-  async function connect() {
-    console.log("Connecting to data source observable...");
-    setStatus(generalTranslations.connecting);
+  function connectMuse () {
+    setStatusMock(generalTranslations.connectMock)
+    window.debugWithMock = false;
+    connect();
+  }
 
-    let debugWithMock = false;
+  function connectMock() {
+    setStatus(generalTranslations.connect)
+    window.debugWithMock = true;
+    connect();
+  }
+
+  async function connect(isMock) {
+    console.log("Connecting to data source observable...");
+
 
     try {
-      if (!debugWithMock) {
+      if (!window.debugWithMock) {
         // Connect with the Muse EEG Client
+        setStatus(generalTranslations.connecting);
+        setStatusMock(generalTranslations.connecting);
+
         window.source$ = new MuseClient();
         await window.source$.connect();
         await window.source$.start();
+        setStatus(generalTranslations.connected);
+        setStatusMock(generalTranslations.connected);
+
       } else {
         // Debug with Mock EEG Data
         // Initialize the mockMuseEEG data stream with sampleRate
+        setStatusMock(generalTranslations.connectingMock);
+        setStatus(generalTranslations.connectingMock);
+
         window.source$ = {};
         window.source$.connectionStatus = {};
         window.source$.connectionStatus.value = true;
         window.source$.eegReadings = mockMuseEEG(256);
-      }
+        setStatus(generalTranslations.connectedMock);
+        setStatusMock(generalTranslations.connectedMock);
 
-      setStatus(generalTranslations.connected);
+      }
 
       if (
         window.source$.connectionStatus.value === true &&
         window.source$.eegReadings
       ) {
         console.log("Connected to data source observable");
-        setStatus(generalTranslations.connected);
 
         console.log("Starting to build the data pipes from the data source...");
 
@@ -262,6 +282,7 @@ export function PageSwitcher() {
       }
     } catch (err) {
       setStatus(generalTranslations.connect);
+      setStatusMock(generalTranslations.connectMock);
       console.log("Connection error: " + err);
     }
   }
@@ -273,9 +294,16 @@ export function PageSwitcher() {
           <Button
             primary={status === generalTranslations.connect}
             disabled={status !== generalTranslations.connect}
-            onClick={connect}
+            onClick={connectMuse}
           >
             {status}
+          </Button>
+          <Button
+            primary={statusMock === generalTranslations.connectMock}
+            disabled={statusMock !== generalTranslations.connectMock}
+            onClick={connectMock}
+          >
+            {statusMock}
           </Button>
         </Stack>
       </Card>
