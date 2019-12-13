@@ -265,20 +265,22 @@ export function PageSwitcher() {
     }
   }
 
-  function disconnect() { 
-    console.log('Disconnecting from data source...'); 
+  // function disconnect() { 
+  //   console.log('Disconnecting from data source...'); 
 
-    window.source$ = {};  
-    // Unsubscribe from all possible subscriptions  
-    if (window.subscriptionRaw$) window.subscriptionRaw$.unsubscribe(); 
-    if (window.subscriptionSpectra$) window.subscriptionSpectra$.unsubscribe(); 
-    if (window.subscriptionBands$) window.subscriptionBands$.unsubscribe(); 
+  //   window.source$ = {};  
+  //   // Unsubscribe from all possible subscriptions  
+  //   if (window.subscriptionRaw$) window.subscriptionRaw$.unsubscribe(); 
+  //   if (window.subscriptionSpectra$) window.subscriptionSpectra$.unsubscribe(); 
+  //   if (window.subscriptionBands$) window.subscriptionBands$.unsubscribe(); 
 
-    setStatus(generalTranslations.connect); 
-    console.log('Disconnected from data source.');  
+  //   setStatus(generalTranslations.connect); 
+  //   console.log('Disconnected from data source.');  
+  // } 
+
+  function refreshPage(){
+    window.location.reload();
   } 
-
-
 
   return (
     <React.Fragment>
@@ -304,7 +306,12 @@ export function PageSwitcher() {
             >
               {status === generalTranslations.connect ? generalTranslations.connectMock : status}
             </Button>
-            <Button destructive onClick={disconnect}> 
+            <Button 
+              destructive
+              onClick={refreshPage}
+              primary={status !== generalTranslations.connect}
+              disabled={status === generalTranslations.connect}
+            > 
               {generalTranslations.disconnect}  
             </Button>
           </ButtonGroup>
