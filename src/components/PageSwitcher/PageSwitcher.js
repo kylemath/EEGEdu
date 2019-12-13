@@ -28,7 +28,9 @@ export function PageSwitcher() {
     cutOffLow: 2,
     cutOffHigh: 20,
     nbChannels: 4,
-    interval: 50
+    interval: 50,
+    srate: 256,
+    duration: 1024
   });
   const [spectraPipeSettings, setSpectraPipeSettings] = useState({
     cutOffLow: 2,
@@ -37,7 +39,9 @@ export function PageSwitcher() {
     interval: 100,
     bins: 256,
     sliceFFTLow: 1,
-    sliceFFTHigh: 30
+    sliceFFTHigh: 30,
+    srate: 256,
+    duration: 1024
   });
   const [rawData, setRawData] = useState(emptyChannelData);
   const [spectraData, setSpectraData] = useState(emptyChannelData);
@@ -197,9 +201,9 @@ export function PageSwitcher() {
     window.pipeRaw$ = zipSamples(window.source$.eegReadings).pipe(
       bandpassFilter({ cutoffFrequencies: [rawPipeSettings.cutOffLow, rawPipeSettings.cutOffHigh], nbChannels: rawPipeSettings.nbChannels }),
       epoch({
-        duration: numOptions.duration,
+        duration: rawPipeSettings.duration,
         interval: rawPipeSettings.interval,
-        samplingRate: numOptions.srate
+        samplingRate: rawPipeSettings.srate
       }),
       catchError(err => {
         console.log(err);
@@ -220,9 +224,9 @@ export function PageSwitcher() {
     window.pipeSpectra$ = zipSamples(window.source$.eegReadings).pipe(
       bandpassFilter({ cutoffFrequencies: [spectraPipeSettings.cutOffLow, spectraPipeSettings.cutOffHigh], nbChannels: spectraPipeSettings.nbChannels }),
       epoch({
-        duration: numOptions.duration,
+        duration: spectraPipeSettings.duration,
         interval: spectraPipeSettings.interval,
-        samplingRate: numOptions.srate
+        samplingRate: spectraPipeSettings.srate
       }),
       fft({ bins: spectraPipeSettings.bins }),
       sliceFFT([spectraPipeSettings.sliceFFTLow, spectraPipeSettings.sliceFFTHigh]),
@@ -339,6 +343,18 @@ export function PageSwitcher() {
     setupRaw();
   }
 
+  function handleRawSrateRangeSliderChange(value) {
+    setRawPipeSettings(prevState => ({...prevState, srate: value}));
+    pipeRawData();
+    setupRaw();
+  }
+
+  function handleRawDurationRangeSliderChange(value) {
+    setRawPipeSettings(prevState => ({...prevState, duration: value}));
+    pipeRawData();
+    setupRaw();
+  }
+
   function handleSpectraIntervalRangeSliderChange(value) {
     setSpectraPipeSettings(prevState => ({...prevState, interval: value}));
     pipeSpectraData();
@@ -370,7 +386,7 @@ export function PageSwitcher() {
   }
 
   function handleSpectraSliceFFTLowRangeSliderChange(value) {
-    setSpectraPipeSettings(prevState => ({...prevState, sliceFTTLow: value}));
+    setSpectraPipeSettings(prevState => ({...prevState, sliceFFTLow: value}));
     pipeSpectraData();
     setupSpectra();
   }
@@ -381,6 +397,19 @@ export function PageSwitcher() {
     setupSpectra();
   }
 
+  function handleSpectraSrateRangeSliderChange(value) {
+    setSpectraPipeSettings(prevState => ({...prevState, srate: value}));
+    pipeSpectraData();
+    setupSpectra();
+  }
+
+  function handleSpectraDurationRangeSliderChange(value) {
+    setSpectraPipeSettings(prevState => ({...prevState, duration: value}));
+    pipeSpectraData();
+    setupSpectra();
+  }
+
+
   function pipeSettingsDisplay() {
     switch(selected) {
       case translations.types.raw:
@@ -388,8 +417,10 @@ export function PageSwitcher() {
           <Card title={'Raw Settings'} sectioned>
             <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Interval: ' + rawPipeSettings.interval} value={rawPipeSettings.interval} onChange={handleRawIntervalRangeSliderChange} />
             <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'nbChannels: ' + rawPipeSettings.nbChannels} value={rawPipeSettings.nbChannels} onChange={handleRawNbChannelsRangeSliderChange} />
-            <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Cutoff Frequency Low: ' + rawPipeSettings.cutOffLow} value={rawPipeSettings.cutOffLow} onChange={handleRawCutoffLowRangeSliderChange} />
-            <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Cutoff Frequency High: ' + rawPipeSettings.cutOffHigh} value={rawPipeSettings.cutOffHigh} onChange={handleRawCutoffHighRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={1} max={rawPipeSettings.cutOffHigh - 1} label={'Cutoff Frequency Low: ' + rawPipeSettings.cutOffLow} value={rawPipeSettings.cutOffLow} onChange={handleRawCutoffLowRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={rawPipeSettings.cutOffLow + 1} label={'Cutoff Frequency High: ' + rawPipeSettings.cutOffHigh} value={rawPipeSettings.cutOffHigh} onChange={handleRawCutoffHighRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={150} max={600} label={'srate: ' + rawPipeSettings.srate} value={rawPipeSettings.srate} onChange={handleRawSrateRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={500} max={2500} label={'Duration: ' + rawPipeSettings.duration} value={rawPipeSettings.duration} onChange={handleRawDurationRangeSliderChange} />
           </Card>
         );
       case translations.types.spectra:
@@ -397,8 +428,8 @@ export function PageSwitcher() {
           <Card title={'Spectra Settings'} sectioned>
             <RangeSlider disabled={status === generalTranslations.connect} min={1} max={200} label={'Interval: ' + spectraPipeSettings.interval} value={spectraPipeSettings.interval} onChange={handleSpectraIntervalRangeSliderChange} />
             <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'nbChannels: ' + spectraPipeSettings.nbChannels} value={spectraPipeSettings.nbChannels} onChange={handleSpectraNbChannelsRangeSliderChange} />
-            <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Cutoff Frequency Low: ' + spectraPipeSettings.cutOffLow} value={spectraPipeSettings.cutOffLow} onChange={handleSpectraCutoffLowRangeSliderChange} />
-            <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Cutoff Frequency High: ' + spectraPipeSettings.cutOffHigh} value={spectraPipeSettings.cutOffHigh} onChange={handleSpectraCutoffHighRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={1} max={spectraPipeSettings.cutOffHigh - 1} label={'Cutoff Frequency Low: ' + spectraPipeSettings.cutOffLow} value={spectraPipeSettings.cutOffLow} onChange={handleSpectraCutoffLowRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={spectraPipeSettings.cutOffLow + 1} label={'Cutoff Frequency High: ' + spectraPipeSettings.cutOffHigh} value={spectraPipeSettings.cutOffHigh} onChange={handleSpectraCutoffHighRangeSliderChange} />
             <Select
               disabled={status === generalTranslations.connect}
               label={'FTT Bins: ' + spectraPipeSettings.bins}
@@ -407,8 +438,10 @@ export function PageSwitcher() {
               value={spectraPipeSettings.bins}
             />
             <br />
-            <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Slice FFT Low: ' + spectraPipeSettings.sliceFFTLow} value={spectraPipeSettings.sliceFFTLow} onChange={handleSpectraSliceFFTLowRangeSliderChange} />
-            <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Slice FFT High: ' + spectraPipeSettings.sliceFFTHigh} value={spectraPipeSettings.sliceFFTHigh} onChange={handleSpectraSliceFFTHighRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={1} max={spectraPipeSettings.sliceFFTHigh - 1} label={'Slice FFT Low: ' + spectraPipeSettings.sliceFFTLow} value={spectraPipeSettings.sliceFFTLow} onChange={handleSpectraSliceFFTLowRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={spectraPipeSettings.sliceFFTLow + 1} label={'Slice FFT High: ' + spectraPipeSettings.sliceFFTHigh} value={spectraPipeSettings.sliceFFTHigh} onChange={handleSpectraSliceFFTHighRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={150} max={600} label={'srate: ' + spectraPipeSettings.srate} value={spectraPipeSettings.srate} onChange={handleSpectraSrateRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={500} max={2500} label={'Duration: ' + spectraPipeSettings.duration} value={spectraPipeSettings.duration} onChange={handleSpectraDurationRangeSliderChange} />
           </Card>
         );
       default: console.log('Error rendering settings display');
