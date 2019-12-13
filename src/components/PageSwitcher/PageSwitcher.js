@@ -30,6 +30,15 @@ export function PageSwitcher() {
     nbChannels: 4,
     interval: 50
   });
+  const [spectraPipeSettings, setSpectraPipeSettings] = useState({
+    cutOffLow: 2,
+    cutOffHigh: 20,
+    nbChannels: 4,
+    interval: 100,
+    bins: 256,
+    sliceFFTLow: 1,
+    sliceFFTHigh: 30
+  });
   const [rawData, setRawData] = useState(emptyChannelData);
   const [spectraData, setSpectraData] = useState(emptyChannelData);
   const [bandsData, setBandsData] = useState(emptyChannelData);
@@ -177,6 +186,80 @@ export function PageSwitcher() {
     }
   }
 
+  function pipeRawData() {
+    if (window.subscriptionRaw$) window.subscriptionRaw$.unsubscribe();
+
+    window.pipeRaw$ = null;
+    window.multicastRaw$ = null;
+    window.subscriptionRaw$ = null;
+
+    // Build Pipe Raw
+    window.pipeRaw$ = zipSamples(window.source$.eegReadings).pipe(
+      bandpassFilter({ cutoffFrequencies: [rawPipeSettings.cutOffLow, rawPipeSettings.cutOffHigh], nbChannels: rawPipeSettings.nbChannels }),
+      epoch({
+        duration: numOptions.duration,
+        interval: rawPipeSettings.interval,
+        samplingRate: numOptions.srate
+      }),
+      catchError(err => {
+        console.log(err);
+      })
+    );
+    window.multicastRaw$ = window.pipeRaw$.pipe(
+      multicast(() => new Subject())
+    );
+  }
+
+  function pipeSpectraData() {
+    if (window.subscriptionSpectra$) window.subscriptionSpectra$.unsubscribe();
+
+    window.pipeSpectra$ = null;
+    window.multicastSpectra$ = null;
+    window.subscriptionSpectra$ = null;
+
+    window.pipeSpectra$ = zipSamples(window.source$.eegReadings).pipe(
+      bandpassFilter({ cutoffFrequencies: [spectraPipeSettings.cutOffLow, spectraPipeSettings.cutOffHigh], nbChannels: spectraPipeSettings.nbChannels }),
+      epoch({
+        duration: numOptions.duration,
+        interval: spectraPipeSettings.interval,
+        samplingRate: numOptions.srate
+      }),
+      fft({ bins: spectraPipeSettings.bins }),
+      sliceFFT([spectraPipeSettings.sliceFFTLow, spectraPipeSettings.slideFFTHigh]),
+      catchError(err => {
+        console.log(err);
+      })
+    );
+    window.multicastSpectra$ = window.pipeSpectra$.pipe(
+      multicast(() => new Subject())
+    );
+  }
+
+  function pipeBandsData() {
+    if (window.subscriptionBands$) window.subscriptionBands$.unsubscribe();
+
+    window.pipeBands$ = null;
+    window.multicastBands$ = null;
+    window.subscriptionBands$ = null;
+
+    window.pipeBands$ = zipSamples(window.source$.eegReadings).pipe(
+      bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
+      epoch({
+        duration: numOptions.duration,
+        interval: 100,
+        samplingRate: numOptions.srate
+      }),
+      fft({ bins: 256 }),
+      powerByBand(),
+      catchError(err => {
+        console.log(err);
+      })
+    );
+    window.multicastBands$ = window.pipeBands$.pipe(
+      multicast(() => new Subject())
+    );
+  }
+
   async function connect() {
     try {
       if (window.debugWithMock) {
@@ -212,40 +295,10 @@ export function PageSwitcher() {
         pipeRawData();
 
         // Build Pipe Spectra
-        window.pipeSpectra$ = zipSamples(window.source$.eegReadings).pipe(
-          bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
-          epoch({
-            duration: numOptions.duration,
-            interval: 100,
-            samplingRate: numOptions.srate
-          }),
-          fft({ bins: 256 }),
-          sliceFFT([1, 30]),
-          catchError(err => {
-            console.log(err);
-          })
-        );
-        window.multicastSpectra$ = window.pipeSpectra$.pipe(
-          multicast(() => new Subject())
-        );
+        pipeSpectraData();
 
         // Build Pipe Bands
-        window.pipeBands$ = zipSamples(window.source$.eegReadings).pipe(
-          bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
-          epoch({
-            duration: numOptions.duration,
-            interval: 100,
-            samplingRate: numOptions.srate
-          }),
-          fft({ bins: 256 }),
-          powerByBand(),
-          catchError(err => {
-            console.log(err);
-          })
-        );
-        window.multicastBands$ = window.pipeBands$.pipe(
-          multicast(() => new Subject())
-        );
+        pipeBandsData();
 
         // Build the data source from the data source
         console.log("Finished building the data pipes from the data source");
@@ -258,57 +311,101 @@ export function PageSwitcher() {
     }
   }
 
-  function pipeRawData() {
-    if (window.subscriptionRaw$) window.subscriptionRaw$.unsubscribe();
-    
-    window.pipeRaw$ = null;
-    window.multicastRaw$ = null;
-    window.subscriptionRaw$ = null;
-    // Build Pipe Raw
-    window.pipeRaw$ = zipSamples(window.source$.eegReadings).pipe(
-      bandpassFilter({ cutoffFrequencies: [rawPipeSettings.cutOffLow, rawPipeSettings.cutOffHigh], nbChannels: rawPipeSettings.nbChannels }),
-      epoch({
-        duration: numOptions.duration,
-        interval: rawPipeSettings.interval,
-        samplingRate: numOptions.srate
-      }),
-      catchError(err => {
-        console.log(err);
-      })
-    );
-    window.multicastRaw$ = window.pipeRaw$.pipe(
-      multicast(() => new Subject())
-    );
-  }
-
   function refreshPage(){
     window.location.reload();
   }
 
-  function handleIntervalRangeSliderChange(value) {
+  function handleRawIntervalRangeSliderChange(value) {
     setRawPipeSettings(prevState => ({...prevState, interval: value}));
     pipeRawData();
     setupRaw();
   }
 
-  function handleNbChannelsRangeSliderChange(value) {
+  function handleRawNbChannelsRangeSliderChange(value) {
     setRawPipeSettings(prevState => ({...prevState, nbChannels: value}));
     pipeRawData();
     setupRaw();
   }
 
-  function handleCutoffLowRangeSliderChange(value) {
+  function handleRawCutoffLowRangeSliderChange(value) {
     setRawPipeSettings(prevState => ({...prevState, cutOffLow: value}));
     pipeRawData();
     setupRaw();
   }
 
-  function handleCutoffHighRangeSliderChange(value) {
+  function handleRawCutoffHighRangeSliderChange(value) {
     setRawPipeSettings(prevState => ({...prevState, cutOffHigh: value}));
     pipeRawData();
     setupRaw();
   }
 
+  function handleSpectraIntervalRangeSliderChange(value) {
+    setSpectraPipeSettings(prevState => ({...prevState, interval: value}));
+    pipeSpectraData();
+    setupSpectra();
+  }
+
+  function handleSpectraNbChannelsRangeSliderChange(value) {
+    setSpectraPipeSettings(prevState => ({...prevState, nbChannels: value}));
+    pipeSpectraData();
+    setupSpectra();
+  }
+
+  function handleSpectraCutoffLowRangeSliderChange(value) {
+    setSpectraPipeSettings(prevState => ({...prevState, cutOffLow: value}));
+    pipeSpectraData();
+    setupSpectra();
+  }
+
+  function handleSpectraCutoffHighRangeSliderChange(value) {
+    setSpectraPipeSettings(prevState => ({...prevState, cutOffHigh: value}));
+    pipeSpectraData();
+    setupSpectra();
+  }
+
+  function handleSpectraBinsRangeSliderChange(value) {
+    setSpectraPipeSettings(prevState => ({...prevState, bins: value}));
+    pipeSpectraData();
+    setupSpectra();
+  }
+
+  function handleSpectraSliceFFTLowRangeSliderChange(value) {
+    setSpectraPipeSettings(prevState => ({...prevState, sliceFTTLow: value}));
+    pipeSpectraData();
+    setupSpectra();
+  }
+
+  function handleSpectraSliceFFTHighRangeSliderChange(value) {
+    setSpectraPipeSettings(prevState => ({...prevState, sliceFFTHigh: value}));
+    pipeSpectraData();
+    setupSpectra();
+  }
+
+  function pipeSettingsDisplay() {
+    switch(selected) {
+      case translations.types.raw:
+        return(
+          <Card title={'Raw Settings'} sectioned>
+            <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Interval: ' + rawPipeSettings.interval} value={rawPipeSettings.interval} onChange={handleRawIntervalRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'nbChannels: ' + rawPipeSettings.nbChannels} value={rawPipeSettings.nbChannels} onChange={handleRawNbChannelsRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Cutoff Frequency Low: ' + rawPipeSettings.cutOffLow} value={rawPipeSettings.cutOffLow} onChange={handleRawCutoffLowRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Cutoff Frequency High: ' + rawPipeSettings.cutOffHigh} value={rawPipeSettings.cutOffHigh} onChange={handleRawCutoffHighRangeSliderChange} />
+          </Card>
+        );
+      case translations.types.spectra:
+        return(
+          <Card title={'Spectra Settings'} sectioned>
+            <RangeSlider disabled={status === generalTranslations.connect} min={1} max={200} label={'Interval: ' + spectraPipeSettings.interval} value={spectraPipeSettings.interval} onChange={handleSpectraIntervalRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'nbChannels: ' + spectraPipeSettings.nbChannels} value={spectraPipeSettings.nbChannels} onChange={handleSpectraNbChannelsRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Cutoff Frequency Low: ' + spectraPipeSettings.cutOffLow} value={spectraPipeSettings.cutOffLow} onChange={handleSpectraCutoffLowRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Cutoff Frequency High: ' + spectraPipeSettings.cutOffHigh} value={spectraPipeSettings.cutOffHigh} onChange={handleSpectraCutoffHighRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={2} max={500} step={Math.pow(2,2)} label={'FTT Bins: ' + spectraPipeSettings.bins} value={spectraPipeSettings.bins} onChange={handleSpectraBinsRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Slice FFT Low: ' + spectraPipeSettings.sliceFFTLow} value={spectraPipeSettings.sliceFFTLow} onChange={handleSpectraSliceFFTLowRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Slice FFT High: ' + spectraPipeSettings.sliceFFTHigh} value={spectraPipeSettings.sliceFFTHigh} onChange={handleSpectraSliceFFTHighRangeSliderChange} />
+          </Card>
+        );
+    }
+  }
   return (
     <React.Fragment>
       <Card sectioned>
@@ -352,13 +449,7 @@ export function PageSwitcher() {
           value={selected}
         />
       </Card>
-      <Card title={'Raw Settings'} sectioned>
-        <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Interval: ' + rawPipeSettings.interval} value={rawPipeSettings.interval} onChange={handleIntervalRangeSliderChange} />
-        <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'nbChannels: ' + rawPipeSettings.nbChannels} value={rawPipeSettings.nbChannels} onChange={handleNbChannelsRangeSliderChange} />
-        <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Cutoff Frequency Low: ' + rawPipeSettings.cutOffLow} value={rawPipeSettings.cutOffLow} onChange={handleCutoffLowRangeSliderChange} />
-        <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Cutoff Frequency High: ' + rawPipeSettings.cutOffHigh} value={rawPipeSettings.cutOffHigh} onChange={handleCutoffHighRangeSliderChange} />
-      </Card>
-
+      {pipeSettingsDisplay()}
       {renderCharts()}
     </React.Fragment>
   );
