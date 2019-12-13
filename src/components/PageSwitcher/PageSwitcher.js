@@ -265,6 +265,21 @@ export function PageSwitcher() {
     }
   }
 
+  function disconnect() { 
+    console.log('Disconnecting from data source...'); 
+
+    window.source$ = {};  
+    // Unsubscribe from all possible subscriptions  
+    if (window.subscriptionRaw$) window.subscriptionRaw$.unsubscribe(); 
+    if (window.subscriptionSpectra$) window.subscriptionSpectra$.unsubscribe(); 
+    if (window.subscriptionBands$) window.subscriptionBands$.unsubscribe(); 
+
+    setStatus(generalTranslations.connect); 
+    console.log('Disconnected from data source.');  
+  } 
+
+
+
   return (
     <React.Fragment>
       <Card sectioned>
@@ -288,6 +303,9 @@ export function PageSwitcher() {
               }}
             >
               {status === generalTranslations.connect ? generalTranslations.connectMock : status}
+            </Button>
+            <Button destructive onClick={disconnect}> 
+              {generalTranslations.disconnect}  
             </Button>
           </ButtonGroup>
         </Stack>
