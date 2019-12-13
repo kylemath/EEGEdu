@@ -184,7 +184,7 @@ export function PageSwitcher() {
     connect();
   }
 
-  async function connect(isMock) {
+  async function connect() {
     console.log("Connecting to data source observable...");
 
 
