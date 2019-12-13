@@ -67,7 +67,6 @@ export function PageSwitcher() {
     { label: translations.types.spectra, value: translations.types.spectra },
     { label: translations.types.bands, value: translations.types.bands }
   ];
-  const xTics = generateXTics();
 
   function subscriptionSetup(value) {
     switch (value) {
@@ -112,7 +111,7 @@ export function PageSwitcher() {
           Object.values(rawData).forEach((channel, index) => {
             if (index < 4) {
               channel.datasets[0].data = data.data[index];
-              channel.xLabels = xTics;
+              channel.xLabels = generateXTics(rawPipeSettings.srate, rawPipeSettings.duration);
             }
           });
 
