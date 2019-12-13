@@ -225,7 +225,7 @@ export function PageSwitcher() {
         samplingRate: numOptions.srate
       }),
       fft({ bins: spectraPipeSettings.bins }),
-      sliceFFT([spectraPipeSettings.sliceFFTLow, spectraPipeSettings.slideFFTHigh]),
+      sliceFFT([spectraPipeSettings.sliceFFTLow, spectraPipeSettings.sliceFFTHigh]),
       catchError(err => {
         console.log(err);
       })
@@ -399,7 +399,14 @@ export function PageSwitcher() {
             <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'nbChannels: ' + spectraPipeSettings.nbChannels} value={spectraPipeSettings.nbChannels} onChange={handleSpectraNbChannelsRangeSliderChange} />
             <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Cutoff Frequency Low: ' + spectraPipeSettings.cutOffLow} value={spectraPipeSettings.cutOffLow} onChange={handleSpectraCutoffLowRangeSliderChange} />
             <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Cutoff Frequency High: ' + spectraPipeSettings.cutOffHigh} value={spectraPipeSettings.cutOffHigh} onChange={handleSpectraCutoffHighRangeSliderChange} />
-            <RangeSlider disabled={status === generalTranslations.connect} min={2} max={500} step={Math.pow(2,2)} label={'FTT Bins: ' + spectraPipeSettings.bins} value={spectraPipeSettings.bins} onChange={handleSpectraBinsRangeSliderChange} />
+            <Select
+              disabled={status === generalTranslations.connect}
+              label={'FTT Bins: ' + spectraPipeSettings.bins}
+              options={['256', '128', '64', '32', '16', '8', '4', '2', '1']}
+              onChange={handleSpectraBinsRangeSliderChange}
+              value={spectraPipeSettings.bins}
+            />
+            <br />
             <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Slice FFT Low: ' + spectraPipeSettings.sliceFFTLow} value={spectraPipeSettings.sliceFFTLow} onChange={handleSpectraSliceFFTLowRangeSliderChange} />
             <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Slice FFT High: ' + spectraPipeSettings.sliceFFTHigh} value={spectraPipeSettings.sliceFFTHigh} onChange={handleSpectraSliceFFTHighRangeSliderChange} />
           </Card>
