@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 
-import { Select, Card, Stack, Button } from "@shopify/polaris";
+import { Select, Card, Stack, Button, ButtonGroup } from "@shopify/polaris";
 import {
   bandpassFilter,
   epoch,
@@ -172,35 +172,34 @@ export function PageSwitcher() {
   }
 
   async function connect() {
-    console.log("Connecting to data source observable...");
-    setStatus(generalTranslations.connecting);
-
-    let debugWithMock = false;
-
     try {
-      if (!debugWithMock) {
-        // Connect with the Muse EEG Client
-        window.source$ = new MuseClient();
-        await window.source$.connect();
-        await window.source$.start();
-      } else {
+      if (window.debugWithMock) {
         // Debug with Mock EEG Data
         // Initialize the mockMuseEEG data stream with sampleRate
+        console.log("Connecting to mock data source...");
+        setStatus(generalTranslations.connectingMock);
+
         window.source$ = {};
         window.source$.connectionStatus = {};
         window.source$.connectionStatus.value = true;
         window.source$.eegReadings = mockMuseEEG(256);
-      }
+        setStatus(generalTranslations.connectedMock);
+      } else {
+        // Connect with the Muse EEG Client
+        console.log("Connecting to data source observable...");
+        setStatus(generalTranslations.connecting);
 
-      setStatus(generalTranslations.connected);
+        window.source$ = new MuseClient();
+        await window.source$.connect();
+        await window.source$.start();
+        setStatus(generalTranslations.connected);
+      }
 
       if (
         window.source$.connectionStatus.value === true &&
         window.source$.eegReadings
       ) {
         console.log("Connected to data source observable");
-        setStatus(generalTranslations.connected);
-
         console.log("Starting to build the data pipes from the data source...");
 
         // Build Pipe Raw
@@ -270,13 +269,27 @@ export function PageSwitcher() {
     <React.Fragment>
       <Card sectioned>
         <Stack>
-          <Button
-            primary={status === generalTranslations.connect}
-            disabled={status !== generalTranslations.connect}
-            onClick={connect}
-          >
-            {status}
-          </Button>
+          <ButtonGroup>
+            <Button
+              primary={status === generalTranslations.connect}
+              disabled={status !== generalTranslations.connect}
+              onClick={() => {
+                window.debugWithMock = false;
+                connect();
+              }}
+            >
+              {status}
+            </Button>
+            <Button
+              disabled={status !== generalTranslations.connect}
+              onClick={() => {
+                window.debugWithMock = true;
+                connect();
+              }}
+            >
+              {status === generalTranslations.connect ? generalTranslations.connectMock : status}
+            </Button>
+          </ButtonGroup>
         </Stack>
       </Card>
       <Card title={translations.title} sectioned>
