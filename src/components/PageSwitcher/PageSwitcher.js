@@ -265,6 +265,10 @@ export function PageSwitcher() {
     }
   }
 
+  function refreshPage(){
+    window.location.reload();
+  } 
+
   return (
     <React.Fragment>
       <Card sectioned>
@@ -288,6 +292,14 @@ export function PageSwitcher() {
               }}
             >
               {status === generalTranslations.connect ? generalTranslations.connectMock : status}
+            </Button>
+            <Button 
+              destructive
+              onClick={refreshPage}
+              primary={status !== generalTranslations.connect}
+              disabled={status === generalTranslations.connect}
+            > 
+              {generalTranslations.disconnect}  
             </Button>
           </ButtonGroup>
         </Stack>
