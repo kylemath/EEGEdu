@@ -273,7 +273,10 @@ export function PageSwitcher() {
             <Button
               primary={status === generalTranslations.connect}
               disabled={status !== generalTranslations.connect}
-              onClick={connect}
+              onClick={() => {
+                window.debugWithMock = false;
+                connect();
+              }}
             >
               {status}
             </Button>
