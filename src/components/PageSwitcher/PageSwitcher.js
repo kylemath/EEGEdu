@@ -259,6 +259,11 @@ export function PageSwitcher() {
   }
 
   function pipeRawData() {
+    if (window.subscriptionRaw$) window.subscriptionRaw$.unsubscribe();
+    
+    window.pipeRaw$ = null;
+    window.multicastRaw$ = null;
+    window.subscriptionRaw$ = null;
     // Build Pipe Raw
     window.pipeRaw$ = zipSamples(window.source$.eegReadings).pipe(
       bandpassFilter({ cutoffFrequencies: [rawPipeSettings.cutOffLow, rawPipeSettings.cutOffHigh], nbChannels: rawPipeSettings.nbChannels }),
@@ -348,10 +353,10 @@ export function PageSwitcher() {
         />
       </Card>
       <Card title={'Raw Settings'} sectioned>
-        <RangeSlider disabled={status === generalTranslations.connect} label={'Interval: ' + rawPipeSettings.interval} value={rawPipeSettings.interval} onChange={handleIntervalRangeSliderChange} />
-        <RangeSlider disabled={status === generalTranslations.connect} label={'nbChannels: ' + rawPipeSettings.nbChannels} value={rawPipeSettings.nbChannels} onChange={handleNbChannelsRangeSliderChange} />
-        <RangeSlider disabled={status === generalTranslations.connect} label={'Cutoff Frequency Low: ' + rawPipeSettings.cutOffLow} value={rawPipeSettings.cutOffLow} onChange={handleCutoffLowRangeSliderChange} />
-        <RangeSlider disabled={status === generalTranslations.connect} label={'Cutoff Frequency High: ' + rawPipeSettings.cutOffHigh} value={rawPipeSettings.cutOffHigh} onChange={handleCutoffHighRangeSliderChange} />
+        <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Interval: ' + rawPipeSettings.interval} value={rawPipeSettings.interval} onChange={handleIntervalRangeSliderChange} />
+        <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'nbChannels: ' + rawPipeSettings.nbChannels} value={rawPipeSettings.nbChannels} onChange={handleNbChannelsRangeSliderChange} />
+        <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Cutoff Frequency Low: ' + rawPipeSettings.cutOffLow} value={rawPipeSettings.cutOffLow} onChange={handleCutoffLowRangeSliderChange} />
+        <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Cutoff Frequency High: ' + rawPipeSettings.cutOffHigh} value={rawPipeSettings.cutOffHigh} onChange={handleCutoffHighRangeSliderChange} />
       </Card>
 
       {renderCharts()}
