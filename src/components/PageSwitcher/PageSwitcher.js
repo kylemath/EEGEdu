@@ -411,6 +411,7 @@ export function PageSwitcher() {
             <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Slice FFT High: ' + spectraPipeSettings.sliceFFTHigh} value={spectraPipeSettings.sliceFFTHigh} onChange={handleSpectraSliceFFTHighRangeSliderChange} />
           </Card>
         );
+      default: console.log('Error rendering settings display');
     }
   }
   return (
