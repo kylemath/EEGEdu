@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 
-import { Select, Card, Stack, Button, ButtonGroup } from "@shopify/polaris";
+import { Select, Card, Stack, Button, ButtonGroup, RangeSlider } from "@shopify/polaris";
 import {
   bandpassFilter,
   epoch,
@@ -8,7 +8,7 @@ import {
   sliceFFT,
   powerByBand
 } from "@neurosity/pipes";
-import { Subject } from "rxjs";
+import {Subject} from "rxjs";
 import { catchError, multicast } from "rxjs/operators";
 
 import { mockMuseEEG } from "./utils/mockMuseEEG";
@@ -24,6 +24,14 @@ import { emptyChannelData } from "./components/chartOptions";
 import { generateXTics, numOptions, bandLabels } from "./utils/chartUtils";
 
 export function PageSwitcher() {
+  const [rawPipeSettings, setRawPipeSettings] = useState({
+    cutOffFrequencies: {
+      low: 2,
+      high: 20,
+    },
+    nbChannels: 4,
+    interval: 50
+  });
   const [rawData, setRawData] = useState(emptyChannelData);
   const [spectraData, setSpectraData] = useState(emptyChannelData);
   const [bandsData, setBandsData] = useState(emptyChannelData);
@@ -203,20 +211,7 @@ export function PageSwitcher() {
         console.log("Starting to build the data pipes from the data source...");
 
         // Build Pipe Raw
-        window.pipeRaw$ = zipSamples(window.source$.eegReadings).pipe(
-          bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
-          epoch({
-            duration: numOptions.duration,
-            interval: 50,
-            samplingRate: numOptions.srate
-          }),
-          catchError(err => {
-            console.log(err);
-          })
-        );
-        window.multicastRaw$ = window.pipeRaw$.pipe(
-          multicast(() => new Subject())
-        );
+        pipeRawData();
 
         // Build Pipe Spectra
         window.pipeSpectra$ = zipSamples(window.source$.eegReadings).pipe(
@@ -265,9 +260,51 @@ export function PageSwitcher() {
     }
   }
 
+  function pipeRawData() {
+    // Build Pipe Raw
+    window.pipeRaw$ = zipSamples(window.source$.eegReadings).pipe(
+      bandpassFilter({ cutoffFrequencies: [rawPipeSettings.cutOffFrequencies.low, rawPipeSettings.cutOffFrequencies.high], nbChannels: rawPipeSettings.nbChannels }),
+      epoch({
+        duration: numOptions.duration,
+        interval: rawPipeSettings.interval,
+        samplingRate: numOptions.srate
+      }),
+      catchError(err => {
+        console.log(err);
+      })
+    );
+    window.multicastRaw$ = window.pipeRaw$.pipe(
+      multicast(() => new Subject())
+    );
+  }
+
   function refreshPage(){
     window.location.reload();
-  } 
+  }
+
+  function handleIntervalRangeSliderChange(value) {
+    setRawPipeSettings(prevState => ({...prevState, interval: value}));
+    pipeRawData();
+    setupRaw();
+  }
+
+  function handleNbChannelsRangeSliderChange(value) {
+    setRawPipeSettings(prevState => ({...prevState, nbChannels: value}));
+    pipeRawData();
+    setupRaw();
+  }
+
+  function handleCutoffLowRangeSliderChange(value) {
+    setRawPipeSettings(prevState => ({...prevState, cutOffFrequencies: {low: value}}));
+    pipeRawData();
+    setupRaw();
+  }
+
+  function handleCutoffHighRangeSliderChange(value) {
+    setRawPipeSettings(prevState => ({...prevState, cutOffFrequencies: {high: value}}));
+    pipeRawData();
+    setupRaw();
+  }
 
   return (
     <React.Fragment>
@@ -293,13 +330,13 @@ export function PageSwitcher() {
             >
               {status === generalTranslations.connect ? generalTranslations.connectMock : status}
             </Button>
-            <Button 
+            <Button
               destructive
               onClick={refreshPage}
               primary={status !== generalTranslations.connect}
               disabled={status === generalTranslations.connect}
-            > 
-              {generalTranslations.disconnect}  
+            >
+              {generalTranslations.disconnect}
             </Button>
           </ButtonGroup>
         </Stack>
@@ -311,6 +348,12 @@ export function PageSwitcher() {
           onChange={handleSelectChange}
           value={selected}
         />
+      </Card>
+      <Card title={'Raw Settings'} sectioned>
+        <RangeSlider label={'Interval: ' + rawPipeSettings.interval} value={rawPipeSettings.interval} onChange={handleIntervalRangeSliderChange} />
+        <RangeSlider label={'nbChannels: ' + rawPipeSettings.nbChannels} value={rawPipeSettings.nbChannels} onChange={handleNbChannelsRangeSliderChange} />
+        <RangeSlider label={'Cutoff Frequency Low: ' + rawPipeSettings.cutOffFrequencies.low} value={rawPipeSettings.cutOffFrequencies.low} onChange={handleCutoffLowRangeSliderChange} />
+        <RangeSlider label={'Cutoff Frequency High: ' + rawPipeSettings.cutOffFrequencies.high} value={rawPipeSettings.cutOffFrequencies.high} onChange={handleCutoffHighRangeSliderChange} />
       </Card>
 
       {renderCharts()}
