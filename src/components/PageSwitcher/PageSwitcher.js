@@ -265,19 +265,6 @@ export function PageSwitcher() {
     }
   }
 
-  // function disconnect() { 
-  //   console.log('Disconnecting from data source...'); 
-
-  //   window.source$ = {};  
-  //   // Unsubscribe from all possible subscriptions  
-  //   if (window.subscriptionRaw$) window.subscriptionRaw$.unsubscribe(); 
-  //   if (window.subscriptionSpectra$) window.subscriptionSpectra$.unsubscribe(); 
-  //   if (window.subscriptionBands$) window.subscriptionBands$.unsubscribe(); 
-
-  //   setStatus(generalTranslations.connect); 
-  //   console.log('Disconnected from data source.');  
-  // } 
-
   function refreshPage(){
     window.location.reload();
   } 
