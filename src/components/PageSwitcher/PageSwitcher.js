@@ -409,15 +409,19 @@ export function PageSwitcher() {
   }
 
 
+  // <RangeSlider disabled={status === generalTranslations.connect} min={256} max={256} label={'srate: ' + rawPipeSettings.srate} value={rawPipeSettings.srate} onChange={handleRawSrateRangeSliderChange} />
+  // <RangeSlider disabled={status === generalTranslations.connect} min={4} max={4} label={'nbChannels: ' + rawPipeSettings.nbChannels} value={rawPipeSettings.nbChannels} onChange={handleRawNbChannelsRangeSliderChange} />
+
+
   function pipeSettingsDisplay() {
     switch(selected) {
       case translations.types.raw:
         return(
           <Card title={'Raw Settings'} sectioned>
-            <RangeSlider disabled={status === generalTranslations.connect} min={512} max={4096} label={'Epoch duration: ' + rawPipeSettings.duration} value={rawPipeSettings.duration} onChange={handleRawDurationRangeSliderChange} />          
-            <RangeSlider disabled={status === generalTranslations.connect} min={12} label={'Interval betweem epochs: ' + rawPipeSettings.interval} value={rawPipeSettings.interval} onChange={handleRawIntervalRangeSliderChange} />
-            <RangeSlider disabled={status === generalTranslations.connect} min={1} max={rawPipeSettings.cutOffHigh - 1} label={'Cutoff Frequency Low: ' + rawPipeSettings.cutOffLow} value={rawPipeSettings.cutOffLow} onChange={handleRawCutoffLowRangeSliderChange} />
-            <RangeSlider disabled={status === generalTranslations.connect} min={rawPipeSettings.cutOffLow + 1} label={'Cutoff Frequency High: ' + rawPipeSettings.cutOffHigh} value={rawPipeSettings.cutOffHigh} onChange={handleRawCutoffHighRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={512} max={4096} label={'Epoch duration (Sampling Points): ' + rawPipeSettings.duration} value={rawPipeSettings.duration} onChange={handleRawDurationRangeSliderChange} />          
+            <RangeSlider disabled={status === generalTranslations.connect} min={12} max={rawPipeSettings.duration} label={'Sampling points between epochs onsets: ' + rawPipeSettings.interval} value={rawPipeSettings.interval} onChange={handleRawIntervalRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={.01} max={rawPipeSettings.cutOffHigh - .5} label={'Cutoff Frequency Low: ' + rawPipeSettings.cutOffLow} value={rawPipeSettings.cutOffLow} onChange={handleRawCutoffLowRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={rawPipeSettings.cutOffLow + .5} label={'Cutoff Frequency High: ' + rawPipeSettings.cutOffHigh} value={rawPipeSettings.cutOffHigh} onChange={handleRawCutoffHighRangeSliderChange} />
           </Card>
         );
       case translations.types.spectra:
