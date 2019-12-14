@@ -21,7 +21,7 @@ import * as translations from "./translations/en.json";
 import { MuseClient, zipSamples } from "muse-js";
 import * as generalTranslations from "./components/translations/en";
 import { emptyChannelData } from "./components/chartOptions";
-import { generateXTics, numOptions, bandLabels } from "./utils/chartUtils";
+import { generateXTics, numOptions, bandLabels, standardDeviation } from "./utils/chartUtils";
 
 export function PageSwitcher() {
   const [rawData, setRawData] = useState(emptyChannelData);
@@ -93,6 +93,7 @@ export function PageSwitcher() {
           Object.values(rawData).forEach((channel, index) => {
             if (index < 4) {
               channel.datasets[0].data = data.data[index];
+              channel.datasets[0].qual = standardDeviation(data.data[index])
               channel.xLabels = xTics;
             }
           });
