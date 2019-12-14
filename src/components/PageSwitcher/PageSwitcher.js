@@ -233,6 +233,7 @@ export function PageSwitcher() {
         console.log(err);
       })
     );
+
     window.multicastSpectra$ = window.pipeSpectra$.pipe(
       multicast(() => new Subject())
     );
@@ -298,6 +299,8 @@ export function PageSwitcher() {
         pipeRawData();
 
         // Build Pipe Spectra
+        setupSpectra();
+
         pipeSpectraData();
 
         // Build Pipe Bands
