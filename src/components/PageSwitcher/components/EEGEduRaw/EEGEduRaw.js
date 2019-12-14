@@ -51,7 +51,7 @@ export default function EEGEduRaw(channels) {
         },
         title: {
           ...generalOptions.title,
-          text: generalTranslations.channel + channelNames[index] + '---- SD: ' + channel.datasets[0].qual 
+          text: generalTranslations.channel + channelNames[index] + ' --- SD: ' + channel.datasets[0].qual 
         }
       };
 
