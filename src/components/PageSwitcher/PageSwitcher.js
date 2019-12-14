@@ -418,8 +418,8 @@ export function PageSwitcher() {
       case translations.types.raw:
         return(
           <Card title={'Raw Settings'} sectioned>
-            <RangeSlider disabled={status === generalTranslations.connect} min={512} max={4096} label={'Epoch duration (Sampling Points): ' + rawPipeSettings.duration} value={rawPipeSettings.duration} onChange={handleRawDurationRangeSliderChange} />          
-            <RangeSlider disabled={status === generalTranslations.connect} min={12} max={rawPipeSettings.duration} label={'Sampling points between epochs onsets: ' + rawPipeSettings.interval} value={rawPipeSettings.interval} onChange={handleRawIntervalRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={512} step={128} max={4096} label={'Epoch duration (Sampling Points): ' + rawPipeSettings.duration} value={rawPipeSettings.duration} onChange={handleRawDurationRangeSliderChange} />          
+            <RangeSlider disabled={status === generalTranslations.connect} min={10} step={5} max={rawPipeSettings.duration} label={'Sampling points between epochs onsets: ' + rawPipeSettings.interval} value={rawPipeSettings.interval} onChange={handleRawIntervalRangeSliderChange} />
             <RangeSlider disabled={status === generalTranslations.connect} min={.01} max={rawPipeSettings.cutOffHigh - .5} label={'Cutoff Frequency Low: ' + rawPipeSettings.cutOffLow} value={rawPipeSettings.cutOffLow} onChange={handleRawCutoffLowRangeSliderChange} />
             <RangeSlider disabled={status === generalTranslations.connect} min={rawPipeSettings.cutOffLow + .5} label={'Cutoff Frequency High: ' + rawPipeSettings.cutOffHigh} value={rawPipeSettings.cutOffHigh} onChange={handleRawCutoffHighRangeSliderChange} />
           </Card>
