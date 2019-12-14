@@ -414,12 +414,10 @@ export function PageSwitcher() {
       case translations.types.raw:
         return(
           <Card title={'Raw Settings'} sectioned>
-            <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'Interval: ' + rawPipeSettings.interval} value={rawPipeSettings.interval} onChange={handleRawIntervalRangeSliderChange} />
-            <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'nbChannels: ' + rawPipeSettings.nbChannels} value={rawPipeSettings.nbChannels} onChange={handleRawNbChannelsRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={512} max={4096} label={'Epoch duration: ' + rawPipeSettings.duration} value={rawPipeSettings.duration} onChange={handleRawDurationRangeSliderChange} />          
+            <RangeSlider disabled={status === generalTranslations.connect} min={12} label={'Interval betweem epochs: ' + rawPipeSettings.interval} value={rawPipeSettings.interval} onChange={handleRawIntervalRangeSliderChange} />
             <RangeSlider disabled={status === generalTranslations.connect} min={1} max={rawPipeSettings.cutOffHigh - 1} label={'Cutoff Frequency Low: ' + rawPipeSettings.cutOffLow} value={rawPipeSettings.cutOffLow} onChange={handleRawCutoffLowRangeSliderChange} />
             <RangeSlider disabled={status === generalTranslations.connect} min={rawPipeSettings.cutOffLow + 1} label={'Cutoff Frequency High: ' + rawPipeSettings.cutOffHigh} value={rawPipeSettings.cutOffHigh} onChange={handleRawCutoffHighRangeSliderChange} />
-            <RangeSlider disabled={status === generalTranslations.connect} min={150} max={600} label={'srate: ' + rawPipeSettings.srate} value={rawPipeSettings.srate} onChange={handleRawSrateRangeSliderChange} />
-            <RangeSlider disabled={status === generalTranslations.connect} min={500} max={2500} label={'Duration: ' + rawPipeSettings.duration} value={rawPipeSettings.duration} onChange={handleRawDurationRangeSliderChange} />
           </Card>
         );
       case translations.types.spectra:
