@@ -20,7 +20,7 @@ import { chartStyles, generalOptions } from "../chartOptions";
 
 import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
-import { numOptions } from "../../utils/chartUtils";
+import { numOptions, standardDeviation } from "../../utils/chartUtils";
 
 export function EEGEduSpectra(channels) {
   function renderCharts() {
@@ -111,21 +111,27 @@ export function setupSpectra(setSpectraData) {
   }
 }
 
-export function buildPipeSpectra () {
-  // Build Pipe Spectra
-  window.pipeSpectra$ = zipSamples(window.source$.eegReadings).pipe(
-    bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
-    epoch({
-      duration: numOptions.duration,
-      interval: 100,
-      samplingRate: numOptions.srate
-    }),
-    fft({ bins: 256 }),
-    sliceFFT([1, 30]),
-    catchError(err => {
-      console.log(err);
-    })
+export function buildPipeSpectra (spectraPipeSettings) {
+  if (window.subscriptionSpectra$) window.subscriptionSpectra$.unsubscribe();
+
+    window.pipeSpectra$ = null;
+    window.multicastSpectra$ = null;
+    window.subscriptionSpectra$ = null;
+
+    window.pipeSpectra$ = zipSamples(window.source$.eegReadings).pipe(
+      bandpassFilter({ cutoffFrequencies: [spectraPipeSettings.cutOffLow, spectraPipeSettings.cutOffHigh], nbChannels: spectraPipeSettings.nbChannels }),
+      epoch({
+        duration: spectraPipeSettings.duration,
+        interval: spectraPipeSettings.interval,
+        samplingRate: spectraPipeSettings.srate
+      }),
+      fft({ bins: spectraPipeSettings.bins }),
+      sliceFFT([spectraPipeSettings.sliceFFTLow, spectraPipeSettings.sliceFFTHigh]),
+      catchError(err => {
+        console.log(err);
+      })
   );
+
   window.multicastSpectra$ = window.pipeSpectra$.pipe(
     multicast(() => new Subject())
   );
