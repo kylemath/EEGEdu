@@ -72,7 +72,7 @@ export function PageSwitcher() {
   function subscriptionSetup(value) {
     switch (value) {
       case translations.types.raw:
-        setupRaw(setRawData);
+        setupRaw(setRawData, rawPipeSettings);
         break;
       case translations.types.spectra:
         setupSpectra(setSpectraData);
@@ -134,8 +134,8 @@ export function PageSwitcher() {
         console.log("Connected to data source observable");
         console.log("Starting to build the data pipes from the data source...");
 
-        buildPipeRaw();
-        buildPipeSpectra();
+        buildPipeRaw(rawPipeSettings);
+        buildPipeSpectra(spectraPipeSettings);
         buildPipeBands();
 
         // Build the data source from the data source
@@ -155,68 +155,68 @@ export function PageSwitcher() {
 
   function handleRawIntervalRangeSliderChange(value) {
     setRawPipeSettings(prevState => ({...prevState, interval: value}));
-    pipeRawData();
-    setupRaw();
+    buildPipeRaw(rawPipeSettings);
+    setupRaw(setRawData, rawPipeSettings);
   }
 
   function handleRawCutoffLowRangeSliderChange(value) {
     setRawPipeSettings(prevState => ({...prevState, cutOffLow: value}));
-    pipeRawData();
-    setupRaw();
+    buildPipeRaw(rawPipeSettings);
+    setupRaw(setRawData, rawPipeSettings);
   }
 
   function handleRawCutoffHighRangeSliderChange(value) {
     setRawPipeSettings(prevState => ({...prevState, cutOffHigh: value}));
-    pipeRawData();
-    setupRaw();
+    buildPipeRaw(rawPipeSettings);
+    setupRaw(setRawData, rawPipeSettings);
   }
 
   function handleRawDurationRangeSliderChange(value) {
     setRawPipeSettings(prevState => ({...prevState, duration: value}));
-    pipeRawData();
-    setupRaw();
+    buildPipeRaw(rawPipeSettings);
+    setupRaw(setRawData, rawPipeSettings);
   }
 
   function handleSpectraIntervalRangeSliderChange(value) {
     setSpectraPipeSettings(prevState => ({...prevState, interval: value}));
-    pipeSpectraData();
-    setupSpectra();
+    buildPipeSpectra(spectraPipeSettings);
+    setupSpectra(setSpectraData);
   }
 
   function handleSpectraCutoffLowRangeSliderChange(value) {
     setSpectraPipeSettings(prevState => ({...prevState, cutOffLow: value}));
-    pipeSpectraData();
-    setupSpectra();
+    buildPipeSpectra(spectraPipeSettings);
+    setupSpectra(setSpectraData);
   }
 
   function handleSpectraCutoffHighRangeSliderChange(value) {
     setSpectraPipeSettings(prevState => ({...prevState, cutOffHigh: value}));
-    pipeSpectraData();
-    setupSpectra();
+    buildPipeSpectra(spectraPipeSettings);
+    setupSpectra(setSpectraData);
   }
 
   // function handleSpectraBinsRangeSliderChange(value) {
   //   setSpectraPipeSettings(prevState => ({...prevState, bins: value}));
-  //   pipeSpectraData();
-  //   setupSpectra();
+  //   buildPipeSpectra();
+  //   setupSpectra(setSpectraData);
   // }
 
   function handleSpectraSliceFFTLowRangeSliderChange(value) {
     setSpectraPipeSettings(prevState => ({...prevState, sliceFFTLow: value}));
-    pipeSpectraData();
-    setupSpectra();
+    buildPipeSpectra(spectraPipeSettings);
+    setupSpectra(setSpectraData);
   }
 
   function handleSpectraSliceFFTHighRangeSliderChange(value) {
     setSpectraPipeSettings(prevState => ({...prevState, sliceFFTHigh: value}));
-    pipeSpectraData();
-    setupSpectra();
+    buildPipeSpectra(spectraPipeSettings);
+    setupSpectra(setSpectraData);
   }
 
   function handleSpectraDurationRangeSliderChange(value) {
     setSpectraPipeSettings(prevState => ({...prevState, duration: value}));
-    pipeSpectraData();
-    setupSpectra();
+    buildPipeSpectra(spectraPipeSettings);
+    setupSpectra(setSpectraData);
   }
 
   function pipeSettingsDisplay() {

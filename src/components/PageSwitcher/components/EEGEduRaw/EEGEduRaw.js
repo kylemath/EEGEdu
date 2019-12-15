@@ -19,9 +19,7 @@ import { chartStyles, generalOptions } from "../chartOptions";
 import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 
-import { generateXTics, numOptions } from "../../utils/chartUtils";
-
-const xTics = generateXTics();
+import { generateXTics, numOptions, standardDeviation } from "../../utils/chartUtils";
 
 export function EEGEduRaw(channels) {
   function renderCharts() {
@@ -92,7 +90,7 @@ export function EEGEduRaw(channels) {
   );
 }
 
-export function setupRaw(setRawData) {
+export function setupRaw(setRawData, rawPipeSettings) {
   console.log("Subscribing to Raw");
 
   if (window.multicastRaw$) {
@@ -101,7 +99,8 @@ export function setupRaw(setRawData) {
         Object.values(rawData).forEach((channel, index) => {
           if (index < 4) {
             channel.datasets[0].data = data.data[index];
-            channel.xLabels = xTics;
+            channel.xLabels = generateXTics(rawPipeSettings.srate, rawPipeSettings.duration);
+            channel.datasets[0].qual = standardDeviation(data.data[index])          
           }
         });
 
@@ -119,14 +118,20 @@ export function setupRaw(setRawData) {
   }
 }
 
-export function buildPipeRaw() {
+export function buildPipeRaw(rawPipeSettings) {
+  if (window.subscriptionRaw$) window.subscriptionRaw$.unsubscribe();
+
+  window.pipeRaw$ = null;
+  window.multicastRaw$ = null;
+  window.subscriptionRaw$ = null;
+
   // Build Pipe Raw
   window.pipeRaw$ = zipSamples(window.source$.eegReadings).pipe(
-    bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
+    bandpassFilter({ cutoffFrequencies: [rawPipeSettings.cutOffLow, rawPipeSettings.cutOffHigh], nbChannels: rawPipeSettings.nbChannels }),
     epoch({
-      duration: numOptions.duration,
-      interval: 50,
-      samplingRate: numOptions.srate
+      duration: rawPipeSettings.duration,
+      interval: rawPipeSettings.interval,
+      samplingRate: rawPipeSettings.srate
     }),
     catchError(err => {
       console.log(err);

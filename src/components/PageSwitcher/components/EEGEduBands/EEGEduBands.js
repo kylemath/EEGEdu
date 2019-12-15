@@ -113,22 +113,27 @@ export function setupBands(setBandsData) {
   }
 }
 
-export function buildPipeBands() {
-  // Build Pipe Bands
-  window.pipeBands$ = zipSamples(window.source$.eegReadings).pipe(
-    bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
-    epoch({
-      duration: numOptions.duration,
-      interval: 100,
-      samplingRate: numOptions.srate
-    }),
-    fft({ bins: 256 }),
-    powerByBand(),
-    catchError(err => {
-      console.log(err);
-    })
-  );
-  window.multicastBands$ = window.pipeBands$.pipe(
-    multicast(() => new Subject())
+export function buildPipeBands(bandsPipeSettings) {
+  if (window.subscriptionBands$) window.subscriptionBands$.unsubscribe();
+
+    window.pipeBands$ = null;
+    window.multicastBands$ = null;
+    window.subscriptionBands$ = null;
+
+    window.pipeBands$ = zipSamples(window.source$.eegReadings).pipe(
+      bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
+      epoch({
+        duration: numOptions.duration,
+        interval: 100,
+        samplingRate: numOptions.srate
+      }),
+      fft({ bins: 256 }),
+      powerByBand(),
+      catchError(err => {
+        console.log(err);
+      })
+    );
+    window.multicastBands$ = window.pipeBands$.pipe(
+      multicast(() => new Subject())
   );
 }
