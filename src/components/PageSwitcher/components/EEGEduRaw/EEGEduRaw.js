@@ -1,16 +1,29 @@
 import React from "react";
+import { catchError, multicast } from "rxjs/operators";
+import { Subject } from "rxjs";
 
 import { TextContainer, Card, Stack } from "@shopify/polaris";
 
-import { Line } from "react-chartjs-2";
 import { channelNames } from "muse-js";
+import { Line } from "react-chartjs-2";
+
+import { zipSamples } from "muse-js";
+
+import {
+  bandpassFilter,
+  epoch
+} from "@neurosity/pipes";
 
 import { chartStyles, generalOptions } from "../chartOptions";
 
 import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 
-export default function EEGEduRaw(channels) {
+import { generateXTics, numOptions } from "../../utils/chartUtils";
+
+const xTics = generateXTics();
+
+export function EEGEduRaw(channels) {
   function renderCharts() {
     return Object.values(channels.data).map((channel, index) => {
       const options = {
@@ -63,5 +76,50 @@ export default function EEGEduRaw(channels) {
         <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
       </Card.Section>
     </Card>
+  );
+}
+
+export function setupRaw(setRawData) {
+  console.log("Subscribing to Raw");
+
+  if (window.multicastRaw$) {
+    window.subscriptionRaw$ = window.multicastRaw$.subscribe(data => {
+      setRawData(rawData => {
+        Object.values(rawData).forEach((channel, index) => {
+          if (index < 4) {
+            channel.datasets[0].data = data.data[index];
+            channel.xLabels = xTics;
+          }
+        });
+
+        return {
+          ch0: rawData.ch0,
+          ch1: rawData.ch1,
+          ch2: rawData.ch2,
+          ch3: rawData.ch3
+        };
+      });
+    });
+
+    window.multicastRaw$.connect();
+    console.log("Subscribed to Raw");
+  }
+}
+
+export function buildPipeRaw() {
+  // Build Pipe Raw
+  window.pipeRaw$ = zipSamples(window.source$.eegReadings).pipe(
+    bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
+    epoch({
+      duration: numOptions.duration,
+      interval: 50,
+      samplingRate: numOptions.srate
+    }),
+    catchError(err => {
+      console.log(err);
+    })
+  );
+  window.multicastRaw$ = window.pipeRaw$.pipe(
+    multicast(() => new Subject())
   );
 }
