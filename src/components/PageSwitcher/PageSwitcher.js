@@ -327,12 +327,6 @@ export function PageSwitcher() {
     setupRaw();
   }
 
-  function handleRawNbChannelsRangeSliderChange(value) {
-    setRawPipeSettings(prevState => ({...prevState, nbChannels: value}));
-    pipeRawData();
-    setupRaw();
-  }
-
   function handleRawCutoffLowRangeSliderChange(value) {
     setRawPipeSettings(prevState => ({...prevState, cutOffLow: value}));
     pipeRawData();
@@ -345,12 +339,6 @@ export function PageSwitcher() {
     setupRaw();
   }
 
-  function handleRawSrateRangeSliderChange(value) {
-    setRawPipeSettings(prevState => ({...prevState, srate: value}));
-    pipeRawData();
-    setupRaw();
-  }
-
   function handleRawDurationRangeSliderChange(value) {
     setRawPipeSettings(prevState => ({...prevState, duration: value}));
     pipeRawData();
@@ -359,12 +347,6 @@ export function PageSwitcher() {
 
   function handleSpectraIntervalRangeSliderChange(value) {
     setSpectraPipeSettings(prevState => ({...prevState, interval: value}));
-    pipeSpectraData();
-    setupSpectra();
-  }
-
-  function handleSpectraNbChannelsRangeSliderChange(value) {
-    setSpectraPipeSettings(prevState => ({...prevState, nbChannels: value}));
     pipeSpectraData();
     setupSpectra();
   }
@@ -399,24 +381,11 @@ export function PageSwitcher() {
     setupSpectra();
   }
 
-  function handleSpectraSrateRangeSliderChange(value) {
-    setSpectraPipeSettings(prevState => ({...prevState, srate: value}));
-    pipeSpectraData();
-    setupSpectra();
-  }
-
   function handleSpectraDurationRangeSliderChange(value) {
     setSpectraPipeSettings(prevState => ({...prevState, duration: value}));
     pipeSpectraData();
     setupSpectra();
   }
-
-
-  // <RangeSlider disabled={status === generalTranslations.connect} min={256} max={256} label={'srate: ' + rawPipeSettings.srate} value={rawPipeSettings.srate} onChange={handleRawSrateRangeSliderChange} />
-  // <RangeSlider disabled={status === generalTranslations.connect} min={4} max={4} label={'nbChannels: ' + rawPipeSettings.nbChannels} value={rawPipeSettings.nbChannels} onChange={handleRawNbChannelsRangeSliderChange} />
-  // <RangeSlider disabled={status === generalTranslations.connect} min={1} label={'nbChannels: ' + spectraPipeSettings.nbChannels} value={spectraPipeSettings.nbChannels} onChange={handleSpectraNbChannelsRangeSliderChange} />
-  // <RangeSlider disabled={status === generalTranslations.connect} min={150} max={600} label={'srate: ' + spectraPipeSettings.srate} value={spectraPipeSettings.srate} onChange={handleSpectraSrateRangeSliderChange} />
-
 
   function pipeSettingsDisplay() {
     switch(selected) {
