@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 
-import { Select, Card, Stack, Button, ButtonGroup } from "@shopify/polaris";
+import { Select, Card, Stack, Button, ButtonGroup, RangeSlider } from "@shopify/polaris";
 import {
   bandpassFilter,
   epoch,
@@ -8,7 +8,7 @@ import {
   sliceFFT,
   powerByBand
 } from "@neurosity/pipes";
-import { Subject } from "rxjs";
+import {Subject} from "rxjs";
 import { catchError, multicast } from "rxjs/operators";
 
 import { mockMuseEEG } from "./utils/mockMuseEEG";
@@ -24,6 +24,25 @@ import { emptyChannelData } from "./components/chartOptions";
 import { generateXTics, numOptions, bandLabels, standardDeviation } from "./utils/chartUtils";
 
 export function PageSwitcher() {
+  const [rawPipeSettings, setRawPipeSettings] = useState({
+    cutOffLow: 2,
+    cutOffHigh: 20,
+    nbChannels: 4,
+    interval: 50,
+    srate: 256,
+    duration: 1024
+  });
+  const [spectraPipeSettings, setSpectraPipeSettings] = useState({
+    cutOffLow: 2,
+    cutOffHigh: 20,
+    nbChannels: 4,
+    interval: 100,
+    bins: 256,
+    sliceFFTLow: 1,
+    sliceFFTHigh: 30,
+    srate: 256,
+    duration: 1024
+  });
   const [rawData, setRawData] = useState(emptyChannelData);
   const [spectraData, setSpectraData] = useState(emptyChannelData);
   const [bandsData, setBandsData] = useState(emptyChannelData);
@@ -48,7 +67,6 @@ export function PageSwitcher() {
     { label: translations.types.spectra, value: translations.types.spectra },
     { label: translations.types.bands, value: translations.types.bands }
   ];
-  const xTics = generateXTics();
 
   function subscriptionSetup(value) {
     switch (value) {
@@ -93,8 +111,8 @@ export function PageSwitcher() {
           Object.values(rawData).forEach((channel, index) => {
             if (index < 4) {
               channel.datasets[0].data = data.data[index];
+              channel.xLabels = generateXTics(rawPipeSettings.srate, rawPipeSettings.duration);
               channel.datasets[0].qual = standardDeviation(data.data[index])
-              channel.xLabels = xTics;
             }
           });
 
@@ -172,6 +190,81 @@ export function PageSwitcher() {
     }
   }
 
+  function pipeRawData() {
+    if (window.subscriptionRaw$) window.subscriptionRaw$.unsubscribe();
+
+    window.pipeRaw$ = null;
+    window.multicastRaw$ = null;
+    window.subscriptionRaw$ = null;
+
+    // Build Pipe Raw
+    window.pipeRaw$ = zipSamples(window.source$.eegReadings).pipe(
+      bandpassFilter({ cutoffFrequencies: [rawPipeSettings.cutOffLow, rawPipeSettings.cutOffHigh], nbChannels: rawPipeSettings.nbChannels }),
+      epoch({
+        duration: rawPipeSettings.duration,
+        interval: rawPipeSettings.interval,
+        samplingRate: rawPipeSettings.srate
+      }),
+      catchError(err => {
+        console.log(err);
+      })
+    );
+    window.multicastRaw$ = window.pipeRaw$.pipe(
+      multicast(() => new Subject())
+    );
+  }
+
+  function pipeSpectraData() {
+    if (window.subscriptionSpectra$) window.subscriptionSpectra$.unsubscribe();
+
+    window.pipeSpectra$ = null;
+    window.multicastSpectra$ = null;
+    window.subscriptionSpectra$ = null;
+
+    window.pipeSpectra$ = zipSamples(window.source$.eegReadings).pipe(
+      bandpassFilter({ cutoffFrequencies: [spectraPipeSettings.cutOffLow, spectraPipeSettings.cutOffHigh], nbChannels: spectraPipeSettings.nbChannels }),
+      epoch({
+        duration: spectraPipeSettings.duration,
+        interval: spectraPipeSettings.interval,
+        samplingRate: spectraPipeSettings.srate
+      }),
+      fft({ bins: spectraPipeSettings.bins }),
+      sliceFFT([spectraPipeSettings.sliceFFTLow, spectraPipeSettings.sliceFFTHigh]),
+      catchError(err => {
+        console.log(err);
+      })
+    );
+
+    window.multicastSpectra$ = window.pipeSpectra$.pipe(
+      multicast(() => new Subject())
+    );
+  }
+
+  function pipeBandsData() {
+    if (window.subscriptionBands$) window.subscriptionBands$.unsubscribe();
+
+    window.pipeBands$ = null;
+    window.multicastBands$ = null;
+    window.subscriptionBands$ = null;
+
+    window.pipeBands$ = zipSamples(window.source$.eegReadings).pipe(
+      bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
+      epoch({
+        duration: numOptions.duration,
+        interval: 100,
+        samplingRate: numOptions.srate
+      }),
+      fft({ bins: 256 }),
+      powerByBand(),
+      catchError(err => {
+        console.log(err);
+      })
+    );
+    window.multicastBands$ = window.pipeBands$.pipe(
+      multicast(() => new Subject())
+    );
+  }
+
   async function connect() {
     try {
       if (window.debugWithMock) {
@@ -204,56 +297,15 @@ export function PageSwitcher() {
         console.log("Starting to build the data pipes from the data source...");
 
         // Build Pipe Raw
-        window.pipeRaw$ = zipSamples(window.source$.eegReadings).pipe(
-          bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
-          epoch({
-            duration: numOptions.duration,
-            interval: 50,
-            samplingRate: numOptions.srate
-          }),
-          catchError(err => {
-            console.log(err);
-          })
-        );
-        window.multicastRaw$ = window.pipeRaw$.pipe(
-          multicast(() => new Subject())
-        );
+        pipeRawData();
 
         // Build Pipe Spectra
-        window.pipeSpectra$ = zipSamples(window.source$.eegReadings).pipe(
-          bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
-          epoch({
-            duration: numOptions.duration,
-            interval: 100,
-            samplingRate: numOptions.srate
-          }),
-          fft({ bins: 256 }),
-          sliceFFT([1, 30]),
-          catchError(err => {
-            console.log(err);
-          })
-        );
-        window.multicastSpectra$ = window.pipeSpectra$.pipe(
-          multicast(() => new Subject())
-        );
+        setupSpectra();
+
+        pipeSpectraData();
 
         // Build Pipe Bands
-        window.pipeBands$ = zipSamples(window.source$.eegReadings).pipe(
-          bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
-          epoch({
-            duration: numOptions.duration,
-            interval: 100,
-            samplingRate: numOptions.srate
-          }),
-          fft({ bins: 256 }),
-          powerByBand(),
-          catchError(err => {
-            console.log(err);
-          })
-        );
-        window.multicastBands$ = window.pipeBands$.pipe(
-          multicast(() => new Subject())
-        );
+        pipeBandsData();
 
         // Build the data source from the data source
         console.log("Finished building the data pipes from the data source");
@@ -268,8 +320,110 @@ export function PageSwitcher() {
 
   function refreshPage(){
     window.location.reload();
-  } 
+  }
 
+  function handleRawIntervalRangeSliderChange(value) {
+    setRawPipeSettings(prevState => ({...prevState, interval: value}));
+    pipeRawData();
+    setupRaw();
+  }
+
+  function handleRawCutoffLowRangeSliderChange(value) {
+    setRawPipeSettings(prevState => ({...prevState, cutOffLow: value}));
+    pipeRawData();
+    setupRaw();
+  }
+
+  function handleRawCutoffHighRangeSliderChange(value) {
+    setRawPipeSettings(prevState => ({...prevState, cutOffHigh: value}));
+    pipeRawData();
+    setupRaw();
+  }
+
+  function handleRawDurationRangeSliderChange(value) {
+    setRawPipeSettings(prevState => ({...prevState, duration: value}));
+    pipeRawData();
+    setupRaw();
+  }
+
+  function handleSpectraIntervalRangeSliderChange(value) {
+    setSpectraPipeSettings(prevState => ({...prevState, interval: value}));
+    pipeSpectraData();
+    setupSpectra();
+  }
+
+  function handleSpectraCutoffLowRangeSliderChange(value) {
+    setSpectraPipeSettings(prevState => ({...prevState, cutOffLow: value}));
+    pipeSpectraData();
+    setupSpectra();
+  }
+
+  function handleSpectraCutoffHighRangeSliderChange(value) {
+    setSpectraPipeSettings(prevState => ({...prevState, cutOffHigh: value}));
+    pipeSpectraData();
+    setupSpectra();
+  }
+
+  // function handleSpectraBinsRangeSliderChange(value) {
+  //   setSpectraPipeSettings(prevState => ({...prevState, bins: value}));
+  //   pipeSpectraData();
+  //   setupSpectra();
+  // }
+
+  function handleSpectraSliceFFTLowRangeSliderChange(value) {
+    setSpectraPipeSettings(prevState => ({...prevState, sliceFFTLow: value}));
+    pipeSpectraData();
+    setupSpectra();
+  }
+
+  function handleSpectraSliceFFTHighRangeSliderChange(value) {
+    setSpectraPipeSettings(prevState => ({...prevState, sliceFFTHigh: value}));
+    pipeSpectraData();
+    setupSpectra();
+  }
+
+  function handleSpectraDurationRangeSliderChange(value) {
+    setSpectraPipeSettings(prevState => ({...prevState, duration: value}));
+    pipeSpectraData();
+    setupSpectra();
+  }
+
+  function pipeSettingsDisplay() {
+    switch(selected) {
+      case translations.types.raw:
+        return(
+          <Card title={'Raw Settings'} sectioned>
+            <RangeSlider disabled={status === generalTranslations.connect} min={128} step={128}  max={4096} label={'Epoch duration (Sampling Points): ' + rawPipeSettings.duration} value={rawPipeSettings.duration} onChange={handleRawDurationRangeSliderChange} />          
+            <RangeSlider disabled={status === generalTranslations.connect} min={10} step={5} max={rawPipeSettings.duration} label={'Sampling points between epochs onsets: ' + rawPipeSettings.interval} value={rawPipeSettings.interval} onChange={handleRawIntervalRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={.01} step={.5} max={rawPipeSettings.cutOffHigh - .5} label={'Cutoff Frequency Low: ' + rawPipeSettings.cutOffLow + ' Hz'} value={rawPipeSettings.cutOffLow} onChange={handleRawCutoffLowRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={rawPipeSettings.cutOffLow + .5} step={.5} max={rawPipeSettings.srate/2} label={'Cutoff Frequency High: ' + rawPipeSettings.cutOffHigh + ' Hz'} value={rawPipeSettings.cutOffHigh} onChange={handleRawCutoffHighRangeSliderChange} />
+          </Card>
+        );
+      case translations.types.spectra:
+        return(
+          <Card title={'Spectra Settings'} sectioned>
+            <RangeSlider disabled={status === generalTranslations.connect} min={128} step={128} max={4096} label={'Epoch duration (Sampling Points): ' + spectraPipeSettings.duration} value={spectraPipeSettings.duration} onChange={handleSpectraDurationRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={10} step={5} max={spectraPipeSettings.duration} label={'Sampling points between epochs onsets: ' + spectraPipeSettings.interval} value={spectraPipeSettings.interval} onChange={handleSpectraIntervalRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={.01} step={.5} max={spectraPipeSettings.cutOffHigh - .5} label={'Cutoff Frequency Low: ' + spectraPipeSettings.cutOffLow + ' Hz'} value={spectraPipeSettings.cutOffLow} onChange={handleSpectraCutoffLowRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={spectraPipeSettings.cutOffLow + .5} step={.5} max={spectraPipeSettings.srate/2} label={'Cutoff Frequency High: ' + spectraPipeSettings.cutOffHigh + ' Hz'} value={spectraPipeSettings.cutOffHigh} onChange={handleSpectraCutoffHighRangeSliderChange} />
+            
+            {/* - comment for now since it causes crash since freq labels are not updated
+            <Select
+              disabled={status === generalTranslations.connect}
+              label={'FTT Bins: ' + spectraPipeSettings.bins}
+              options={['128','256','512','1024','2048','4096']}
+              onChange={handleSpectraBinsRangeSliderChange}
+              value={spectraPipeSettings.bins}
+            />
+            <br />
+          */}
+            <RangeSlider disabled={status === generalTranslations.connect} min={1} max={spectraPipeSettings.sliceFFTHigh - 1} label={'Slice FFT Lower limit: ' + spectraPipeSettings.sliceFFTLow + ' Hz'} value={spectraPipeSettings.sliceFFTLow} onChange={handleSpectraSliceFFTLowRangeSliderChange} />
+            <RangeSlider disabled={status === generalTranslations.connect} min={spectraPipeSettings.sliceFFTLow + 1} label={'Slice FFT Upper limit: ' + spectraPipeSettings.sliceFFTHigh + ' Hz'} value={spectraPipeSettings.sliceFFTHigh} onChange={handleSpectraSliceFFTHighRangeSliderChange} />
+          </Card>
+        );
+      default: console.log('Error rendering settings display');
+    }
+  }
   return (
     <React.Fragment>
       <Card sectioned>
@@ -294,13 +448,13 @@ export function PageSwitcher() {
             >
               {status === generalTranslations.connect ? generalTranslations.connectMock : status}
             </Button>
-            <Button 
+            <Button
               destructive
               onClick={refreshPage}
               primary={status !== generalTranslations.connect}
               disabled={status === generalTranslations.connect}
-            > 
-              {generalTranslations.disconnect}  
+            >
+              {generalTranslations.disconnect}
             </Button>
           </ButtonGroup>
         </Stack>
@@ -313,7 +467,7 @@ export function PageSwitcher() {
           value={selected}
         />
       </Card>
-
+      {pipeSettingsDisplay()}
       {renderCharts()}
     </React.Fragment>
   );
