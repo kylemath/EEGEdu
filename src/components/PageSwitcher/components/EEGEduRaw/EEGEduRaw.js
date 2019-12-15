@@ -42,16 +42,29 @@ export function EEGEduRaw(channels) {
               scaleLabel: {
                 ...generalOptions.scales.yAxes[0].scaleLabel,
                 labelString: specificTranslations.ylabel
+              },
+              ticks: {
+                max: 300,
+                min: -300
               }
             }
           ]
+        },
+        elements: {
+          line: {
+            borderColor: 'rgba(' + channel.datasets[0].qual*10 + ', 128, 128)',
+            fill: false
+          },
+          point: {
+            radius: 0
+          }
         },
         animation: {
           duration: 0
         },
         title: {
           ...generalOptions.title,
-          text: generalTranslations.channel + channelNames[index]
+          text: generalTranslations.channel + channelNames[index] + ' --- SD: ' + channel.datasets[0].qual 
         }
       };
 
