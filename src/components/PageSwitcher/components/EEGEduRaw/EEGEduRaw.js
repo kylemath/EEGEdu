@@ -39,7 +39,7 @@ export default function EEGEduRaw(channels) {
         },
         elements: {
           line: {
-            borderColor: 'rgba(' + channel.datasets[0].qual*10 + ', 128, ' + channel.datasets[0].qual*10  +')',
+            borderColor: 'rgba(' + channel.datasets[0].qual*10 + ', 128, 128)',
             fill: false
           },
           point: {
