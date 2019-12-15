@@ -37,6 +37,11 @@ export default function EEGEduSpectra(channels) {
             }
           ]
         },
+        elements: {
+          point: {
+            radius: 3
+          }
+        },
         title: {
           ...generalOptions.title,
           text: generalTranslations.channel + channelNames[index]
