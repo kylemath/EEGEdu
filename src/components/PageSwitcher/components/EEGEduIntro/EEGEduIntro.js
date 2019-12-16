@@ -2,9 +2,8 @@ import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 import { Subject } from "rxjs";
 
-import { TextContainer, Card, Stack, RangeSlider } from "@shopify/polaris";
+import { TextContainer, Card, Stack } from "@shopify/polaris";
 
-import { channelNames } from "muse-js";
 import { Line } from "react-chartjs-2";
 
 import { zipSamples } from "muse-js";
@@ -16,31 +15,31 @@ import {
 
 import { chartStyles, generalOptions } from "../chartOptions";
 
-import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 
 import { generateXTics, standardDeviation } from "../../utils/chartUtils";
 
 export function getSettings () {
   return {
+    name: "Intro",
     cutOffLow: 2,
     cutOffHigh: 20,
     nbChannels: 4,
-    interval: 50,
+    interval: 1,
     srate: 256,
     duration: 1024
   }
 };
 
 export function buildPipe(Settings) {
-  if (window.subscriptionRaw$) window.subscriptionRaw$.unsubscribe();
+  if (window.subscriptionIntro$) window.subscriptionIntro$.unsubscribe();
 
-  window.pipeRaw$ = null;
-  window.multicastRaw$ = null;
-  window.subscriptionRaw$ = null;
+  window.pipeIntro$ = null;
+  window.multicastIntro$ = null;
+  window.subscriptionIntro$ = null;
 
-  // Build Pipe Raw
-  window.pipeRaw$ = zipSamples(window.source$.eegReadings).pipe(
+  // Build Pipe
+  window.pipeIntro$ = zipSamples(window.source$.eegReadings).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
       nbChannels: Settings.nbChannels }),
@@ -53,19 +52,19 @@ export function buildPipe(Settings) {
       console.log(err);
     })
   );
-  window.multicastRaw$ = window.pipeRaw$.pipe(
+  window.multicastIntro$ = window.pipeIntro$.pipe(
     multicast(() => new Subject())
   );
 }
 
 export function setup(setData, Settings) {
-  console.log("Subscribing to Raw");
+  console.log("Subscribing to " + Settings.name);
 
-  if (window.multicastRaw$) {
-    window.subscriptionRaw$ = window.multicastRaw$.subscribe(data => {
-      setData(rawData => {
-        Object.values(rawData).forEach((channel, index) => {
-          if (index < 4) {
+  if (window.multicastIntro$) {
+    window.subscriptionIntro$ = window.multicastIntro$.subscribe(data => {
+      setData(introData => {
+        Object.values(introData).forEach((channel, index) => {
+          if (index === 0) {
             channel.datasets[0].data = data.data[index];
             channel.xLabels = generateXTics(Settings.srate, Settings.duration);
             channel.datasets[0].qual = standardDeviation(data.data[index])          
@@ -73,16 +72,16 @@ export function setup(setData, Settings) {
         });
 
         return {
-          ch0: rawData.ch0,
-          ch1: rawData.ch1,
-          ch2: rawData.ch2,
-          ch3: rawData.ch3
+          ch0: introData.ch0,
+          ch1: introData.ch1,
+          ch2: introData.ch2,
+          ch3: introData.ch3
         };
       });
     });
 
-    window.multicastRaw$.connect();
-    console.log("Subscribed to Raw");
+    window.multicastIntro$.connect();
+    console.log("Subscribed to " + Settings.name);
   }
 }
 
@@ -127,15 +126,19 @@ export function EEGEdu(channels) {
         },
         title: {
           ...generalOptions.title,
-          text: generalTranslations.channel + channelNames[index] + ' --- SD: ' + channel.datasets[0].qual 
+          text: 'Voltage signal over time'
         }
       };
 
-      return (
-        <Card.Section key={"Card_" + index}>
-          <Line key={"Line_" + index} data={channel} options={options} />
-        </Card.Section>
-      );
+      if (index === 0) {
+        return (
+          <Card.Section key={"Card_" + index}>
+            <Line key={"Line_" + index} data={channel} options={options} />
+          </Card.Section>
+        );
+      } else {
+        return null
+      };
     });
   }
 
@@ -156,63 +159,3 @@ export function EEGEdu(channels) {
 }
 
   
-export function renderSliders(setData, setSettings, status, Settings) {
-
-  function handleIntervalRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, interval: value}));
-    buildPipe(Settings);
-    setup(setData, Settings);
-  }
-
-  function handleCutoffLowRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, cutOffLow: value}));
-    buildPipe(Settings);
-    setup(setData, Settings);
-  }
-
-  function handleCutoffHighRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, cutOffHigh: value}));
-    buildPipe(Settings);
-    setup(setData, Settings);
-  }
-
-  function handleDurationRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, duration: value}));
-    buildPipe(Settings);
-    setup(setData, Settings);
-  }
-
-
-  return (
-    <React.Fragment>
-      <RangeSlider 
-        disabled={status === generalTranslations.connect} 
-        min={128} step={128} max={4096}
-        label={'Epoch duration (Sampling Points): ' + Settings.duration} 
-        value={Settings.duration} 
-        onChange={handleDurationRangeSliderChange} 
-      />          
-      <RangeSlider 
-        disabled={status === generalTranslations.connect} 
-        min={10} step={5} max={Settings.duration}
-        label={'Sampling points between epochs onsets: ' + Settings.interval} 
-        value={Settings.interval} 
-        onChange={handleIntervalRangeSliderChange} 
-      />
-      <RangeSlider 
-        disabled={status === generalTranslations.connect} 
-        min={.01} step={.5} max={Settings.cutOffHigh - .5}
-        label={'Cutoff Frequency Low: ' + Settings.cutOffLow + ' Hz'} 
-        value={Settings.cutOffLow} 
-        onChange={handleCutoffLowRangeSliderChange} 
-      />
-      <RangeSlider 
-        disabled={status === generalTranslations.connect} 
-        min={Settings.cutOffLow + .5} step={.5} max={Settings.srate/2}
-        label={'Cutoff Frequency High: ' + Settings.cutOffHigh + ' Hz'} 
-        value={Settings.cutOffHigh} 
-        onChange={handleCutoffHighRangeSliderChange} 
-      />
-    </React.Fragment>
-  )
-}

@@ -1,6 +1,7 @@
 {
-  "title": "Choose your data type",
+  "title": "Choose your Module",
   "types": {
+  	"intro": "Intro",
     "raw": "Raw",
     "spectra": "Spectra",
     "bands": "Bands"
