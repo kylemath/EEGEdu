@@ -21,7 +21,7 @@ import { chartStyles, generalOptions } from "../chartOptions";
 import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 
-export function getSpectraSettings () {
+export function getSettings() {
   return {
     cutOffLow: 2,
     cutOffHigh: 20,
@@ -30,11 +30,12 @@ export function getSpectraSettings () {
     bins: 256,
     sliceFFTLow: 1,
     sliceFFTHigh: 30,
-    duration: 1024
+    duration: 1024,
+    srate: 256
   }
 };
 
-export function buildPipeSpectra (spectraPipeSettings) {
+export function buildPipe(Settings) {
   if (window.subscriptionSpectra$) window.subscriptionSpectra$.unsubscribe();
 
     window.pipeSpectra$ = null;
@@ -42,14 +43,16 @@ export function buildPipeSpectra (spectraPipeSettings) {
     window.subscriptionSpectra$ = null;
 
     window.pipeSpectra$ = zipSamples(window.source$.eegReadings).pipe(
-      bandpassFilter({ cutoffFrequencies: [spectraPipeSettings.cutOffLow, spectraPipeSettings.cutOffHigh], nbChannels: spectraPipeSettings.nbChannels }),
+      bandpassFilter({ 
+        cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
+        nbChannels: Settings.nbChannels }),
       epoch({
-        duration: spectraPipeSettings.duration,
-        interval: spectraPipeSettings.interval,
-        samplingRate: spectraPipeSettings.srate
+        duration: Settings.duration,
+        interval: Settings.interval,
+        samplingRate: Settings.srate
       }),
-      fft({ bins: spectraPipeSettings.bins }),
-      sliceFFT([spectraPipeSettings.sliceFFTLow, spectraPipeSettings.sliceFFTHigh]),
+      fft({ bins: Settings.bins }),
+      sliceFFT([Settings.sliceFFTLow, Settings.sliceFFTHigh]),
       catchError(err => {
         console.log(err);
       })
@@ -60,12 +63,12 @@ export function buildPipeSpectra (spectraPipeSettings) {
   );
 }
 
-export function setupSpectra(setSpectraData) {
+export function setup(setData) {
   console.log("Subscribing to Spectra");
 
   if (window.multicastSpectra$) {
     window.subscriptionSpectra$ = window.multicastSpectra$.subscribe(data => {
-      setSpectraData(spectraData => {
+      setData(spectraData => {
         Object.values(spectraData).forEach((channel, index) => {
           if (index < 4) {
             channel.datasets[0].data = data.psd[index];
@@ -87,7 +90,7 @@ export function setupSpectra(setSpectraData) {
   }
 }
 
-export function EEGEduSpectra(channels) {
+export function EEGEdu(channels) {
   function renderCharts() {
     return Object.values(channels.data).map((channel, index) => {
       const options = {
@@ -149,81 +152,81 @@ export function EEGEduSpectra(channels) {
   );
 }
 
-export function renderSlidersSpectra(setSpectraData, setSpectraPipeSettings, status, spectraPipeSettings) {
+export function renderSliders(setData, setSettings, status, Settings) {
 
-  function handleSpectraIntervalRangeSliderChange(value) {
-    setSpectraPipeSettings(prevState => ({...prevState, interval: value}));
-    buildPipeSpectra(spectraPipeSettings);
-    setupSpectra(setSpectraData);
+  function handleIntervalRangeSliderChange(value) {
+    setSettings(prevState => ({...prevState, interval: value}));
+    buildPipe(Settings);
+    setup(setData);
   }
 
-  function handleSpectraCutoffLowRangeSliderChange(value) {
-    setSpectraPipeSettings(prevState => ({...prevState, cutOffLow: value}));
-    buildPipeSpectra(spectraPipeSettings);
-    setupSpectra(setSpectraData);
+  function handleCutoffLowRangeSliderChange(value) {
+    setSettings(prevState => ({...prevState, cutOffLow: value}));
+    buildPipe(Settings);
+    setup(setData);
   }
 
-  function handleSpectraCutoffHighRangeSliderChange(value) {
-    setSpectraPipeSettings(prevState => ({...prevState, cutOffHigh: value}));
-    buildPipeSpectra(spectraPipeSettings);
-    setupSpectra(setSpectraData);
+  function handleCutoffHighRangeSliderChange(value) {
+    setSettings(prevState => ({...prevState, cutOffHigh: value}));
+    buildPipe(Settings);
+    setup(setData);
   }
 
-  function handleSpectraSliceFFTLowRangeSliderChange(value) {
-    setSpectraPipeSettings(prevState => ({...prevState, sliceFFTLow: value}));
-    buildPipeSpectra(spectraPipeSettings);
-    setupSpectra(setSpectraData);
+  function handleSliceFFTLowRangeSliderChange(value) {
+    setSettings(prevState => ({...prevState, sliceFFTLow: value}));
+    buildPipe(Settings);
+    setup(setData);
   }
 
-  function handleSpectraSliceFFTHighRangeSliderChange(value) {
-    setSpectraPipeSettings(prevState => ({...prevState, sliceFFTHigh: value}));
-    buildPipeSpectra(spectraPipeSettings);
-    setupSpectra(setSpectraData);
+  function handleSliceFFTHighRangeSliderChange(value) {
+    setSettings(prevState => ({...prevState, sliceFFTHigh: value}));
+    buildPipe(Settings);
+    setup(setData);
   }
 
-  function handleSpectraDurationRangeSliderChange(value) {
-    setSpectraPipeSettings(prevState => ({...prevState, duration: value}));
-    buildPipeSpectra(spectraPipeSettings);
-    setupSpectra(setSpectraData);
+  function handleDurationRangeSliderChange(value) {
+    setSettings(prevState => ({...prevState, duration: value}));
+    buildPipe(Settings);
+    setup(setData);
   }
 
   return (
     <React.Fragment>
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        label={'Epoch duration (Sampling Points): ' + spectraPipeSettings.duration} 
-        value={spectraPipeSettings.duration} 
-        onChange={handleSpectraDurationRangeSliderChange} 
+        label={'Epoch duration (Sampling Points): ' + Settings.duration} 
+        value={Settings.duration} 
+        onChange={handleDurationRangeSliderChange} 
       />
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        label={'Sampling points between epochs onsets: ' + spectraPipeSettings.interval} 
-        value={spectraPipeSettings.interval} 
-        onChange={handleSpectraIntervalRangeSliderChange} 
+        label={'Sampling points between epochs onsets: ' + Settings.interval} 
+        value={Settings.interval} 
+        onChange={handleIntervalRangeSliderChange} 
       />
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        label={'Cutoff Frequency Low: ' + spectraPipeSettings.cutOffLow + ' Hz'} 
-        value={spectraPipeSettings.cutOffLow} 
-        onChange={handleSpectraCutoffLowRangeSliderChange} 
+        label={'Cutoff Frequency Low: ' + Settings.cutOffLow + ' Hz'} 
+        value={Settings.cutOffLow} 
+        onChange={handleCutoffLowRangeSliderChange} 
       />
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        label={'Cutoff Frequency High: ' + spectraPipeSettings.cutOffHigh + ' Hz'} 
-        value={spectraPipeSettings.cutOffHigh} 
-        onChange={handleSpectraCutoffHighRangeSliderChange} 
+        label={'Cutoff Frequency High: ' + Settings.cutOffHigh + ' Hz'} 
+        value={Settings.cutOffHigh} 
+        onChange={handleCutoffHighRangeSliderChange} 
       />
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        label={'Slice FFT Lower limit: ' + spectraPipeSettings.sliceFFTLow + ' Hz'} 
-        value={spectraPipeSettings.sliceFFTLow} 
-        onChange={handleSpectraSliceFFTLowRangeSliderChange} 
+        label={'Slice FFT Lower limit: ' + Settings.sliceFFTLow + ' Hz'} 
+        value={Settings.sliceFFTLow} 
+        onChange={handleSliceFFTLowRangeSliderChange} 
       />
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        label={'Slice FFT Upper limit: ' + spectraPipeSettings.sliceFFTHigh + ' Hz'} 
-        value={spectraPipeSettings.sliceFFTHigh} 
-        onChange={handleSpectraSliceFFTHighRangeSliderChange} 
+        label={'Slice FFT Upper limit: ' + Settings.sliceFFTHigh + ' Hz'} 
+        value={Settings.sliceFFTHigh} 
+        onChange={handleSliceFFTHighRangeSliderChange} 
       />
     </React.Fragment>
   )

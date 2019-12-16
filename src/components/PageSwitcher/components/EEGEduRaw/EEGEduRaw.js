@@ -21,7 +21,7 @@ import * as specificTranslations from "./translations/en";
 
 import { generateXTics, standardDeviation } from "../../utils/chartUtils";
 
-export function getRawSettings () {
+export function getSettings () {
   return {
     cutOffLow: 2,
     cutOffHigh: 20,
@@ -32,7 +32,7 @@ export function getRawSettings () {
   }
 };
 
-export function buildPipeRaw(rawPipeSettings) {
+export function buildPipe(Settings) {
   if (window.subscriptionRaw$) window.subscriptionRaw$.unsubscribe();
 
   window.pipeRaw$ = null;
@@ -41,11 +41,13 @@ export function buildPipeRaw(rawPipeSettings) {
 
   // Build Pipe Raw
   window.pipeRaw$ = zipSamples(window.source$.eegReadings).pipe(
-    bandpassFilter({ cutoffFrequencies: [rawPipeSettings.cutOffLow, rawPipeSettings.cutOffHigh], nbChannels: rawPipeSettings.nbChannels }),
+    bandpassFilter({ 
+      cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
+      nbChannels: Settings.nbChannels }),
     epoch({
-      duration: rawPipeSettings.duration,
-      interval: rawPipeSettings.interval,
-      samplingRate: rawPipeSettings.srate
+      duration: Settings.duration,
+      interval: Settings.interval,
+      samplingRate: Settings.srate
     }),
     catchError(err => {
       console.log(err);
@@ -56,16 +58,16 @@ export function buildPipeRaw(rawPipeSettings) {
   );
 }
 
-export function setupRaw(setRawData, rawPipeSettings) {
+export function setup(setData, Settings) {
   console.log("Subscribing to Raw");
 
   if (window.multicastRaw$) {
     window.subscriptionRaw$ = window.multicastRaw$.subscribe(data => {
-      setRawData(rawData => {
+      setData(rawData => {
         Object.values(rawData).forEach((channel, index) => {
           if (index < 4) {
             channel.datasets[0].data = data.data[index];
-            channel.xLabels = generateXTics(rawPipeSettings.srate, rawPipeSettings.duration);
+            channel.xLabels = generateXTics(Settings.srate, Settings.duration);
             channel.datasets[0].qual = standardDeviation(data.data[index])          
           }
         });
@@ -84,7 +86,7 @@ export function setupRaw(setRawData, rawPipeSettings) {
   }
 }
 
-export function EEGEduRaw(channels) {
+export function EEGEdu(channels) {
   function renderCharts() {
     return Object.values(channels.data).map((channel, index) => {
       const options = {
@@ -154,30 +156,30 @@ export function EEGEduRaw(channels) {
 }
 
   
-export function renderSlidersRaw(setRawData, setRawPipeSettings, status, rawPipeSettings) {
+export function renderSliders(setData, setSettings, status, Settings) {
 
-  function handleRawIntervalRangeSliderChange(value) {
-    setRawPipeSettings(prevState => ({...prevState, interval: value}));
-    buildPipeRaw(rawPipeSettings);
-    setupRaw(setRawData, rawPipeSettings);
+  function handleIntervalRangeSliderChange(value) {
+    setSettings(prevState => ({...prevState, interval: value}));
+    buildPipe(Settings);
+    setup(setData, Settings);
   }
 
-  function handleRawCutoffLowRangeSliderChange(value) {
-    setRawPipeSettings(prevState => ({...prevState, cutOffLow: value}));
-    buildPipeRaw(rawPipeSettings);
-    setupRaw(setRawData, rawPipeSettings);
+  function handleCutoffLowRangeSliderChange(value) {
+    setSettings(prevState => ({...prevState, cutOffLow: value}));
+    buildPipe(Settings);
+    setup(setData, Settings);
   }
 
-  function handleRawCutoffHighRangeSliderChange(value) {
-    setRawPipeSettings(prevState => ({...prevState, cutOffHigh: value}));
-    buildPipeRaw(rawPipeSettings);
-    setupRaw(setRawData, rawPipeSettings);
+  function handleCutoffHighRangeSliderChange(value) {
+    setSettings(prevState => ({...prevState, cutOffHigh: value}));
+    buildPipe(Settings);
+    setup(setData, Settings);
   }
 
-  function handleRawDurationRangeSliderChange(value) {
-    setRawPipeSettings(prevState => ({...prevState, duration: value}));
-    buildPipeRaw(rawPipeSettings);
-    setupRaw(setRawData, rawPipeSettings);
+  function handleDurationRangeSliderChange(value) {
+    setSettings(prevState => ({...prevState, duration: value}));
+    buildPipe(Settings);
+    setup(setData, Settings);
   }
 
 
@@ -185,28 +187,28 @@ export function renderSlidersRaw(setRawData, setRawPipeSettings, status, rawPipe
     <React.Fragment>
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        label={'Epoch duration (Sampling Points): ' + rawPipeSettings.duration} 
-        value={rawPipeSettings.duration} 
-        onChange={handleRawDurationRangeSliderChange} 
+        label={'Epoch duration (Sampling Points): ' + Settings.duration} 
+        value={Settings.duration} 
+        onChange={handleDurationRangeSliderChange} 
       />          
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        label={'Sampling points between epochs onsets: ' + rawPipeSettings.interval} 
-        value={rawPipeSettings.interval} 
-        onChange={handleRawIntervalRangeSliderChange} 
+        label={'Sampling points between epochs onsets: ' + Settings.interval} 
+        value={Settings.interval} 
+        onChange={handleIntervalRangeSliderChange} 
       />
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        min={1} step={.5} max={rawPipeSettings.cutOffHigh - .5}
-        label={'Cutoff Frequency Low: ' + rawPipeSettings.cutOffLow + ' Hz'} 
-        value={rawPipeSettings.cutOffLow} 
-        onChange={handleRawCutoffLowRangeSliderChange} 
+        min={1} step={.5} max={Settings.cutOffHigh - .5}
+        label={'Cutoff Frequency Low: ' + Settings.cutOffLow + ' Hz'} 
+        value={Settings.cutOffLow} 
+        onChange={handleCutoffLowRangeSliderChange} 
       />
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        label={'Cutoff Frequency High: ' + rawPipeSettings.cutOffHigh + ' Hz'} 
-        value={rawPipeSettings.cutOffHigh} 
-        onChange={handleRawCutoffHighRangeSliderChange} 
+        label={'Cutoff Frequency High: ' + Settings.cutOffHigh + ' Hz'} 
+        value={Settings.cutOffHigh} 
+        onChange={handleCutoffHighRangeSliderChange} 
       />
     </React.Fragment>
   )
