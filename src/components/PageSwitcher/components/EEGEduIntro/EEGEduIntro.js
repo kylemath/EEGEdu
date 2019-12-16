@@ -144,55 +144,81 @@ export function EEGEdu(channels) {
 
   return (
     <React.Fragment>
+
       <Card title={specificTranslations.title}>
         <Card.Section>
-          <Stack>
-            <TextContainer>
-              <p>{specificTranslations.description}</p>
-            </TextContainer>
-          </Stack>
+          <p>
+            {"Below you are now looking at an live measurement of the electrical potential created by your brain. "}
+            {"Just like a AA battery stores 1.5 volts of electrical potential energy accross its positive and negative leads, "}
+            {"Two points on your head also have a much smaller electrical potential when measured accross them. "}
+            {"Here we are watching that live, with the voltage on the vertical axis (\u03BCV are microvolts, 1 million microvolts are in a volt). "}
+            {"Time is shown in milleseconds along the horizontal axis, with the right side of the chart being the current moment:"}
+          </p>       
+          <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
+          <p>
+            {"Read on to find out where this electrical potential comes from and what it means. "}
+          </p>  
         </Card.Section>
+      </Card>
+
+      <Card title={"Neurons"}>
         <Card.Section>
+          <p>
+            {"The brain is made up of cells called neurons. "}
+            {"Neurons communicate using chemical messages that change the electrical potential of the cells they connect with. "}
+            {"This change in electrical potential, if large enough, can make those cells send messages as well, and so on. "}
+            {"For example, an excitatory neuron releases Glutamate on another neuron, which lets in positively charged Sodium ions into the cell and make its interior less negative compared to outside. "}
+            {"These changes in electrical potential create small electrical fields, which act as tiny electrical dipoles like batteries. "}
+          </p>
           <img 
-            src={ require("./assets/electrodelocations.png")} 
-            alt="Electrode Map"
+            src={ require("./assets/neuronarrow.png")} 
+            alt="Single Neuron"
             height="200"
-            width="200"
-          >
-          </img>
+          ></img>
+          <p>
+            {"The electrical potential accross the cell membrane is small, around -70 mV at rest, and it changes around -20 mV during electrical changes in the cell. "}
+            {"However, iff a large group of these tiny dipoles are aligned in space and their electrical potentials change at the same time, "}
+            {"they can create electrical potentials which are large enough to conduct through the brain tissue and be measurable comparing different points on the head. "}
+          </p>         
+          <img 
+            src={ require("./assets/neuronmultiarrow.png")} 
+            alt="Single Neuron"
+            height="200"
+          ></img> 
         </Card.Section>
+      </Card>
+
+      <Card title={"Raw Data"}>
         <Card.Section>
           <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
         </Card.Section>
       </Card>
+
       <Card title={"Credits"}>
         <Card.Section>
-          <Stack>
-            <TextContainer>
-              <p>
-                {"EEGEdu is an open source collaborative project with NeurotechX's "}
-                <a href="http://learn.neurotechedu.com/">NeurotechEdu. </a>
-              </p>
-              <p>
-                {"This is also created in collaboration with "}
-                <a href="https://choosemuse.com/muse-research/">Interaxon. </a>
-              </p>
-              <p>
-                {"This online tutorial is made using a Muse connection by Web Bluetooth using "}
-                <a href="https://github.com/urish/muse-js">muse-js </a>
-                {"by Uri Shaked who has an excellent introduction to EEG "}
-                <a href="https://medium.com/neurotechx/a-techys-introduction-to-neuroscience-3f492df4d3bf">A Techy's Introduction to Neuroscience. </a>
-              </p>
-              <p>
-                {"The data is processed using Neurosity's "}
-                <a href="https://github.com/neurosity/eeg-pipes">eeg-pipes </a>
-                {"by Alex Castillo who also has an excellent post about EEG and the web called "}
-                <a href="https://medium.com/@castillo.io/muse-2016-headband-web-bluetooth-11ddcfa74c83">Muse 2016 Headband + Web Bluetooth.</a>
-              </p>
-            </TextContainer>
-          </Stack>
+          <p>
+            {"EEGEdu is an open source collaborative project with NeurotechX's "}
+            <a href="http://learn.neurotechedu.com/">NeurotechEdu. </a>
+          </p>
+          <p>
+            {"This is also created in collaboration with "}
+            <a href="https://choosemuse.com/muse-research/">Interaxon. </a>
+          </p>
+          <p>
+            {"This online tutorial is made using a Muse connection by Web Bluetooth using "}
+            <a href="https://github.com/urish/muse-js">muse-js </a>
+            {"by Uri Shaked who has an excellent introduction to EEG "}
+            <a href="https://medium.com/neurotechx/a-techys-introduction-to-neuroscience-3f492df4d3bf">A Techy's Introduction to Neuroscience. </a>
+          </p>
+          <p>
+            {"The data is processed using Neurosity's "}
+            <a href="https://github.com/neurosity/eeg-pipes">eeg-pipes </a>
+            {"by Alex Castillo who also has an excellent post about EEG and the web called "}
+            <a href="https://medium.com/@castillo.io/muse-2016-headband-web-bluetooth-11ddcfa74c83">Muse 2016 Headband + Web Bluetooth.</a>
+          </p>
         </Card.Section>
       </Card>
+
     </React.Fragment>
   );
 }
