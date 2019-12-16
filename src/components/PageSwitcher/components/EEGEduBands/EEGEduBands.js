@@ -20,20 +20,21 @@ import { chartStyles, generalOptions } from "../chartOptions";
 
 import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
-import { numOptions, bandLabels } from "../../utils/chartUtils";
+import { bandLabels } from "../../utils/chartUtils";
 
-export function getBandsSettings () {
+export function getSettings () {
   return {
     cutOffLow: 2,
     cutOffHigh: 20,
     nbChannels: 4,
     interval: 100,
     bins: 256,
-    duration: 1024
+    duration: 1024,
+    srate: 256
   }
 };
 
-export function buildPipeBands(bandsPipeSettings) {
+export function buildPipe(Settings) {
   if (window.subscriptionBands$) window.subscriptionBands$.unsubscribe();
 
     window.pipeBands$ = null;
@@ -41,13 +42,15 @@ export function buildPipeBands(bandsPipeSettings) {
     window.subscriptionBands$ = null;
 
     window.pipeBands$ = zipSamples(window.source$.eegReadings).pipe(
-      bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
+      bandpassFilter({ 
+        cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
+        nbChannels: Settings.nbChannels }),
       epoch({
-        duration: numOptions.duration,
-        interval: 100,
-        samplingRate: numOptions.srate
+        duration: Settings.duration,
+        interval: Settings.interval,
+        samplingRate: Settings.srate
       }),
-      fft({ bins: 256 }),
+      fft({ bins: Settings.bins }),
       powerByBand(),
       catchError(err => {
         console.log(err);
@@ -58,12 +61,12 @@ export function buildPipeBands(bandsPipeSettings) {
   );
 }
 
-export function setupBands(setBandsData) {
+export function setup(setData) {
   console.log("Subscribing to Bands");
 
   if (window.multicastBands$) {
     window.subscriptionBands$ = window.multicastBands$.subscribe(data => {
-      setBandsData(bandsData => {
+      setData(bandsData => {
         Object.values(bandsData).forEach((channel, index) => {
           if (index < 4) {
             channel.datasets[0].data = [
@@ -91,7 +94,7 @@ export function setupBands(setBandsData) {
   }
 }
 
-export function EEGEduBands(channels) {
+export function EEGEdu(channels) {
   function renderCharts() {
     return Object.values(channels.data).map((channel, index) => {
       const options = {
@@ -149,57 +152,57 @@ export function EEGEduBands(channels) {
 }
 
 
-export function renderSlidersBands(setBandsData, setBandsPipeSettings, status, bandsPipeSettings) {
+export function renderSliders(setData, setSettings, status, Settings) {
 
-  function handleBandsIntervalRangeSliderChange(value) {
-    setBandsPipeSettings(prevState => ({...prevState, interval: value}));
-    buildPipeBands(bandsPipeSettings);
-    setupBands(setBandsData);
+  function handleIntervalRangeSliderChange(value) {
+    setSettings(prevState => ({...prevState, interval: value}));
+    buildPipe(Settings);
+    setup(setData);
   }
 
-  function handleBandsCutoffLowRangeSliderChange(value) {
-    setBandsPipeSettings(prevState => ({...prevState, cutOffLow: value}));
-    buildPipeBands(bandsPipeSettings);
-    setupBands(setBandsData);
+  function handleCutoffLowRangeSliderChange(value) {
+    setSettings(prevState => ({...prevState, cutOffLow: value}));
+    buildPipe(Settings);
+    setup(setData);
   }
 
-  function handleBandsCutoffHighRangeSliderChange(value) {
-    setBandsPipeSettings(prevState => ({...prevState, cutOffHigh: value}));
-    buildPipeBands(bandsPipeSettings);
-    setupBands(setBandsData);
+  function handleCutoffHighRangeSliderChange(value) {
+    setSettings(prevState => ({...prevState, cutOffHigh: value}));
+    buildPipe(Settings);
+    setup(setData);
   }
 
-  function handleBandsDurationRangeSliderChange(value) {
-    setBandsPipeSettings(prevState => ({...prevState, duration: value}));
-    buildPipeBands(bandsPipeSettings);
-    setupBands(setBandsData);
+  function handleDurationRangeSliderChange(value) {
+    setSettings(prevState => ({...prevState, duration: value}));
+    buildPipe(Settings);
+    setup(setData);
   }
 
   return (
     <React.Fragment>
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        label={'Epoch duration (Sampling Points): ' + bandsPipeSettings.duration} 
-        value={bandsPipeSettings.duration} 
-        onChange={handleBandsDurationRangeSliderChange} 
+        label={'Epoch duration (Sampling Points): ' + Settings.duration} 
+        value={Settings.duration} 
+        onChange={handleDurationRangeSliderChange} 
       />
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        label={'Sampling points between epochs onsets: ' + bandsPipeSettings.interval} 
-        value={bandsPipeSettings.interval} 
-        onChange={handleBandsIntervalRangeSliderChange} 
+        label={'Sampling points between epochs onsets: ' + Settings.interval} 
+        value={Settings.interval} 
+        onChange={handleIntervalRangeSliderChange} 
       />
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        label={'Cutoff Frequency Low: ' + bandsPipeSettings.cutOffLow + ' Hz'} 
-        value={bandsPipeSettings.cutOffLow} 
-        onChange={handleBandsCutoffLowRangeSliderChange} 
+        label={'Cutoff Frequency Low: ' + Settings.cutOffLow + ' Hz'} 
+        value={Settings.cutOffLow} 
+        onChange={handleCutoffLowRangeSliderChange} 
       />
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        label={'Cutoff Frequency High: ' + bandsPipeSettings.cutOffHigh + ' Hz'} 
-        value={bandsPipeSettings.cutOffHigh} 
-        onChange={handleBandsCutoffHighRangeSliderChange} 
+        label={'Cutoff Frequency High: ' + Settings.cutOffHigh + ' Hz'} 
+        value={Settings.cutOffHigh} 
+        onChange={handleCutoffHighRangeSliderChange} 
       />
     </React.Fragment>
   )

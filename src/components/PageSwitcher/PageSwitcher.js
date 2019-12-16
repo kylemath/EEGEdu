@@ -19,9 +19,9 @@ export function PageSwitcher() {
   const [spectraData, setSpectraData] = useState(emptyChannelData);
   const [bandsData, setBandsData] = useState(emptyChannelData);
 
-  const [spectraPipeSettings, setSpectraPipeSettings] = useState(Spectra.getSpectraSettings);
-  const [rawPipeSettings, setRawPipeSettings] = useState(Raw.getRawSettings); 
-  const [bandsPipeSettings, setBandsPipeSettings] = useState(Bands.getBandsSettings);
+  const [spectraSettings, setSpectraSettings] = useState(Spectra.getSettings);
+  const [rawSettings, setRawSettings] = useState(Raw.getSettings); 
+  const [bandsSettings, setBandsSettings] = useState(Bands.getSettings);
 
   const [status, setStatus] = useState(generalTranslations.connect);
   const [selected, setSelected] = useState(translations.types.raw);
@@ -48,13 +48,13 @@ export function PageSwitcher() {
   function subscriptionSetup(value) {
     switch (value) {
       case translations.types.raw:
-        Raw.setupRaw(setRawData, rawPipeSettings);
+        Raw.setup(setRawData, rawSettings);
         break;
       case translations.types.spectra:
-        Spectra.setupSpectra(setSpectraData);
+        Spectra.setup(setSpectraData);
         break;
       case translations.types.bands:
-        Bands.setupBands(setBandsData);
+        Bands.setup(setBandsData);
         break;
       default:
         console.log(
@@ -94,9 +94,9 @@ export function PageSwitcher() {
         console.log("Connected to data source observable");
         console.log("Starting to build the data pipes from the data source...");
 
-        Raw.buildPipeRaw(rawPipeSettings);
-        Spectra.buildPipeSpectra(spectraPipeSettings);
-        Bands.buildPipeBands();
+        Raw.buildPipe(rawSettings);
+        Spectra.buildPipe(spectraSettings);
+        Bands.buildPipe(bandsSettings);
 
         // Build the data source from the data source
         console.log("Finished building the data pipes from the data source");
@@ -118,19 +118,19 @@ export function PageSwitcher() {
       case translations.types.raw:
         return(
           <Card title={'Raw Settings'} sectioned>
-            {Raw.renderSlidersRaw(setRawData, setRawPipeSettings, status, rawPipeSettings)}
+            {Raw.renderSliders(setRawData, setRawSettings, status, rawSettings)}
           </Card>
         );
       case translations.types.spectra:
         return(
           <Card title={'Spectra Settings'} sectioned>
-            {Spectra.renderSlidersSpectra(setSpectraData, setSpectraPipeSettings, status, spectraPipeSettings)}
+            {Spectra.renderSliders(setSpectraData, setSpectraSettings, status, spectraSettings)}
           </Card>
         );
       case translations.types.bands:
         return(
           <Card title={'Bands Settings'} sectioned>
-            {Bands.renderSlidersBands(setBandsData, setBandsPipeSettings, status, bandsPipeSettings)}
+            {Bands.renderSliders(setBandsData, setBandsSettings, status, bandsSettings)}
           </Card>
         );
       default: console.log('Error rendering settings display');
@@ -141,13 +141,13 @@ export function PageSwitcher() {
     switch (selected) {
       case translations.types.raw:
         console.log("Rendering Raw Component");
-        return <Raw.EEGEduRaw data={rawData} />;
+        return <Raw.EEGEdu data={rawData} />;
       case translations.types.spectra:
         console.log("Rendering Spectra Component");
-        return <Spectra.EEGEduSpectra data={spectraData} />;
+        return <Spectra.EEGEdu data={spectraData} />;
       case translations.types.bands:
         console.log("Rendering Bands Component");
-        return <Bands.EEGEduBands data={bandsData} />;
+        return <Bands.EEGEdu data={bandsData} />;
       default:
         console.log("Error on renderCharts switch.");
     }
