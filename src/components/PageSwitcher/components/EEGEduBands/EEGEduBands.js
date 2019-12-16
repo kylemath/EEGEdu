@@ -181,25 +181,29 @@ export function renderSliders(setData, setSettings, status, Settings) {
   return (
     <React.Fragment>
       <RangeSlider 
-        disabled={status === generalTranslations.connect} 
+        disabled={status === generalTranslations.connect}
+        min={128} step={128} max={4096} 
         label={'Epoch duration (Sampling Points): ' + Settings.duration} 
         value={Settings.duration} 
         onChange={handleDurationRangeSliderChange} 
       />
       <RangeSlider 
-        disabled={status === generalTranslations.connect} 
+        disabled={status === generalTranslations.connect}
+        min={10} step={5} max={Settings.duration} 
         label={'Sampling points between epochs onsets: ' + Settings.interval} 
         value={Settings.interval} 
         onChange={handleIntervalRangeSliderChange} 
       />
       <RangeSlider 
-        disabled={status === generalTranslations.connect} 
+        disabled={status === generalTranslations.connect}
+        min={.01} step={.5} max={Settings.cutOffHigh - .5} 
         label={'Cutoff Frequency Low: ' + Settings.cutOffLow + ' Hz'} 
         value={Settings.cutOffLow} 
         onChange={handleCutoffLowRangeSliderChange} 
       />
       <RangeSlider 
-        disabled={status === generalTranslations.connect} 
+        disabled={status === generalTranslations.connect}
+        min={Settings.cutOffLow + .5} step={.5} max={Settings.srate/2} 
         label={'Cutoff Frequency High: ' + Settings.cutOffHigh + ' Hz'} 
         value={Settings.cutOffHigh} 
         onChange={handleCutoffHighRangeSliderChange} 
