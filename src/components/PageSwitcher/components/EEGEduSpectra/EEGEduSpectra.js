@@ -30,7 +30,6 @@ export function getSpectraSettings () {
     bins: 256,
     sliceFFTLow: 1,
     sliceFFTHigh: 30,
-    srate: 256,
     duration: 1024
   }
 };
@@ -150,7 +149,7 @@ export function EEGEduSpectra(channels) {
   );
 }
 
-export function renderSlidersSpectra(setSpectraData, status, setSpectraPipeSettings, spectraPipeSettings) {
+export function renderSlidersSpectra(setSpectraData, setSpectraPipeSettings, status, spectraPipeSettings) {
 
   function handleSpectraIntervalRangeSliderChange(value) {
     setSpectraPipeSettings(prevState => ({...prevState, interval: value}));

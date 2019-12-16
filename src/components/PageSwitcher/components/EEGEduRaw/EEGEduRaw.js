@@ -153,8 +153,9 @@ export function EEGEduRaw(channels) {
   );
 }
 
+  
+export function renderSlidersRaw(setRawData, setRawPipeSettings, status, rawPipeSettings) {
 
-export function renderSlidersRaw(setRawData, status, rawPipeSettings, setRawPipeSettings) {
   function handleRawIntervalRangeSliderChange(value) {
     setRawPipeSettings(prevState => ({...prevState, interval: value}));
     buildPipeRaw(rawPipeSettings);
@@ -179,6 +180,7 @@ export function renderSlidersRaw(setRawData, status, rawPipeSettings, setRawPipe
     setupRaw(setRawData, rawPipeSettings);
   }
 
+
   return (
     <React.Fragment>
       <RangeSlider 
@@ -195,6 +197,7 @@ export function renderSlidersRaw(setRawData, status, rawPipeSettings, setRawPipe
       />
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
+        min={1} step={.5} max={rawPipeSettings.cutOffHigh - .5}
         label={'Cutoff Frequency Low: ' + rawPipeSettings.cutOffLow + ' Hz'} 
         value={rawPipeSettings.cutOffLow} 
         onChange={handleRawCutoffLowRangeSliderChange} 

@@ -1,7 +1,7 @@
 import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 
-import { Card, Stack, TextContainer } from "@shopify/polaris";
+import { Card, Stack, TextContainer, RangeSlider } from "@shopify/polaris";
 import { Subject } from "rxjs";
 
 import { channelNames } from "muse-js";
@@ -21,6 +21,17 @@ import { chartStyles, generalOptions } from "../chartOptions";
 import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 import { numOptions, bandLabels } from "../../utils/chartUtils";
+
+export function getBandsSettings () {
+  return {
+    cutOffLow: 2,
+    cutOffHigh: 20,
+    nbChannels: 4,
+    interval: 100,
+    bins: 256,
+    duration: 1024
+  }
+};
 
 export function buildPipeBands(bandsPipeSettings) {
   if (window.subscriptionBands$) window.subscriptionBands$.unsubscribe();
@@ -135,5 +146,62 @@ export function EEGEduBands(channels) {
       </Card.Section>
     </Card>
   );
+}
+
+
+export function renderSlidersBands(setBandsData, setBandsPipeSettings, status, bandsPipeSettings) {
+
+  function handleBandsIntervalRangeSliderChange(value) {
+    setBandsPipeSettings(prevState => ({...prevState, interval: value}));
+    buildPipeBands(bandsPipeSettings);
+    setupBands(setBandsData);
+  }
+
+  function handleBandsCutoffLowRangeSliderChange(value) {
+    setBandsPipeSettings(prevState => ({...prevState, cutOffLow: value}));
+    buildPipeBands(bandsPipeSettings);
+    setupBands(setBandsData);
+  }
+
+  function handleBandsCutoffHighRangeSliderChange(value) {
+    setBandsPipeSettings(prevState => ({...prevState, cutOffHigh: value}));
+    buildPipeBands(bandsPipeSettings);
+    setupBands(setBandsData);
+  }
+
+  function handleBandsDurationRangeSliderChange(value) {
+    setBandsPipeSettings(prevState => ({...prevState, duration: value}));
+    buildPipeBands(bandsPipeSettings);
+    setupBands(setBandsData);
+  }
+
+  return (
+    <React.Fragment>
+      <RangeSlider 
+        disabled={status === generalTranslations.connect} 
+        label={'Epoch duration (Sampling Points): ' + bandsPipeSettings.duration} 
+        value={bandsPipeSettings.duration} 
+        onChange={handleBandsDurationRangeSliderChange} 
+      />
+      <RangeSlider 
+        disabled={status === generalTranslations.connect} 
+        label={'Sampling points between epochs onsets: ' + bandsPipeSettings.interval} 
+        value={bandsPipeSettings.interval} 
+        onChange={handleBandsIntervalRangeSliderChange} 
+      />
+      <RangeSlider 
+        disabled={status === generalTranslations.connect} 
+        label={'Cutoff Frequency Low: ' + bandsPipeSettings.cutOffLow + ' Hz'} 
+        value={bandsPipeSettings.cutOffLow} 
+        onChange={handleBandsCutoffLowRangeSliderChange} 
+      />
+      <RangeSlider 
+        disabled={status === generalTranslations.connect} 
+        label={'Cutoff Frequency High: ' + bandsPipeSettings.cutOffHigh + ' Hz'} 
+        value={bandsPipeSettings.cutOffHigh} 
+        onChange={handleBandsCutoffHighRangeSliderChange} 
+      />
+    </React.Fragment>
+  )
 }
 
