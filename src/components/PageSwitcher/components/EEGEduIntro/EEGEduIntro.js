@@ -145,7 +145,7 @@ export function EEGEdu(channels) {
   return (
     <React.Fragment>
 
-      <Card title={specificTranslations.title}>
+      <Card title={"Introduction"}>
         <Card.Section>
           <p>
             {"Below you are now looking at an live measurement of the electrical potential created by your brain. "}
