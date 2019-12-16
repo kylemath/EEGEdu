@@ -6,7 +6,7 @@ import { mockMuseEEG } from "./utils/mockMuseEEG";
 
 import * as Raw from "./components/EEGEduRaw/EEGEduRaw";
 import * as Spectra from "./components/EEGEduSpectra/EEGEduSpectra";
-import { EEGEduBands, setupBands, buildPipeBands } from "./components/EEGEduBands/EEGEduBands";
+import * as Bands from "./components/EEGEduBands/EEGEduBands";
 
 import * as translations from "./translations/en.json";
 import { MuseClient } from "muse-js";
@@ -20,7 +20,8 @@ export function PageSwitcher() {
   const [bandsData, setBandsData] = useState(emptyChannelData);
 
   const [spectraPipeSettings, setSpectraPipeSettings] = useState(Spectra.getSpectraSettings);
-  const [rawPipeSettings, setRawPipeSettings] = useState(Raw.getRawSettings);
+  const [rawPipeSettings, setRawPipeSettings] = useState(Raw.getRawSettings); 
+  const [bandsPipeSettings, setBandsPipeSettings] = useState(Bands.getBandsSettings);
 
   const [status, setStatus] = useState(generalTranslations.connect);
   const [selected, setSelected] = useState(translations.types.raw);
@@ -53,7 +54,7 @@ export function PageSwitcher() {
         Spectra.setupSpectra(setSpectraData);
         break;
       case translations.types.bands:
-        setupBands(setBandsData);
+        Bands.setupBands(setBandsData);
         break;
       default:
         console.log(
@@ -95,7 +96,7 @@ export function PageSwitcher() {
 
         Raw.buildPipeRaw(rawPipeSettings);
         Spectra.buildPipeSpectra(spectraPipeSettings);
-        buildPipeBands();
+        Bands.buildPipeBands();
 
         // Build the data source from the data source
         console.log("Finished building the data pipes from the data source");
@@ -117,13 +118,19 @@ export function PageSwitcher() {
       case translations.types.raw:
         return(
           <Card title={'Raw Settings'} sectioned>
-            {Raw.renderSlidersRaw(setRawData, status, setRawPipeSettings, rawPipeSettings)}
+            {Raw.renderSlidersRaw(setRawData, setRawPipeSettings, status, rawPipeSettings)}
           </Card>
         );
       case translations.types.spectra:
         return(
           <Card title={'Spectra Settings'} sectioned>
-            {Spectra.renderSlidersSpectra(setSpectraData, status, setSpectraPipeSettings, spectraPipeSettings)}
+            {Spectra.renderSlidersSpectra(setSpectraData, setSpectraPipeSettings, status, spectraPipeSettings)}
+          </Card>
+        );
+      case translations.types.bands:
+        return(
+          <Card title={'Bands Settings'} sectioned>
+            {Bands.renderSlidersBands(setBandsData, setBandsPipeSettings, status, bandsPipeSettings)}
           </Card>
         );
       default: console.log('Error rendering settings display');
@@ -140,13 +147,13 @@ export function PageSwitcher() {
         return <Spectra.EEGEduSpectra data={spectraData} />;
       case translations.types.bands:
         console.log("Rendering Bands Component");
-        return <EEGEduBands data={bandsData} />;
+        return <Bands.EEGEduBands data={bandsData} />;
       default:
         console.log("Error on renderCharts switch.");
     }
   }
 
-  return (
+ return (
     <React.Fragment>
       <Card sectioned>
         <Stack>
