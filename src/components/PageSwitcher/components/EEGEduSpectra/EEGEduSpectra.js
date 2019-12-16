@@ -22,18 +22,17 @@ import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 
 export function getSpectraSettings () {
-    var spectraSettings = {
-      cutOffLow: 2,
-      cutOffHigh: 20,
-      nbChannels: 4,
-      interval: 100,
-      bins: 256,
-      sliceFFTLow: 1,
-      sliceFFTHigh: 30,
-      srate: 256,
-      duration: 1024
-    }
-  return spectraSettings 
+  return {
+    cutOffLow: 2,
+    cutOffHigh: 20,
+    nbChannels: 4,
+    interval: 100,
+    bins: 256,
+    sliceFFTLow: 1,
+    sliceFFTHigh: 30,
+    srate: 256,
+    duration: 1024
+  }
 };
 
 export function buildPipeSpectra (spectraPipeSettings) {
@@ -171,12 +170,6 @@ export function renderSlidersSpectra(setSpectraData, status, setSpectraPipeSetti
     setupSpectra(setSpectraData);
   }
 
-  // function handleSpectraBinsRangeSliderChange(value) {
-  //   setSpectraPipeSettings(prevState => ({...prevState, bins: value}));
-  //   buildPipeSpectra();
-  //   setupSpectra(setSpectraData);
-  // }
-
   function handleSpectraSliceFFTLowRangeSliderChange(value) {
     setSpectraPipeSettings(prevState => ({...prevState, sliceFFTLow: value}));
     buildPipeSpectra(spectraPipeSettings);
@@ -199,52 +192,36 @@ export function renderSlidersSpectra(setSpectraData, status, setSpectraPipeSetti
     <React.Fragment>
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        min={128} step={128} max={4096} 
         label={'Epoch duration (Sampling Points): ' + spectraPipeSettings.duration} 
         value={spectraPipeSettings.duration} 
         onChange={handleSpectraDurationRangeSliderChange} 
       />
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        min={10} step={5} max={spectraPipeSettings.duration} 
         label={'Sampling points between epochs onsets: ' + spectraPipeSettings.interval} 
         value={spectraPipeSettings.interval} 
         onChange={handleSpectraIntervalRangeSliderChange} 
       />
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        min={.01} step={.5} max={spectraPipeSettings.cutOffHigh - .5} 
         label={'Cutoff Frequency Low: ' + spectraPipeSettings.cutOffLow + ' Hz'} 
         value={spectraPipeSettings.cutOffLow} 
         onChange={handleSpectraCutoffLowRangeSliderChange} 
       />
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        min={spectraPipeSettings.cutOffLow + .5} step={.5} max={spectraPipeSettings.srate/2} 
         label={'Cutoff Frequency High: ' + spectraPipeSettings.cutOffHigh + ' Hz'} 
         value={spectraPipeSettings.cutOffHigh} 
         onChange={handleSpectraCutoffHighRangeSliderChange} 
       />
-      {/* - comment for now since it causes crash since freq labels are not updated
-      <Select
-        disabled={status === generalTranslations.connect}
-        label={'FTT Bins: ' + spectraPipeSettings.bins}
-        options={['128','256','512','1024','2048','4096']}
-        onChange={handleSpectraBinsRangeSliderChange}
-        value={spectraPipeSettings.bins}
-      />
-      <br />
-    */}
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        min={1} max={spectraPipeSettings.sliceFFTHigh - 1} 
         label={'Slice FFT Lower limit: ' + spectraPipeSettings.sliceFFTLow + ' Hz'} 
         value={spectraPipeSettings.sliceFFTLow} 
         onChange={handleSpectraSliceFFTLowRangeSliderChange} 
       />
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        min={spectraPipeSettings.sliceFFTLow + 1} 
         label={'Slice FFT Upper limit: ' + spectraPipeSettings.sliceFFTHigh + ' Hz'} 
         value={spectraPipeSettings.sliceFFTHigh} 
         onChange={handleSpectraSliceFFTHighRangeSliderChange} 
