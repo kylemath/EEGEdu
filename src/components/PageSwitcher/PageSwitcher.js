@@ -4,6 +4,7 @@ import { Select, Card, Stack, Button, ButtonGroup } from "@shopify/polaris";
 
 import { mockMuseEEG } from "./utils/mockMuseEEG";
 
+import * as Intro from "./components/EEGEduIntro/EEGEduIntro"
 import * as Raw from "./components/EEGEduRaw/EEGEduRaw";
 import * as Spectra from "./components/EEGEduSpectra/EEGEduSpectra";
 import * as Bands from "./components/EEGEduBands/EEGEduBands";
@@ -15,22 +16,26 @@ import { emptyChannelData } from "./components/chartOptions";
 
 export function PageSwitcher() {
 
+  const [introData, setIntroData] = useState(emptyChannelData)
   const [rawData, setRawData] = useState(emptyChannelData);
   const [spectraData, setSpectraData] = useState(emptyChannelData);
   const [bandsData, setBandsData] = useState(emptyChannelData);
 
+  const [introSettings] = useState(Intro.getSettings);
   const [spectraSettings, setSpectraSettings] = useState(Spectra.getSettings);
   const [rawSettings, setRawSettings] = useState(Raw.getSettings); 
   const [bandsSettings, setBandsSettings] = useState(Bands.getSettings);
 
   const [status, setStatus] = useState(generalTranslations.connect);
-  const [selected, setSelected] = useState(translations.types.raw);
+  // module at load:
+  const [selected, setSelected] = useState(translations.types.intro);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 
     console.log("Switching to: " + value);
 
     // Unsubscribe from all possible subscriptions
+    if (window.subscriptionIntro$) window.subscriptionIntro$.unsubscribe();
     if (window.subscriptionRaw$) window.subscriptionRaw$.unsubscribe();
     if (window.subscriptionSpectra$) window.subscriptionSpectra$.unsubscribe();
     if (window.subscriptionBands$) window.subscriptionBands$.unsubscribe();
@@ -40,6 +45,7 @@ export function PageSwitcher() {
   }, []);
 
   const chartTypes = [
+    { label: translations.types.intro, value: translations.types.intro },
     { label: translations.types.raw, value: translations.types.raw },
     { label: translations.types.spectra, value: translations.types.spectra },
     { label: translations.types.bands, value: translations.types.bands }
@@ -47,6 +53,9 @@ export function PageSwitcher() {
 
   function subscriptionSetup(value) {
     switch (value) {
+      case translations.types.intro:
+        Intro.setup(setIntroData, introSettings);
+        break;
       case translations.types.raw:
         Raw.setup(setRawData, rawSettings);
         break;
@@ -94,6 +103,7 @@ export function PageSwitcher() {
         console.log("Connected to data source observable");
         console.log("Starting to build the data pipes from the data source...");
 
+        Intro.buildPipe(introSettings);
         Raw.buildPipe(rawSettings);
         Spectra.buildPipe(spectraSettings);
         Bands.buildPipe(bandsSettings);
@@ -115,6 +125,8 @@ export function PageSwitcher() {
 
   function pipeSettingsDisplay() {
     switch(selected) {
+      case translations.types.intro:
+        return null
       case translations.types.raw:
         return(
           <Card title={'Raw Settings'} sectioned>
@@ -139,6 +151,9 @@ export function PageSwitcher() {
 
   function renderCharts() {
     switch (selected) {
+      case translations.types.intro:
+        console.log("Rendering Intro Component");
+        return <Intro.EEGEdu data={introData} />;
       case translations.types.raw:
         console.log("Rendering Raw Component");
         return <Raw.EEGEdu data={rawData} />;
