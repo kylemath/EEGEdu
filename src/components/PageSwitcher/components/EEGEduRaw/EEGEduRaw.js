@@ -22,7 +22,7 @@ import * as specificTranslations from "./translations/en";
 import { generateXTics, standardDeviation } from "../../utils/chartUtils";
 
 export function getRawSettings () {
-  const settingsRaw = {
+  return {
     cutOffLow: 2,
     cutOffHigh: 20,
     nbChannels: 4,
@@ -30,7 +30,6 @@ export function getRawSettings () {
     srate: 256,
     duration: 1024
   }
-  return settingsRaw
 };
 
 export function buildPipeRaw(rawPipeSettings) {
@@ -184,28 +183,24 @@ export function renderSlidersRaw(setRawData, status, rawPipeSettings, setRawPipe
     <React.Fragment>
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        min={128} step={128}  max={4096} 
         label={'Epoch duration (Sampling Points): ' + rawPipeSettings.duration} 
         value={rawPipeSettings.duration} 
         onChange={handleRawDurationRangeSliderChange} 
       />          
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        min={10} step={5} max={rawPipeSettings.duration} 
         label={'Sampling points between epochs onsets: ' + rawPipeSettings.interval} 
         value={rawPipeSettings.interval} 
         onChange={handleRawIntervalRangeSliderChange} 
       />
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        min={.01} step={.5} max={rawPipeSettings.cutOffHigh - .5} 
         label={'Cutoff Frequency Low: ' + rawPipeSettings.cutOffLow + ' Hz'} 
         value={rawPipeSettings.cutOffLow} 
         onChange={handleRawCutoffLowRangeSliderChange} 
       />
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        min={rawPipeSettings.cutOffLow + .5} step={.5} max={rawPipeSettings.srate/2} 
         label={'Cutoff Frequency High: ' + rawPipeSettings.cutOffHigh + ' Hz'} 
         value={rawPipeSettings.cutOffHigh} 
         onChange={handleRawCutoffHighRangeSliderChange} 

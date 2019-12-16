@@ -62,22 +62,6 @@ export function PageSwitcher() {
     }
   }
 
-  function renderCharts() {
-    switch (selected) {
-      case translations.types.raw:
-        console.log("Rendering Raw Component");
-        return <Raw.EEGEduRaw data={rawData} />;
-      case translations.types.spectra:
-        console.log("Rendering Spectra Component");
-        return <Spectra.EEGEduSpectra data={spectraData} />;
-      case translations.types.bands:
-        console.log("Rendering Bands Component");
-        return <EEGEduBands data={bandsData} />;
-      default:
-        console.log("Error on renderCharts switch.");
-    }
-  }
-
   async function connect() {
     try {
       if (window.debugWithMock) {
@@ -145,6 +129,23 @@ export function PageSwitcher() {
       default: console.log('Error rendering settings display');
     }
   }
+
+  function renderCharts() {
+    switch (selected) {
+      case translations.types.raw:
+        console.log("Rendering Raw Component");
+        return <Raw.EEGEduRaw data={rawData} />;
+      case translations.types.spectra:
+        console.log("Rendering Spectra Component");
+        return <Spectra.EEGEduSpectra data={spectraData} />;
+      case translations.types.bands:
+        console.log("Rendering Bands Component");
+        return <EEGEduBands data={bandsData} />;
+      default:
+        console.log("Error on renderCharts switch.");
+    }
+  }
+
   return (
     <React.Fragment>
       <Card sectioned>
