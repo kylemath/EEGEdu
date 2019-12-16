@@ -152,6 +152,9 @@ export function EEGEdu(channels) {
         </Stack>
       </Card.Section>
       <Card.Section>
+        <img src={ require("./assets/electrodelocations.png")} alt="not found."></img>
+      </Card.Section>
+      <Card.Section>
         <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
       </Card.Section>
     </Card>
