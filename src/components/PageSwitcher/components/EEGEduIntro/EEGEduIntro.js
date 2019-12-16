@@ -152,7 +152,13 @@ export function EEGEdu(channels) {
         </Stack>
       </Card.Section>
       <Card.Section>
-        <img src={ require("./assets/electrodelocations.png")} alt="not found."></img>
+        <img 
+          src={ require("./assets/electrodelocations.png")} 
+          alt="Electrode Map"
+          height="200"
+          width="200"
+        >
+        </img>
       </Card.Section>
       <Card.Section>
         <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
