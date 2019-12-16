@@ -143,27 +143,57 @@ export function EEGEdu(channels) {
   }
 
   return (
-    <Card title={specificTranslations.title}>
-      <Card.Section>
-        <Stack>
-          <TextContainer>
-            <p>{specificTranslations.description}</p>
-          </TextContainer>
-        </Stack>
-      </Card.Section>
-      <Card.Section>
-        <img 
-          src={ require("./assets/electrodelocations.png")} 
-          alt="Electrode Map"
-          height="200"
-          width="200"
-        >
-        </img>
-      </Card.Section>
-      <Card.Section>
-        <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
-      </Card.Section>
-    </Card>
+    <React.Fragment>
+      <Card title={specificTranslations.title}>
+        <Card.Section>
+          <Stack>
+            <TextContainer>
+              <p>{specificTranslations.description}</p>
+            </TextContainer>
+          </Stack>
+        </Card.Section>
+        <Card.Section>
+          <img 
+            src={ require("./assets/electrodelocations.png")} 
+            alt="Electrode Map"
+            height="200"
+            width="200"
+          >
+          </img>
+        </Card.Section>
+        <Card.Section>
+          <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
+        </Card.Section>
+      </Card>
+      <Card title={"Credits"}>
+        <Card.Section>
+          <Stack>
+            <TextContainer>
+              <p>
+                {"EEGEdu is an open source collaborative project with NeurotechX's "}
+                <a href="http://learn.neurotechedu.com/">NeurotechEdu. </a>
+              </p>
+              <p>
+                {"This is also created in collaboration with "}
+                <a href="https://choosemuse.com/muse-research/">Interaxon. </a>
+              </p>
+              <p>
+                {"This online tutorial is made using a Muse connection by Web Bluetooth using "}
+                <a href="https://github.com/urish/muse-js">muse-js </a>
+                {"by Uri Shaked who has an excellent introduction to EEG "}
+                <a href="https://medium.com/neurotechx/a-techys-introduction-to-neuroscience-3f492df4d3bf">A Techy's Introduction to Neuroscience. </a>
+              </p>
+              <p>
+                {"The data is processed using Neurosity's "}
+                <a href="https://github.com/neurosity/eeg-pipes">eeg-pipes </a>
+                {"by Alex Castillo who also has an excellent post about EEG and the web called "}
+                <a href="https://medium.com/@castillo.io/muse-2016-headband-web-bluetooth-11ddcfa74c83">Muse 2016 Headband + Web Bluetooth.</a>
+              </p>
+            </TextContainer>
+          </Stack>
+        </Card.Section>
+      </Card>
+    </React.Fragment>
   );
 }
 
