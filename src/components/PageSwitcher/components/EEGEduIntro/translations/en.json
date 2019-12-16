@@ -1,16 +1,6 @@
 {
   "title": "Introduction",
   "description": "EEG Measures changes in electrical voltage on the head over time...",
-  "credits": [
-	"This online tutorial is made using a Muse connection by Web Bluetooth using muse-js ",
-	"by Uri Shaked who has an excellent introduction to EEG here: ",
-	"https://medium.com/neurotechx/a-techys-introduction-to-neuroscience-3f492df4d3bf?.",
-	"https://github.com/urish/muse-js ",
-	"The data is processed using Neurosity's eeg-pipes by Alex Castillo ",
-	"who also has an excellent post about EEG and the muse: ",
-	"https://medium.com/@castillo.io/muse-2016-headband-web-bluetooth-11ddcfa74c83",
-	"https://github.com/neurosity/eeg-pipes"
-	],
   "xlabel": "Time (msec)",
   "ylabel": "Voltage (\u03BCV)"
 }
