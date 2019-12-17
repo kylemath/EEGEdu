@@ -1,51 +1,28 @@
 import React, { useState, useCallback } from "react";
 
-import { Select, Card, Stack, Button, ButtonGroup, RangeSlider } from "@shopify/polaris";
-import {
-  bandpassFilter,
-  epoch,
-  fft,
-  sliceFFT,
-  powerByBand
-} from "@neurosity/pipes";
-import {Subject} from "rxjs";
-import { catchError, multicast } from "rxjs/operators";
+import { Select, Card, Stack, Button, ButtonGroup } from "@shopify/polaris";
 
 import { mockMuseEEG } from "./utils/mockMuseEEG";
 
-import EEGEduRaw from "./components/EEGEduRaw/EEGEduRaw";
-import EEGEduSpectra from "./components/EEGEduSpectra/EEGEduSpectra";
-import EEGEduBands from "./components/EEGEduBands/EEGEduBands";
+import * as Raw from "./components/EEGEduRaw/EEGEduRaw";
+import * as Spectra from "./components/EEGEduSpectra/EEGEduSpectra";
+import * as Bands from "./components/EEGEduBands/EEGEduBands";
 
 import * as translations from "./translations/en.json";
-import { MuseClient, zipSamples } from "muse-js";
+import { MuseClient } from "muse-js";
 import * as generalTranslations from "./components/translations/en";
 import { emptyChannelData } from "./components/chartOptions";
-import { generateXTics, numOptions, bandLabels, standardDeviation } from "./utils/chartUtils";
 
 export function PageSwitcher() {
-  const [rawPipeSettings, setRawPipeSettings] = useState({
-    cutOffLow: 2,
-    cutOffHigh: 20,
-    nbChannels: 4,
-    interval: 50,
-    srate: 256,
-    duration: 1024
-  });
-  const [spectraPipeSettings, setSpectraPipeSettings] = useState({
-    cutOffLow: 2,
-    cutOffHigh: 20,
-    nbChannels: 4,
-    interval: 100,
-    bins: 256,
-    sliceFFTLow: 1,
-    sliceFFTHigh: 30,
-    srate: 256,
-    duration: 1024
-  });
+
   const [rawData, setRawData] = useState(emptyChannelData);
   const [spectraData, setSpectraData] = useState(emptyChannelData);
   const [bandsData, setBandsData] = useState(emptyChannelData);
+
+  const [spectraSettings, setSpectraSettings] = useState(Spectra.getSettings);
+  const [rawSettings, setRawSettings] = useState(Raw.getSettings); 
+  const [bandsSettings, setBandsSettings] = useState(Bands.getSettings);
+
   const [status, setStatus] = useState(generalTranslations.connect);
   const [selected, setSelected] = useState(translations.types.raw);
   const handleSelectChange = useCallback(value => {
@@ -71,198 +48,19 @@ export function PageSwitcher() {
   function subscriptionSetup(value) {
     switch (value) {
       case translations.types.raw:
-        setupRaw();
+        Raw.setup(setRawData, rawSettings);
         break;
       case translations.types.spectra:
-        setupSpectra();
+        Spectra.setup(setSpectraData);
         break;
       case translations.types.bands:
-        setupBands();
+        Bands.setup(setBandsData);
         break;
       default:
         console.log(
           "Error on handleSubscriptions. Couldn't switch to: " + value
         );
     }
-  }
-
-  function renderCharts() {
-    switch (selected) {
-      case translations.types.raw:
-        console.log("Rendering Raw Component");
-        return <EEGEduRaw data={rawData} />;
-      case translations.types.spectra:
-        console.log("Rendering Spectra Component");
-        return <EEGEduSpectra data={spectraData} />;
-      case translations.types.bands:
-        console.log("Rendering Bands Component");
-        return <EEGEduBands data={bandsData} />;
-      default:
-        console.log("Error on renderCharts switch.");
-    }
-  }
-
-  function setupRaw() {
-    console.log("Subscribing to Raw");
-
-    if (window.multicastRaw$) {
-      window.subscriptionRaw$ = window.multicastRaw$.subscribe(data => {
-        setRawData(rawData => {
-          Object.values(rawData).forEach((channel, index) => {
-            if (index < 4) {
-              channel.datasets[0].data = data.data[index];
-              channel.xLabels = generateXTics(rawPipeSettings.srate, rawPipeSettings.duration);
-              channel.datasets[0].qual = standardDeviation(data.data[index])
-            }
-          });
-
-          return {
-            ch0: rawData.ch0,
-            ch1: rawData.ch1,
-            ch2: rawData.ch2,
-            ch3: rawData.ch3
-          };
-        });
-      });
-
-      window.multicastRaw$.connect();
-      console.log("Subscribed to Raw");
-    }
-  }
-
-  function setupSpectra() {
-    console.log("Subscribing to Spectra");
-
-    if (window.multicastSpectra$) {
-      window.subscriptionSpectra$ = window.multicastSpectra$.subscribe(data => {
-        setSpectraData(spectraData => {
-          Object.values(spectraData).forEach((channel, index) => {
-            if (index < 4) {
-              channel.datasets[0].data = data.psd[index];
-              channel.xLabels = data.freqs;
-            }
-          });
-
-          return {
-            ch0: spectraData.ch0,
-            ch1: spectraData.ch1,
-            ch2: spectraData.ch2,
-            ch3: spectraData.ch3
-          };
-        });
-      });
-
-      window.multicastSpectra$.connect();
-      console.log("Subscribed to Spectra");
-    }
-  }
-
-  function setupBands() {
-    console.log("Subscribing to Bands");
-
-    if (window.multicastBands$) {
-      window.subscriptionBands$ = window.multicastBands$.subscribe(data => {
-        setBandsData(bandsData => {
-          Object.values(bandsData).forEach((channel, index) => {
-            if (index < 4) {
-              channel.datasets[0].data = [
-                data.delta[index],
-                data.theta[index],
-                data.alpha[index],
-                data.beta[index],
-                data.gamma[index]
-              ];
-              channel.xLabels = bandLabels;
-            }
-          });
-
-          return {
-            ch0: bandsData.ch0,
-            ch1: bandsData.ch1,
-            ch2: bandsData.ch2,
-            ch3: bandsData.ch3
-          };
-        });
-      });
-
-      window.multicastBands$.connect();
-      console.log("Subscribed to Bands");
-    }
-  }
-
-  function pipeRawData() {
-    if (window.subscriptionRaw$) window.subscriptionRaw$.unsubscribe();
-
-    window.pipeRaw$ = null;
-    window.multicastRaw$ = null;
-    window.subscriptionRaw$ = null;
-
-    // Build Pipe Raw
-    window.pipeRaw$ = zipSamples(window.source$.eegReadings).pipe(
-      bandpassFilter({ cutoffFrequencies: [rawPipeSettings.cutOffLow, rawPipeSettings.cutOffHigh], nbChannels: rawPipeSettings.nbChannels }),
-      epoch({
-        duration: rawPipeSettings.duration,
-        interval: rawPipeSettings.interval,
-        samplingRate: rawPipeSettings.srate
-      }),
-      catchError(err => {
-        console.log(err);
-      })
-    );
-    window.multicastRaw$ = window.pipeRaw$.pipe(
-      multicast(() => new Subject())
-    );
-  }
-
-  function pipeSpectraData() {
-    if (window.subscriptionSpectra$) window.subscriptionSpectra$.unsubscribe();
-
-    window.pipeSpectra$ = null;
-    window.multicastSpectra$ = null;
-    window.subscriptionSpectra$ = null;
-
-    window.pipeSpectra$ = zipSamples(window.source$.eegReadings).pipe(
-      bandpassFilter({ cutoffFrequencies: [spectraPipeSettings.cutOffLow, spectraPipeSettings.cutOffHigh], nbChannels: spectraPipeSettings.nbChannels }),
-      epoch({
-        duration: spectraPipeSettings.duration,
-        interval: spectraPipeSettings.interval,
-        samplingRate: spectraPipeSettings.srate
-      }),
-      fft({ bins: spectraPipeSettings.bins }),
-      sliceFFT([spectraPipeSettings.sliceFFTLow, spectraPipeSettings.sliceFFTHigh]),
-      catchError(err => {
-        console.log(err);
-      })
-    );
-
-    window.multicastSpectra$ = window.pipeSpectra$.pipe(
-      multicast(() => new Subject())
-    );
-  }
-
-  function pipeBandsData() {
-    if (window.subscriptionBands$) window.subscriptionBands$.unsubscribe();
-
-    window.pipeBands$ = null;
-    window.multicastBands$ = null;
-    window.subscriptionBands$ = null;
-
-    window.pipeBands$ = zipSamples(window.source$.eegReadings).pipe(
-      bandpassFilter({ cutoffFrequencies: [2, 20], nbChannels: 4 }),
-      epoch({
-        duration: numOptions.duration,
-        interval: 100,
-        samplingRate: numOptions.srate
-      }),
-      fft({ bins: 256 }),
-      powerByBand(),
-      catchError(err => {
-        console.log(err);
-      })
-    );
-    window.multicastBands$ = window.pipeBands$.pipe(
-      multicast(() => new Subject())
-    );
   }
 
   async function connect() {
@@ -296,16 +94,9 @@ export function PageSwitcher() {
         console.log("Connected to data source observable");
         console.log("Starting to build the data pipes from the data source...");
 
-        // Build Pipe Raw
-        pipeRawData();
-
-        // Build Pipe Spectra
-        setupSpectra();
-
-        pipeSpectraData();
-
-        // Build Pipe Bands
-        pipeBandsData();
+        Raw.buildPipe(rawSettings);
+        Spectra.buildPipe(spectraSettings);
+        Bands.buildPipe(bandsSettings);
 
         // Build the data source from the data source
         console.log("Finished building the data pipes from the data source");
@@ -322,109 +113,47 @@ export function PageSwitcher() {
     window.location.reload();
   }
 
-  function handleRawIntervalRangeSliderChange(value) {
-    setRawPipeSettings(prevState => ({...prevState, interval: value}));
-    pipeRawData();
-    setupRaw();
-  }
-
-  function handleRawCutoffLowRangeSliderChange(value) {
-    setRawPipeSettings(prevState => ({...prevState, cutOffLow: value}));
-    pipeRawData();
-    setupRaw();
-  }
-
-  function handleRawCutoffHighRangeSliderChange(value) {
-    setRawPipeSettings(prevState => ({...prevState, cutOffHigh: value}));
-    pipeRawData();
-    setupRaw();
-  }
-
-  function handleRawDurationRangeSliderChange(value) {
-    setRawPipeSettings(prevState => ({...prevState, duration: value}));
-    pipeRawData();
-    setupRaw();
-  }
-
-  function handleSpectraIntervalRangeSliderChange(value) {
-    setSpectraPipeSettings(prevState => ({...prevState, interval: value}));
-    pipeSpectraData();
-    setupSpectra();
-  }
-
-  function handleSpectraCutoffLowRangeSliderChange(value) {
-    setSpectraPipeSettings(prevState => ({...prevState, cutOffLow: value}));
-    pipeSpectraData();
-    setupSpectra();
-  }
-
-  function handleSpectraCutoffHighRangeSliderChange(value) {
-    setSpectraPipeSettings(prevState => ({...prevState, cutOffHigh: value}));
-    pipeSpectraData();
-    setupSpectra();
-  }
-
-  // function handleSpectraBinsRangeSliderChange(value) {
-  //   setSpectraPipeSettings(prevState => ({...prevState, bins: value}));
-  //   pipeSpectraData();
-  //   setupSpectra();
-  // }
-
-  function handleSpectraSliceFFTLowRangeSliderChange(value) {
-    setSpectraPipeSettings(prevState => ({...prevState, sliceFFTLow: value}));
-    pipeSpectraData();
-    setupSpectra();
-  }
-
-  function handleSpectraSliceFFTHighRangeSliderChange(value) {
-    setSpectraPipeSettings(prevState => ({...prevState, sliceFFTHigh: value}));
-    pipeSpectraData();
-    setupSpectra();
-  }
-
-  function handleSpectraDurationRangeSliderChange(value) {
-    setSpectraPipeSettings(prevState => ({...prevState, duration: value}));
-    pipeSpectraData();
-    setupSpectra();
-  }
-
   function pipeSettingsDisplay() {
     switch(selected) {
       case translations.types.raw:
         return(
           <Card title={'Raw Settings'} sectioned>
-            <RangeSlider disabled={status === generalTranslations.connect} min={128} step={128}  max={4096} label={'Epoch duration (Sampling Points): ' + rawPipeSettings.duration} value={rawPipeSettings.duration} onChange={handleRawDurationRangeSliderChange} />          
-            <RangeSlider disabled={status === generalTranslations.connect} min={10} step={5} max={rawPipeSettings.duration} label={'Sampling points between epochs onsets: ' + rawPipeSettings.interval} value={rawPipeSettings.interval} onChange={handleRawIntervalRangeSliderChange} />
-            <RangeSlider disabled={status === generalTranslations.connect} min={.01} step={.5} max={rawPipeSettings.cutOffHigh - .5} label={'Cutoff Frequency Low: ' + rawPipeSettings.cutOffLow + ' Hz'} value={rawPipeSettings.cutOffLow} onChange={handleRawCutoffLowRangeSliderChange} />
-            <RangeSlider disabled={status === generalTranslations.connect} min={rawPipeSettings.cutOffLow + .5} step={.5} max={rawPipeSettings.srate/2} label={'Cutoff Frequency High: ' + rawPipeSettings.cutOffHigh + ' Hz'} value={rawPipeSettings.cutOffHigh} onChange={handleRawCutoffHighRangeSliderChange} />
+            {Raw.renderSliders(setRawData, setRawSettings, status, rawSettings)}
           </Card>
         );
       case translations.types.spectra:
         return(
           <Card title={'Spectra Settings'} sectioned>
-            <RangeSlider disabled={status === generalTranslations.connect} min={128} step={128} max={4096} label={'Epoch duration (Sampling Points): ' + spectraPipeSettings.duration} value={spectraPipeSettings.duration} onChange={handleSpectraDurationRangeSliderChange} />
-            <RangeSlider disabled={status === generalTranslations.connect} min={10} step={5} max={spectraPipeSettings.duration} label={'Sampling points between epochs onsets: ' + spectraPipeSettings.interval} value={spectraPipeSettings.interval} onChange={handleSpectraIntervalRangeSliderChange} />
-            <RangeSlider disabled={status === generalTranslations.connect} min={.01} step={.5} max={spectraPipeSettings.cutOffHigh - .5} label={'Cutoff Frequency Low: ' + spectraPipeSettings.cutOffLow + ' Hz'} value={spectraPipeSettings.cutOffLow} onChange={handleSpectraCutoffLowRangeSliderChange} />
-            <RangeSlider disabled={status === generalTranslations.connect} min={spectraPipeSettings.cutOffLow + .5} step={.5} max={spectraPipeSettings.srate/2} label={'Cutoff Frequency High: ' + spectraPipeSettings.cutOffHigh + ' Hz'} value={spectraPipeSettings.cutOffHigh} onChange={handleSpectraCutoffHighRangeSliderChange} />
-            
-            {/* - comment for now since it causes crash since freq labels are not updated
-            <Select
-              disabled={status === generalTranslations.connect}
-              label={'FTT Bins: ' + spectraPipeSettings.bins}
-              options={['128','256','512','1024','2048','4096']}
-              onChange={handleSpectraBinsRangeSliderChange}
-              value={spectraPipeSettings.bins}
-            />
-            <br />
-          */}
-            <RangeSlider disabled={status === generalTranslations.connect} min={1} max={spectraPipeSettings.sliceFFTHigh - 1} label={'Slice FFT Lower limit: ' + spectraPipeSettings.sliceFFTLow + ' Hz'} value={spectraPipeSettings.sliceFFTLow} onChange={handleSpectraSliceFFTLowRangeSliderChange} />
-            <RangeSlider disabled={status === generalTranslations.connect} min={spectraPipeSettings.sliceFFTLow + 1} label={'Slice FFT Upper limit: ' + spectraPipeSettings.sliceFFTHigh + ' Hz'} value={spectraPipeSettings.sliceFFTHigh} onChange={handleSpectraSliceFFTHighRangeSliderChange} />
+            {Spectra.renderSliders(setSpectraData, setSpectraSettings, status, spectraSettings)}
+          </Card>
+        );
+      case translations.types.bands:
+        return(
+          <Card title={'Bands Settings'} sectioned>
+            {Bands.renderSliders(setBandsData, setBandsSettings, status, bandsSettings)}
           </Card>
         );
       default: console.log('Error rendering settings display');
     }
   }
-  return (
+
+  function renderCharts() {
+    switch (selected) {
+      case translations.types.raw:
+        console.log("Rendering Raw Component");
+        return <Raw.EEGEdu data={rawData} />;
+      case translations.types.spectra:
+        console.log("Rendering Spectra Component");
+        return <Spectra.EEGEdu data={spectraData} />;
+      case translations.types.bands:
+        console.log("Rendering Bands Component");
+        return <Bands.EEGEdu data={bandsData} />;
+      default:
+        console.log("Error on renderCharts switch.");
+    }
+  }
+
+ return (
     <React.Fragment>
       <Card sectioned>
         <Stack>

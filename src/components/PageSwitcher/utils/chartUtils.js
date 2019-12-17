@@ -16,12 +16,6 @@ function average(data){
   return avg;
 }
 
-// Chart options
-export const numOptions = {
-  srate: 256,
-  duration: 1024
-};
-
 export const bandLabels = ["Delta", "Theta", "Alpha", "Beta", "Gamma"];
 
 // Generate xTics
