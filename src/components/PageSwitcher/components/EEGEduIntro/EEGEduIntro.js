@@ -150,7 +150,7 @@ export function EEGEdu(channels) {
           <p>
             {"Below you are now looking at an live measurement of the electrical potential created by your brain. "}
             {"Just like a AA battery stores 1.5 volts of electrical potential energy accross its positive and negative leads, "}
-            {"Two points on your head also have a much smaller electrical potential when measured accross them. "}
+            {"two points on your head also have a much smaller electrical potential when measured accross them. "}
             {"Here we are watching that live, with the voltage on the vertical axis (\u03BCV are microvolts, 1 million microvolts are in a volt). "}
             {"Time is shown in milleseconds along the horizontal axis, with the right side of the chart being the current moment:"}
           </p>       
@@ -173,26 +173,105 @@ export function EEGEdu(channels) {
           <img 
             src={ require("./assets/neuronarrow.png")} 
             alt="Single Neuron"
-            height="200"
+            height="400"
           ></img>
           <p>
-            {"The electrical potential accross the cell membrane is small, around -70 mV at rest, and it changes around -20 mV during electrical changes in the cell. "}
-            {"However, iff a large group of these tiny dipoles are aligned in space and their electrical potentials change at the same time, "}
+            {"The electrical potential accross the cell membrane is small, around -70 mV at rest (1000 microvolts in a millivolt), and it changes around -20 mV during electrical changes in the cell. "}
+            {"However, if a large group of these tiny dipoles are aligned in space and their electrical potentials change at the same time, "}
             {"they can create electrical potentials which are large enough to conduct through the brain tissue and be measurable comparing different points on the head. "}
           </p>         
           <img 
             src={ require("./assets/neuronmultiarrow.png")} 
-            alt="Single Neuron"
-            height="200"
+            alt="Multiple Neurons"
+            height="400"
           ></img> 
+          <p>
+            {"As you can see above, these electrical potentials measured on the outside of the head fluctuature between about -200 and 200 \u03BCV. "}
+            {"You can also see cycles between high and low voltage, called oscillations, which can occur in the human brain at a number of frequencies. "}
+            {"You may have heard of some of these brain waves before, but what do they mean? "}
+          </p> 
         </Card.Section>
       </Card>
 
-      <Card title={"Raw Data"}>
+      <Card title={"Oscillations"}>
         <Card.Section>
-          <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
+          <p>
+            {"Large groups of aligned neurons are all becoming more and less active together in groups. "}
+            {"And these fluctuations in activity seem to occur within certain frequency bands. "}
+            {"It has been proposed that these different frequencies of neural activity serve functional mechanisms in the brain. "}
+            {"That is, one of the ways the brain uses to process and communicate information is through these rhythmic processes. "}
+            {"These oscillations can change during different behaviours. One of the most drastic is the difference in the EEG when we fall asleep: "}
+
+          </p>
+          <img 
+            src={ require("./assets/awakeasleep.gif")} 
+            alt="Awake/Asleep"
+            height="400"
+          ></img>
+          <p>
+            {"When we are awake, our EEG signal is dominated by high frequency activity called Beta waves. "}
+            {"When we fall asleep, our brain slows down. Larger and larger groups of neurons all fire together, in slow oscillations called Delta waves. "}
+            {"We will learn more in the modules on the frequency spectra and frequency bands about what the various oscillations represent and how they change. "}
+            {"We use the power of these brain waves to provide real time feedback about the state of your brain and practice Neurofeedback applications. "}
+            {"We can also use these measures to control oscillations, or control some Brain Machine Interfaces (BMIs). "}
+            {"But first, a little more about the tecnology we are using to measure and vizualize these signals. "}
+          </p>         
         </Card.Section>
       </Card>
+
+      <Card title={"EEG Hardware"}>
+        <Card.Section>
+          <p>
+            {"Because the brain has a great deal of salty water in it, it conducts electricity. "}
+            {"This electrical field gets smeared by the slightly electrically resistive skull and scalp. "}
+            {"Therefore the signal on the outside of the head has very little spatial information about where the signal came from. "}
+            {"Even worse, any potential measured on the head could have an infinite number of dipole configurations inside the head creating it. "}
+            {"Nonetheless, there are still difference in voltage between different parts of the head that may be interesting. "}
+          <br />
+          <br />
+            {"To measure the spatial distribution of the voltage signals, EEG is traditionally placed in a regular grid of electrode locations covering the surface of the head. "}
+            {"Each location is given a name, with the letter indicating the location of the head (F-Frontal; C-Central; P-Parietal; T-Temporal; O-Occipital; Fp-Fronto-polar). "}
+            {"The suffix has a z if along the midline, odd numbers over the left hemisphere, and even over the right. "}
+            {"Numbers start along the midline and get larger for more lateral sites on the head. "}
+          </p>
+          <img 
+            src={ require("./assets/electrodelocations.png")} 
+            alt="Awake/Asleep"
+            height="400"
+          ></img>
+          <br />
+          <br />
+          <p>
+            {"Voltage is electrical potential, and like a battery, is measured as the difference between two locations. "}
+            {"In the case of EEG, we use a reference electrode, shown here in black, to compare each of the other electrode locations against. "}
+            {"The EEG device must therefore measure the difference in voltage at each of its sensors compared to some reference location. "}
+            {"It must then amplify this very small signal, and convert this voltage to some signal that can be saved by a computer (digitization), and in the case of wireless EEG, transmit the signal. "}
+            {"A computer must then receive this signal, and display it, process it, or save it for later analysis. "}
+          <br />
+          <br />          
+            {"The amplification and digitization turns the continuous voltage into a digitized signal. "}
+            {"This signal now has descrete time steps and descrete difference in voltage. "}
+            {"The hardware's sampling rate controls how many samples of voltage per second (in Hz) are recorded. For example Muse 2 records 256 samples per second. "}
+            {"The digitization's bit depth, or how many memory bits are used to represent each voltage value, influence the smallest change in voltage that a system can measure. "}
+            {"Finally, since there are multiple electrode locations, these individual signals need to be digitized quickly one after another each recording cycle, this is called mulitplexing. "}
+          </p>
+          <br />
+          <img 
+            src={ require("./assets/musepicture.png")} 
+            alt="Awake/Asleep"
+            height="400"
+          ></img> 
+          <p>
+          <br />
+            {"One important consideration is the electrical conductivity between the head and the sensor. "}
+            {"An electrode is a conductive piece of material that takes the voltage difference between locations on the head and transmits it along a wire to the amplifier/digitizer. "}
+            {"The signal will therefore be greatly affected by the conductivity of the electrode to head connection. "}
+            {"The inverse of conductivity we call electrical resistance, and since the EEG oscillates like an alternating current power source, we call this impedance. "}
+            {"Notice that the muse uses two different types of sensor material, gold on the forehead, and conductive rubber behind the ears. "}
+          </p>        
+        </Card.Section>
+      </Card>
+
 
       <Card title={"Credits"}>
         <Card.Section>
