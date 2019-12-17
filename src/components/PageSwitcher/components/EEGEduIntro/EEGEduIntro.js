@@ -236,7 +236,7 @@ export function EEGEdu(channels) {
           </p>
           <img 
             src={ require("./assets/electrodelocations.png")} 
-            alt="Awake/Asleep"
+            alt="electrode locations"
             height="400"
           ></img>
           <br />
@@ -254,24 +254,60 @@ export function EEGEdu(channels) {
             {"The hardware's sampling rate controls how many samples of voltage per second (in Hz) are recorded. For example Muse 2 records 256 samples per second. "}
             {"The digitization's bit depth, or how many memory bits are used to represent each voltage value, influence the smallest change in voltage that a system can measure. "}
             {"Finally, since there are multiple electrode locations, these individual signals need to be digitized quickly one after another each recording cycle, this is called mulitplexing. "}
-          </p>
           <br />
-          <img 
-            src={ require("./assets/musepicture.png")} 
-            alt="Awake/Asleep"
+           <img 
+            src={ require("./assets/DigitalDAQv2.png")} //https://upload.wikimedia.org/wikipedia/commons/9/97/DigitalDAQv2.pdf
+            alt="electrode locations"
             height="400"
-          ></img> 
-          <p>
+          ></img>
           <br />
             {"One important consideration is the electrical conductivity between the head and the sensor. "}
             {"An electrode is a conductive piece of material that takes the voltage difference between locations on the head and transmits it along a wire to the amplifier/digitizer. "}
             {"The signal will therefore be greatly affected by the conductivity of the electrode to head connection. "}
             {"The inverse of conductivity we call electrical resistance, and since the EEG oscillates like an alternating current power source, we call this impedance. "}
             {"Notice that the muse uses two different types of sensor material, gold on the forehead, and conductive rubber behind the ears. "}
-          </p>        
+          </p>      
         </Card.Section>
       </Card>
 
+      <Card title={"Interaxon Muse"}>
+        <Card.Section>
+          <p>
+            {"A decade ago, before the revolution in wireless and battery powered electronics, EEG devices were large and combersome. "}
+            {"EEG devices reqired large amplifiers and digitizers, with dedicated power supplies, and desktop computers for data recording and analysis. "}
+            {"Computing limitations limited live data processing and experimentation. "}
+            {"Within the last decade, a series of new consumer focused EEG devices have been devleoped, drastically reducing the price and portability of the technology. "}
+            {"One of the most common is the Muse and Muse 2 created by Toronto based Interaxon Inc. "}
+          <br />
+          <br />
+           <img 
+            src={ require("./assets/musepicture.png")} 
+            alt="Awake/Asleep"
+            height="300"
+          ></img> 
+          <br />
+          <br />
+            {"The Muse is sold as an interactive mediation device, for under 300$ US. "}
+            {"Researchers have compared the signals with traditional expensive EEG devices and found very positive results. "}
+            {"Therefore the muse makes for an excellent teaching tool to integrate real time brain measurement into the classroom. "}
+            {"The muse records EEG data at 256 Hz, from four electrode locations shown here: "}
+          <img 
+            src={ require("./assets/electrodediagram.png")} 
+            alt="Awake/Asleep"
+            height="200"
+          ></img> 
+          <br />
+           <img 
+            src={ require("./assets/electrodelegend.png")} 
+            alt="Awake/Asleep"
+            height="75"
+          ></img> 
+          <br />
+          <br />
+            {"In the subsequent modules in this EEGEdu tutorial, you will use the live data from these four electrode locations. "}
+          </p>  
+        </Card.Section>
+      </Card>
 
       <Card title={"Credits"}>
         <Card.Section>
