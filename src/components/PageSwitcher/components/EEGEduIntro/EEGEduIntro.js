@@ -2,7 +2,7 @@ import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 import { Subject } from "rxjs";
 
-import { TextContainer, Card, Stack } from "@shopify/polaris";
+import { Card } from "@shopify/polaris";
 
 import { Line } from "react-chartjs-2";
 
@@ -173,7 +173,7 @@ export function EEGEdu(channels) {
           <img 
             src={ require("./assets/neuronarrow.png")} 
             alt="Single Neuron"
-            height="400"
+            height="300"
           ></img>
           <p>
             {"The electrical potential accross the cell membrane is small, around -70 mV at rest (1000 microvolts in a millivolt), and it changes around -20 mV during electrical changes in the cell. "}
@@ -315,6 +315,12 @@ export function EEGEdu(channels) {
             {"So now you have some background on how this electrical signal from your brain is generated. "}
             {"This particular signal is from behind your left ear, Electrode 1 at TP9. "}
             {"As the amplitude of the noise in the signal decreases, the line should get darker. "}
+          <br />
+          <img 
+            src={ require("./assets/electrodediagram1.png")} 
+            alt="Multiple Neurons"
+            height="200"
+          ></img> 
           </p>       
             <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
           <p>
