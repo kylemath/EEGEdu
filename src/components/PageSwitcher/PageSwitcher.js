@@ -4,7 +4,7 @@ import { Select, Card, Stack, Button, ButtonGroup } from "@shopify/polaris";
 
 import { mockMuseEEG } from "./utils/mockMuseEEG";
 
-import * as Intro from "./components/EEGEduIntro/EEGEduIntro"
+import * as Intro from "./components/EEGEduIntro/EEGEduIntro";
 import * as Raw from "./components/EEGEduRaw/EEGEduRaw";
 import * as Spectra from "./components/EEGEduSpectra/EEGEduSpectra";
 import * as Bands from "./components/EEGEduBands/EEGEduBands";
@@ -15,15 +15,14 @@ import * as generalTranslations from "./components/translations/en";
 import { emptyChannelData } from "./components/chartOptions";
 
 export function PageSwitcher() {
-
-  const [introData, setIntroData] = useState(emptyChannelData)
+  const [introData, setIntroData] = useState(emptyChannelData);
   const [rawData, setRawData] = useState(emptyChannelData);
   const [spectraData, setSpectraData] = useState(emptyChannelData);
   const [bandsData, setBandsData] = useState(emptyChannelData);
 
   const [introSettings] = useState(Intro.getSettings);
   const [spectraSettings, setSpectraSettings] = useState(Spectra.getSettings);
-  const [rawSettings, setRawSettings] = useState(Raw.getSettings); 
+  const [rawSettings, setRawSettings] = useState(Raw.getSettings);
   const [bandsSettings, setBandsSettings] = useState(Bands.getSettings);
 
   const [status, setStatus] = useState(generalTranslations.connect);
@@ -119,33 +118,44 @@ export function PageSwitcher() {
     }
   }
 
-  function refreshPage(){
+  function refreshPage() {
     window.location.reload();
   }
 
   function pipeSettingsDisplay() {
-    switch(selected) {
+    switch (selected) {
       case translations.types.intro:
-        return null
+        return null;
       case translations.types.raw:
-        return(
-          <Card title={'Raw Settings'} sectioned>
+        return (
+          <Card title={"Raw Settings"} sectioned>
             {Raw.renderSliders(setRawData, setRawSettings, status, rawSettings)}
           </Card>
         );
       case translations.types.spectra:
-        return(
-          <Card title={'Spectra Settings'} sectioned>
-            {Spectra.renderSliders(setSpectraData, setSpectraSettings, status, spectraSettings)}
+        return (
+          <Card title={"Spectra Settings"} sectioned>
+            {Spectra.renderSliders(
+              setSpectraData,
+              setSpectraSettings,
+              status,
+              spectraSettings
+            )}
           </Card>
         );
       case translations.types.bands:
-        return(
-          <Card title={'Bands Settings'} sectioned>
-            {Bands.renderSliders(setBandsData, setBandsSettings, status, bandsSettings)}
+        return (
+          <Card title={"Bands Settings"} sectioned>
+            {Bands.renderSliders(
+              setBandsData,
+              setBandsSettings,
+              status,
+              bandsSettings
+            )}
           </Card>
         );
-      default: console.log('Error rendering settings display');
+      default:
+        console.log("Error rendering settings display");
     }
   }
 
@@ -168,7 +178,7 @@ export function PageSwitcher() {
     }
   }
 
- return (
+  return (
     <React.Fragment>
       <Card sectioned>
         <Stack>
@@ -190,7 +200,9 @@ export function PageSwitcher() {
                 connect();
               }}
             >
-              {status === generalTranslations.connect ? generalTranslations.connectMock : status}
+              {status === generalTranslations.connect
+                ? generalTranslations.connectMock
+                : status}
             </Button>
             <Button
               destructive

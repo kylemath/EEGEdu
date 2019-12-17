@@ -7,13 +7,10 @@ function customCount(start, end, step = 1) {
 }
 
 // Average of values in data
-function average(data){
-  var sum = data.reduce(function(sum, value){
+function average(data) {
+  return data.reduce(function(sum, value) {
     return sum + value;
-  }, 0);
-
-  var avg = sum / data.length;
-  return avg;
+  }, 0).length;
 }
 
 export const bandLabels = ["Delta", "Theta", "Alpha", "Beta", "Gamma"];
@@ -30,15 +27,12 @@ export function generateXTics(srate, duration) {
 }
 
 // Standard deviation of values in values
-export function standardDeviation(values){
-  var avg = average(values);
-  var squareDiffs = values.map(function(value){
-    var diff = value - avg;
-    var sqrDiff = diff * diff;
-    return sqrDiff;
+export function standardDeviation(values) {
+  const avg = average(values);
+  const squareDiffs = values.map(function(value) {
+    const diff = value - avg;
+    return diff * diff;
   });
-  
-  var avgSquareDiff = average(squareDiffs);
-  var stdDev = Math.sqrt(avgSquareDiff).toFixed(0);
-  return stdDev;
+
+  return Math.sqrt(average(squareDiffs)).toFixed(0);
 }
