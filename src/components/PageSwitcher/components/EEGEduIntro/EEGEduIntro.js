@@ -154,7 +154,7 @@ export function EEGEdu(channels) {
             {"Here we are watching that live, with the voltage on the vertical axis (\u03BCV are microvolts, 1 million microvolts are in a volt). "}
             {"Time is shown in milleseconds along the horizontal axis, with the right side of the chart being the current moment:"}
           </p>       
-          <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
+            <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
           <p>
             {"Read on to find out where this electrical potential comes from and what it means. "}
           </p>  
@@ -308,6 +308,21 @@ export function EEGEdu(channels) {
           </p>  
         </Card.Section>
       </Card>
+
+      <Card title={"EEG Signal"}>
+        <Card.Section>
+          <p>
+            {"So now you have some background on how this electrical signal from your brain is generated. "}
+            {"This particular signal is from behind your left ear, Electrode 1 at TP9. "}
+            {"As the amplitude of the noise in the signal decreases, the line should get darker. "}
+          </p>       
+            <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
+          <p>
+            {"After playing around with this live signal you are ready to move onto some modules, select one from the menu above. "}
+          </p>  
+        </Card.Section>
+      </Card>
+
 
       <Card title={"Credits"}>
         <Card.Section>
