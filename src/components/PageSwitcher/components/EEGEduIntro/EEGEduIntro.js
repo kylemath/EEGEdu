@@ -25,9 +25,9 @@ export function getSettings () {
     cutOffLow: 2,
     cutOffHigh: 20,
     nbChannels: 4,
-    interval: 1,
+    interval: 2,
     srate: 256,
-    duration: 1024
+    duration: 512
   }
 };
 
@@ -148,15 +148,11 @@ export function EEGEdu(channels) {
       <Card title={"Introduction"}>
         <Card.Section>
           <p>
-            {"Below you are now looking at an live measurement of the electrical potential created by your brain. "}
-            {"Just like a AA battery stores 1.5 volts of electrical potential energy accross its positive and negative leads, "}
-            {"two points on your head also have a much smaller electrical potential when measured accross them. "}
-            {"Here we are watching that live, with the voltage on the vertical axis (\u03BCV are microvolts, 1 million microvolts are in a volt). "}
-            {"Time is shown in milleseconds along the horizontal axis, with the right side of the chart being the current moment:"}
+            {specificTranslations.Intro1}
           </p>       
             <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
           <p>
-            {"Read on to find out where this electrical potential comes from and what it means. "}
+            {specificTranslations.Intro2}
           </p>  
         </Card.Section>
       </Card>
@@ -164,11 +160,7 @@ export function EEGEdu(channels) {
       <Card title={"Neurons"}>
         <Card.Section>
           <p>
-            {"The brain is made up of cells called neurons. "}
-            {"Neurons communicate using chemical messages that change the electrical potential of the cells they connect with. "}
-            {"This change in electrical potential, if large enough, can make those cells send messages as well, and so on. "}
-            {"For example, an excitatory neuron releases Glutamate on another neuron, which lets in positively charged Sodium ions into the cell and make its interior less negative compared to outside. "}
-            {"These changes in electrical potential create small electrical fields, which act as tiny electrical dipoles like batteries. "}
+            {specificTranslations.Neurons1}
           </p>
           <img 
             src={ require("./assets/neuronarrow.png")} 
@@ -177,9 +169,7 @@ export function EEGEdu(channels) {
             height="auto"
           ></img>
           <p>
-            {"The electrical potential accross the cell membrane is small, around -70 mV at rest (1000 microvolts in a millivolt), and it changes around -20 mV during electrical changes in the cell. "}
-            {"However, if a large group of these tiny dipoles are aligned in space and their electrical potentials change at the same time, "}
-            {"they can create electrical potentials which are large enough to conduct through the brain tissue and be measurable comparing different points on the head. "}
+            {specificTranslations.Neurons2}
           </p>         
           <img 
             src={ require("./assets/neuronmultiarrow.png")} 
@@ -188,9 +178,7 @@ export function EEGEdu(channels) {
             height="auto"
           ></img> 
           <p>
-            {"As you can see above, these electrical potentials measured on the outside of the head fluctuature between about -200 and 200 \u03BCV. "}
-            {"You can also see cycles between high and low voltage, called oscillations, which can occur in the human brain at a number of frequencies. "}
-            {"You may have heard of some of these brain waves before, but what do they mean? "}
+            {specificTranslations.Neurons3}
           </p> 
         </Card.Section>
       </Card>
