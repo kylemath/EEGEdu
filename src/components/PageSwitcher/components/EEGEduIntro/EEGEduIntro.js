@@ -145,7 +145,7 @@ export function EEGEdu(channels) {
   return (
     <React.Fragment>
 
-      <Card title={"Introduction"}>
+      <Card title={specificTranslations.title}>
         <Card.Section>
           <p>
             {specificTranslations.intro1}
@@ -273,7 +273,7 @@ export function EEGEdu(channels) {
         </Card.Section>
       </Card>
 
-      <Card title={specificTranslations.museHead}>
+      <Card title={specificTranslations.signalHead}>
         <Card.Section>
           <p>
             {specificTranslations.signal1}
