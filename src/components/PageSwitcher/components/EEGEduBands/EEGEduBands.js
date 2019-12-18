@@ -9,7 +9,12 @@ import { Bar } from "react-chartjs-2";
 
 import { zipSamples } from "muse-js";
 
-import { bandpassFilter, epoch, fft, powerByBand } from "@neurosity/pipes";
+import {
+  bandpassFilter,
+  epoch,
+  fft,
+  powerByBand
+} from "@neurosity/pipes";
 
 import { chartStyles, generalOptions } from "../chartOptions";
 
@@ -17,7 +22,7 @@ import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 import { bandLabels } from "../../utils/chartUtils";
 
-export function getSettings() {
+export function getSettings () {
   return {
     cutOffLow: 2,
     cutOffHigh: 20,
@@ -26,34 +31,33 @@ export function getSettings() {
     bins: 256,
     duration: 1024,
     srate: 256
-  };
-}
+  }
+};
 
 export function buildPipe(Settings) {
   if (window.subscriptionBands$) window.subscriptionBands$.unsubscribe();
 
-  window.pipeBands$ = null;
-  window.multicastBands$ = null;
-  window.subscriptionBands$ = null;
+    window.pipeBands$ = null;
+    window.multicastBands$ = null;
+    window.subscriptionBands$ = null;
 
-  window.pipeBands$ = zipSamples(window.source$.eegReadings).pipe(
-    bandpassFilter({
-      cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh],
-      nbChannels: Settings.nbChannels
-    }),
-    epoch({
-      duration: Settings.duration,
-      interval: Settings.interval,
-      samplingRate: Settings.srate
-    }),
-    fft({ bins: Settings.bins }),
-    powerByBand(),
-    catchError(err => {
-      console.log(err);
-    })
-  );
-  window.multicastBands$ = window.pipeBands$.pipe(
-    multicast(() => new Subject())
+    window.pipeBands$ = zipSamples(window.source$.eegReadings).pipe(
+      bandpassFilter({ 
+        cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
+        nbChannels: Settings.nbChannels }),
+      epoch({
+        duration: Settings.duration,
+        interval: Settings.interval,
+        samplingRate: Settings.srate
+      }),
+      fft({ bins: Settings.bins }),
+      powerByBand(),
+      catchError(err => {
+        console.log(err);
+      })
+    );
+    window.multicastBands$ = window.pipeBands$.pipe(
+      multicast(() => new Subject())
   );
 }
 
@@ -147,69 +151,64 @@ export function EEGEdu(channels) {
   );
 }
 
+
 export function renderSliders(setData, setSettings, status, Settings) {
+
   function handleIntervalRangeSliderChange(value) {
-    setSettings(prevState => ({ ...prevState, interval: value }));
+    setSettings(prevState => ({...prevState, interval: value}));
     buildPipe(Settings);
     setup(setData);
   }
 
   function handleCutoffLowRangeSliderChange(value) {
-    setSettings(prevState => ({ ...prevState, cutOffLow: value }));
+    setSettings(prevState => ({...prevState, cutOffLow: value}));
     buildPipe(Settings);
     setup(setData);
   }
 
   function handleCutoffHighRangeSliderChange(value) {
-    setSettings(prevState => ({ ...prevState, cutOffHigh: value }));
+    setSettings(prevState => ({...prevState, cutOffHigh: value}));
     buildPipe(Settings);
     setup(setData);
   }
 
   function handleDurationRangeSliderChange(value) {
-    setSettings(prevState => ({ ...prevState, duration: value }));
+    setSettings(prevState => ({...prevState, duration: value}));
     buildPipe(Settings);
     setup(setData);
   }
 
   return (
     <React.Fragment>
-      <RangeSlider
+      <RangeSlider 
         disabled={status === generalTranslations.connect}
-        min={128}
-        step={128}
-        max={4096}
-        label={"Epoch duration (Sampling Points): " + Settings.duration}
-        value={Settings.duration}
-        onChange={handleDurationRangeSliderChange}
+        min={128} step={128} max={4096} 
+        label={'Epoch duration (Sampling Points): ' + Settings.duration} 
+        value={Settings.duration} 
+        onChange={handleDurationRangeSliderChange} 
       />
-      <RangeSlider
+      <RangeSlider 
         disabled={status === generalTranslations.connect}
-        min={10}
-        step={5}
-        max={Settings.duration}
-        label={"Sampling points between epochs onsets: " + Settings.interval}
-        value={Settings.interval}
-        onChange={handleIntervalRangeSliderChange}
+        min={10} step={5} max={Settings.duration} 
+        label={'Sampling points between epochs onsets: ' + Settings.interval} 
+        value={Settings.interval} 
+        onChange={handleIntervalRangeSliderChange} 
       />
-      <RangeSlider
+      <RangeSlider 
         disabled={status === generalTranslations.connect}
-        min={0.01}
-        step={0.5}
-        max={Settings.cutOffHigh - 0.5}
-        label={"Cutoff Frequency Low: " + Settings.cutOffLow + " Hz"}
-        value={Settings.cutOffLow}
-        onChange={handleCutoffLowRangeSliderChange}
+        min={.01} step={.5} max={Settings.cutOffHigh - .5} 
+        label={'Cutoff Frequency Low: ' + Settings.cutOffLow + ' Hz'} 
+        value={Settings.cutOffLow} 
+        onChange={handleCutoffLowRangeSliderChange} 
       />
-      <RangeSlider
+      <RangeSlider 
         disabled={status === generalTranslations.connect}
-        min={Settings.cutOffLow + 0.5}
-        step={0.5}
-        max={Settings.srate / 2}
-        label={"Cutoff Frequency High: " + Settings.cutOffHigh + " Hz"}
-        value={Settings.cutOffHigh}
-        onChange={handleCutoffHighRangeSliderChange}
+        min={Settings.cutOffLow + .5} step={.5} max={Settings.srate/2} 
+        label={'Cutoff Frequency High: ' + Settings.cutOffHigh + ' Hz'} 
+        value={Settings.cutOffHigh} 
+        onChange={handleCutoffHighRangeSliderChange} 
       />
     </React.Fragment>
-  );
+  )
 }
+
