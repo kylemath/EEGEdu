@@ -1,9 +1,9 @@
 {
   "title": "Choose your Module",
   "types": {
-  	"intro": "Intro",
-    "raw": "Raw",
-    "spectra": "Spectra",
-    "bands": "Bands"
+  	"intro": "Introduction",
+    "raw": "Raw and Filtered Data",
+    "spectra": "Frequency Spectra",
+    "bands": "Frequency Bands"
   }
 }

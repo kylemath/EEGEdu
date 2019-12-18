@@ -148,19 +148,19 @@ export function EEGEdu(channels) {
       <Card title={"Introduction"}>
         <Card.Section>
           <p>
-            {specificTranslations.Intro1}
+            {specificTranslations.intro1}
           </p>       
             <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
           <p>
-            {specificTranslations.Intro2}
+            {specificTranslations.intro2}
           </p>  
         </Card.Section>
       </Card>
 
-      <Card title={"Neurons"}>
+      <Card title={specificTranslations.neuronsHead}>
         <Card.Section>
           <p>
-            {specificTranslations.Neurons1}
+            {specificTranslations.neurons1}
           </p>
           <img 
             src={ require("./assets/neuronarrow.png")} 
@@ -169,7 +169,7 @@ export function EEGEdu(channels) {
             height="auto"
           ></img>
           <p>
-            {specificTranslations.Neurons2}
+            {specificTranslations.neurons2}
           </p>         
           <img 
             src={ require("./assets/neuronmultiarrow.png")} 
@@ -178,7 +178,7 @@ export function EEGEdu(channels) {
             height="auto"
           ></img> 
           <p>
-            {specificTranslations.Neurons3}
+            {specificTranslations.neurons3}
           </p> 
         </Card.Section>
       </Card>
