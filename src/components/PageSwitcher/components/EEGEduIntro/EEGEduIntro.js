@@ -150,7 +150,9 @@ export function EEGEdu(channels) {
           <p>
             {specificTranslations.intro1}
           </p>       
-            <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
+            <div style={chartStyles.wrapperStyle.style}>
+              {renderCharts()}
+            </div>
           <p>
             {specificTranslations.intro2}
           </p>  
@@ -283,7 +285,9 @@ export function EEGEdu(channels) {
             height="auto"
           ></img> 
           </p>       
-            <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
+            <div style={chartStyles.wrapperStyle.style}>
+              {renderCharts()}
+            </div>
           <p>
             {specificTranslations.signal2}
           </p>  
@@ -296,7 +300,6 @@ export function EEGEdu(channels) {
           <p>
             {specificTranslations.credits1}
             <a href="http://learn.neurotechedu.com/">NeurotechEdu. </a>
-            }
           </p>
           <p>
             {specificTranslations.credits2}
