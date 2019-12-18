@@ -173,7 +173,8 @@ export function EEGEdu(channels) {
           <img 
             src={ require("./assets/neuronarrow.png")} 
             alt="Single Neuron"
-            height="300"
+            width="100%"
+            height="auto"
           ></img>
           <p>
             {"The electrical potential accross the cell membrane is small, around -70 mV at rest (1000 microvolts in a millivolt), and it changes around -20 mV during electrical changes in the cell. "}
@@ -183,7 +184,8 @@ export function EEGEdu(channels) {
           <img 
             src={ require("./assets/neuronmultiarrow.png")} 
             alt="Multiple Neurons"
-            height="400"
+            width="100%"
+            height="auto"
           ></img> 
           <p>
             {"As you can see above, these electrical potentials measured on the outside of the head fluctuature between about -200 and 200 \u03BCV. "}
@@ -206,7 +208,8 @@ export function EEGEdu(channels) {
           <img 
             src={ require("./assets/awakeasleep.gif")} 
             alt="Awake/Asleep"
-            height="400"
+            width="100%"
+            height="auto"
           ></img>
           <p>
             {"When we are awake, our EEG signal is dominated by high frequency activity called Beta waves. "}
@@ -234,10 +237,12 @@ export function EEGEdu(channels) {
             {"The suffix has a z if along the midline, odd numbers over the left hemisphere, and even over the right. "}
             {"Numbers start along the midline and get larger for more lateral sites on the head. "}
           </p>
+          <br />
           <img 
             src={ require("./assets/electrodelocations.png")} 
             alt="electrode locations"
-            height="400"
+            width="50%"
+            height="auto"
           ></img>
           <br />
           <br />
@@ -257,8 +262,9 @@ export function EEGEdu(channels) {
           <br />
            <img 
             src={ require("./assets/DigitalDAQv2.png")} //https://upload.wikimedia.org/wikipedia/commons/9/97/DigitalDAQv2.pdf
-            alt="electrode locations"
-            height="400"
+            alt="DAQ diagram"
+            width="100%"
+            height="auto"
           ></img>
           <br />
             {"One important consideration is the electrical conductivity between the head and the sensor. "}
@@ -283,7 +289,8 @@ export function EEGEdu(channels) {
            <img 
             src={ require("./assets/musepicture.png")} 
             alt="Awake/Asleep"
-            height="300"
+            width="75%"
+            height="auto"
           ></img> 
           <br />
           <br />
@@ -291,16 +298,19 @@ export function EEGEdu(channels) {
             {"Researchers have compared the signals with traditional expensive EEG devices and found very positive results. "}
             {"Therefore the muse makes for an excellent teaching tool to integrate real time brain measurement into the classroom. "}
             {"The muse records EEG data at 256 Hz, from four electrode locations shown here: "}
+          <br />
           <img 
             src={ require("./assets/electrodediagram.png")} 
-            alt="Awake/Asleep"
-            height="200"
+            alt="Muse Electrodes"
+            width="50%"
+            height="auto"
           ></img> 
           <br />
            <img 
             src={ require("./assets/electrodelegend.png")} 
-            alt="Awake/Asleep"
-            height="75"
+            alt="ElectrodeLegend"
+            width="50%"
+            height="auto"
           ></img> 
           <br />
           <br />
@@ -318,8 +328,9 @@ export function EEGEdu(channels) {
           <br />
           <img 
             src={ require("./assets/electrodediagram1.png")} 
-            alt="Multiple Neurons"
-            height="200"
+            alt="SingleElectrode"
+            width="50%"
+            height="auto"
           ></img> 
           </p>       
             <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
