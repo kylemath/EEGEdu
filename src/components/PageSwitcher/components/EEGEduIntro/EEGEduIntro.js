@@ -183,15 +183,10 @@ export function EEGEdu(channels) {
         </Card.Section>
       </Card>
 
-      <Card title={"Oscillations"}>
+      <Card title={specificTranslations.oscillationsHead}>
         <Card.Section>
           <p>
-            {"Large groups of aligned neurons are all becoming more and less active together in groups. "}
-            {"And these fluctuations in activity seem to occur within certain frequency bands. "}
-            {"It has been proposed that these different frequencies of neural activity serve functional mechanisms in the brain. "}
-            {"That is, one of the ways the brain uses to process and communicate information is through these rhythmic processes. "}
-            {"These oscillations can change during different behaviours. One of the most drastic is the difference in the EEG when we fall asleep: "}
-
+            {specificTranslations.oscillations1}
           </p>
           <img 
             src={ require("./assets/awakeasleep.gif")} 
@@ -200,30 +195,18 @@ export function EEGEdu(channels) {
             height="auto"
           ></img>
           <p>
-            {"When we are awake, our EEG signal is dominated by high frequency activity called Beta waves. "}
-            {"When we fall asleep, our brain slows down. Larger and larger groups of neurons all fire together, in slow oscillations called Delta waves. "}
-            {"We will learn more in the modules on the frequency spectra and frequency bands about what the various oscillations represent and how they change. "}
-            {"We use the power of these brain waves to provide real time feedback about the state of your brain and practice Neurofeedback applications. "}
-            {"We can also use these measures to control oscillations, or control some Brain Machine Interfaces (BMIs). "}
-            {"But first, a little more about the tecnology we are using to measure and vizualize these signals. "}
+            {specificTranslations.oscillations2}
           </p>         
         </Card.Section>
       </Card>
 
-      <Card title={"EEG Hardware"}>
+      <Card title={specificTranslations.hardwareHead}>
         <Card.Section>
           <p>
-            {"Because the brain has a great deal of salty water in it, it conducts electricity. "}
-            {"This electrical field gets smeared by the slightly electrically resistive skull and scalp. "}
-            {"Therefore the signal on the outside of the head has very little spatial information about where the signal came from. "}
-            {"Even worse, any potential measured on the head could have an infinite number of dipole configurations inside the head creating it. "}
-            {"Nonetheless, there are still difference in voltage between different parts of the head that may be interesting. "}
+            {specificTranslations.hardware1}
           <br />
           <br />
-            {"To measure the spatial distribution of the voltage signals, EEG is traditionally placed in a regular grid of electrode locations covering the surface of the head. "}
-            {"Each location is given a name, with the letter indicating the location of the head (F-Frontal; C-Central; P-Parietal; T-Temporal; O-Occipital; Fp-Fronto-polar). "}
-            {"The suffix has a z if along the midline, odd numbers over the left hemisphere, and even over the right. "}
-            {"Numbers start along the midline and get larger for more lateral sites on the head. "}
+            {specificTranslations.hardware2}
           </p>
           <br />
           <img 
@@ -235,18 +218,10 @@ export function EEGEdu(channels) {
           <br />
           <br />
           <p>
-            {"Voltage is electrical potential, and like a battery, is measured as the difference between two locations. "}
-            {"In the case of EEG, we use a reference electrode, shown here in black, to compare each of the other electrode locations against. "}
-            {"The EEG device must therefore measure the difference in voltage at each of its sensors compared to some reference location. "}
-            {"It must then amplify this very small signal, and convert this voltage to some signal that can be saved by a computer (digitization), and in the case of wireless EEG, transmit the signal. "}
-            {"A computer must then receive this signal, and display it, process it, or save it for later analysis. "}
+            {specificTranslations.hardware3}
           <br />
           <br />          
-            {"The amplification and digitization turns the continuous voltage into a digitized signal. "}
-            {"This signal now has descrete time steps and descrete difference in voltage. "}
-            {"The hardware's sampling rate controls how many samples of voltage per second (in Hz) are recorded. For example Muse 2 records 256 samples per second. "}
-            {"The digitization's bit depth, or how many memory bits are used to represent each voltage value, influence the smallest change in voltage that a system can measure. "}
-            {"Finally, since there are multiple electrode locations, these individual signals need to be digitized quickly one after another each recording cycle, this is called mulitplexing. "}
+            {specificTranslations.hardware4}
           <br />
            <img 
             src={ require("./assets/DigitalDAQv2.png")} //https://upload.wikimedia.org/wikipedia/commons/9/97/DigitalDAQv2.pdf
@@ -255,23 +230,15 @@ export function EEGEdu(channels) {
             height="auto"
           ></img>
           <br />
-            {"One important consideration is the electrical conductivity between the head and the sensor. "}
-            {"An electrode is a conductive piece of material that takes the voltage difference between locations on the head and transmits it along a wire to the amplifier/digitizer. "}
-            {"The signal will therefore be greatly affected by the conductivity of the electrode to head connection. "}
-            {"The inverse of conductivity we call electrical resistance, and since the EEG oscillates like an alternating current power source, we call this impedance. "}
-            {"Notice that the muse uses two different types of sensor material, gold on the forehead, and conductive rubber behind the ears. "}
+            {specificTranslations.hardware5}
           </p>      
         </Card.Section>
       </Card>
 
-      <Card title={"Interaxon Muse"}>
+      <Card title={specificTranslations.museHead}>
         <Card.Section>
           <p>
-            {"A decade ago, before the revolution in wireless and battery powered electronics, EEG devices were large and combersome. "}
-            {"EEG devices reqired large amplifiers and digitizers, with dedicated power supplies, and desktop computers for data recording and analysis. "}
-            {"Computing limitations limited live data processing and experimentation. "}
-            {"Within the last decade, a series of new consumer focused EEG devices have been devleoped, drastically reducing the price and portability of the technology. "}
-            {"One of the most common is the Muse and Muse 2 created by Toronto based Interaxon Inc. "}
+            {specificTranslations.muse1}
           <br />
           <br />
            <img 
@@ -282,10 +249,7 @@ export function EEGEdu(channels) {
           ></img> 
           <br />
           <br />
-            {"The Muse is sold as an interactive mediation device, for under 300$ US. "}
-            {"Researchers have compared the signals with traditional expensive EEG devices and found very positive results. "}
-            {"Therefore the muse makes for an excellent teaching tool to integrate real time brain measurement into the classroom. "}
-            {"The muse records EEG data at 256 Hz, from four electrode locations shown here: "}
+            {specificTranslations.muse2}
           <br />
           <img 
             src={ require("./assets/electrodediagram.png")} 
@@ -302,17 +266,15 @@ export function EEGEdu(channels) {
           ></img> 
           <br />
           <br />
-            {"In the subsequent modules in this EEGEdu tutorial, you will use the live data from these four electrode locations. "}
+            {specificTranslations.muse3}
           </p>  
         </Card.Section>
       </Card>
 
-      <Card title={"EEG Signal"}>
+      <Card title={specificTranslations.museHead}>
         <Card.Section>
           <p>
-            {"So now you have some background on how this electrical signal from your brain is generated. "}
-            {"This particular signal is from behind your left ear, Electrode 1 at TP9. "}
-            {"As the amplitude of the noise in the signal decreases, the line should get darker. "}
+            {specificTranslations.signal1}
           <br />
           <img 
             src={ require("./assets/electrodediagram1.png")} 
@@ -323,32 +285,33 @@ export function EEGEdu(channels) {
           </p>       
             <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
           <p>
-            {"After playing around with this live signal you are ready to move onto some modules, select one from the menu above. "}
+            {specificTranslations.signal2}
           </p>  
         </Card.Section>
       </Card>
 
 
-      <Card title={"Credits"}>
+      <Card title={specificTranslations.creditsHead}>
         <Card.Section>
           <p>
-            {"EEGEdu is an open source collaborative project with NeurotechX's "}
+            {specificTranslations.credits1}
             <a href="http://learn.neurotechedu.com/">NeurotechEdu. </a>
+            }
           </p>
           <p>
-            {"This is also created in collaboration with "}
+            {specificTranslations.credits2}
             <a href="https://choosemuse.com/muse-research/">Interaxon. </a>
           </p>
           <p>
-            {"This online tutorial is made using a Muse connection by Web Bluetooth using "}
+            {specificTranslations.credits3}
             <a href="https://github.com/urish/muse-js">muse-js </a>
-            {"by Uri Shaked who has an excellent introduction to EEG "}
+            {specificTranslations.credits4}
             <a href="https://medium.com/neurotechx/a-techys-introduction-to-neuroscience-3f492df4d3bf">A Techy's Introduction to Neuroscience. </a>
           </p>
           <p>
-            {"The data is processed using Neurosity's "}
+            {specificTranslations.credits5}
             <a href="https://github.com/neurosity/eeg-pipes">eeg-pipes </a>
-            {"by Alex Castillo who also has an excellent post about EEG and the web called "}
+            {specificTranslations.credits6}
             <a href="https://medium.com/@castillo.io/muse-2016-headband-web-bluetooth-11ddcfa74c83">Muse 2016 Headband + Web Bluetooth.</a>
           </p>
         </Card.Section>
@@ -357,5 +320,3 @@ export function EEGEdu(channels) {
     </React.Fragment>
   );
 }
-
-  
