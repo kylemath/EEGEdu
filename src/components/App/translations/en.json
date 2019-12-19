@@ -10,7 +10,7 @@
     "The first step will be to turn on your Muse headband and click the connect button. ",
     "This will open a screen and will list available Muse devices. ",
     "Select the serial number written on your Muse. ",
-    "If you do not have a muse headband you can click the Mock Data button to use simluated data. ",
+    "If you do not have a Muse headband you can click the Mock Data button to use simluated data. ",
     "Then scroll down to see you live brain activity!"
   ],
   "footer": "EEGEdu - An Interactive Electrophysiology Tutorial with the Muse brought to you by Mathewson Sons"
