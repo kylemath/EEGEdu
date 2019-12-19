@@ -30,6 +30,10 @@ jobs:
       - name: Build
         run: yarn build
 
+      - name: Create artifact dir
+        run: |
+          mkdir -p artifacts
+
       - name: Archive Produciton Artifacts
         uses: actions/upload-artifact@master
         with:
