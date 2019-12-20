@@ -75,7 +75,7 @@ export function PageSwitcher() {
   }
 
   function saveToCSV(value) {
-    const numSamplesToSave = 10;
+    const numSamplesToSave = 1;
     console.log('Saving ' + numSamplesToSave + ' samples...');
     var localObservable$ = null;
     const dataToSave = [];
@@ -99,23 +99,18 @@ export function PageSwitcher() {
         );
         break;
       case translations.types.bands:
-        localObservable$ = window.pipeBands$.pipe(
-          take(1)
+        console.log('making headers')
+        dataToSave.push(
+          "delta0,delta1,delta2,delta3,deltaAux,", 
+          "theta0,theta1,theta2,theta3,thetaAux,",  
+          "alpha0,alpha1,alpha2,alpha3,alphaAux,",  
+          "beta0,beta1,beta2,beta3,betaAux,", 
+          "delta0,delta1,delta2,delta3,deltaAux\n"
         );
-        localObservable$.subscribe({
-          next(x) {
-            dataToSave.push(
-              "delta0,delta1,delta2,delta3,deltaAux,", 
-              "theta0,theta1,theta2,theta3,thetaAux,",  
-              "alpha0,alpha1,alpha2,alpha3,alphaAux,",  
-              "beta0,beta1,beta2,beta3,betaAux,", 
-              "delta0,delta1,delta2,delta3,deltaAux\n"
-            );
-          }
-        })
         localObservable$ = window.pipeBands$.pipe(
           take(numSamplesToSave)
         );
+        console.log(localObservable$)
         break;
       default:
         console.log(
@@ -126,12 +121,15 @@ export function PageSwitcher() {
 
     localObservable$.subscribe({
       next(x) { 
+        console.log('here?')
+        // something in here doesn't run on real data
         dataToSave.push(Object.values(x).join(",") + "\n");
         // logging is useful for debugging
         console.log(x);
       },
       error(err) { console.log(err); },
       complete() { 
+        console.log('Trying to save')
         var blob = new Blob(
           dataToSave, 
           {type: "text/plain;charset=utf-8"}
