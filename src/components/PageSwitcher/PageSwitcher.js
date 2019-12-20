@@ -75,12 +75,13 @@ export function PageSwitcher() {
   }
 
   function saveToCSV(value) {
-    const numSamplesToSave = 100;
+    const numSamplesToSave = 10;
     console.log('Saving ' + numSamplesToSave + ' samples...');
     var localObservable$ = null;
     const dataToSave = [];
 
-
+    var d = Date();
+    dataToSave.push(d.toString() + "\n");
 
     switch (value) {
       case translations.types.intro:
