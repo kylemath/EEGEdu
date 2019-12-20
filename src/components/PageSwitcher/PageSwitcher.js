@@ -75,7 +75,7 @@ export function PageSwitcher() {
   }
 
   function saveToCSV(value) {
-    const numSamplesToSave = 100;
+    const numSamplesToSave = 10;
     console.log('Saving ' + numSamplesToSave + ' samples...');
     var localObservable$ = null;
     const dataToSave = [];
@@ -105,11 +105,11 @@ export function PageSwitcher() {
         localObservable$.subscribe({
           next(x) {
             dataToSave.push(
-              Object.keys(x).join(",") + "," +
-              Object.keys(x).join(",") + "," + 
-              Object.keys(x).join(",") + "," + 
-              Object.keys(x).join(",") + "," + 
-              Object.keys(x).join(",") + "\n"
+              "delta0,delta1,delta2,delta3,deltaAux,", 
+              "theta0,theta1,theta2,theta3,thetaAux,",  
+              "alpha0,alpha1,alpha2,alpha3,alphaAux,",  
+              "beta0,beta1,beta2,beta3,betaAux,", 
+              "delta0,delta1,delta2,delta3,deltaAux\n"
             );
           }
         })
@@ -136,7 +136,7 @@ export function PageSwitcher() {
           dataToSave, 
           {type: "text/plain;charset=utf-8"}
         );
-        saveAs(blob, "dataToSave.txt");
+        saveAs(blob, "Bands_Recording.csv");
         console.log('Completed');
       }
     });
