@@ -30,7 +30,7 @@ export function PageSwitcher() {
 
   const [status, setStatus] = useState(generalTranslations.connect);
   // module at load:
-  const [selected, setSelected] = useState(translations.types.intro);
+  const [selected, setSelected] = useState(translations.types.raw);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 
@@ -231,9 +231,6 @@ export function PageSwitcher() {
             >
               {generalTranslations.disconnect}
             </Button>     
-            <Button onClick={saveToCSV}> 
-              {'Save to CSV'}  
-            </Button>
           </ButtonGroup>
         </Stack>
       </Card>
@@ -247,6 +244,19 @@ export function PageSwitcher() {
       </Card>
       {pipeSettingsDisplay()}
       {renderCharts()}
+      <Card title={'Record Data'} sectioned>
+        <Stack>
+          <ButtonGroup>
+            <Button 
+              onClick={saveToCSV}
+              primary={status !== generalTranslations.connect}
+              disabled={status === generalTranslations.connect}
+            > 
+              {'Save to CSV'}  
+            </Button>
+          </ButtonGroup>
+        </Stack>
+      </Card>
     </React.Fragment>
   );
 }
