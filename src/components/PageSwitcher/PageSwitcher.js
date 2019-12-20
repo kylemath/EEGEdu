@@ -75,7 +75,7 @@ export function PageSwitcher() {
   }
 
   function saveToCSV(value) {
-    const numSamplesToSave = 10;
+    const numSamplesToSave = 100;
     console.log('Saving ' + numSamplesToSave + ' samples...');
     var localObservable$ = null;
     const dataToSave = [];
@@ -101,6 +101,7 @@ export function PageSwitcher() {
       case translations.types.bands:
         console.log('making headers')
         dataToSave.push(
+          "Timestamp (ms),",
           "delta0,delta1,delta2,delta3,deltaAux,", 
           "theta0,theta1,theta2,theta3,thetaAux,",  
           "alpha0,alpha1,alpha2,alpha3,alphaAux,",  
@@ -118,13 +119,14 @@ export function PageSwitcher() {
         );
     }
     
+    const startTime = Date.now();
     localObservable$.subscribe({
       next(x) { 
         console.log('here?')
         // something in here doesn't run on real data
-        dataToSave.push(Object.values(x).join(",") + "\n");
+        dataToSave.push(Date.now()-startTime + "," + Object.values(x).join(",") + "\n");
         // logging is useful for debugging
-        console.log(x);
+        // console.log(x);
       },
       error(err) { console.log(err); },
       complete() { 
