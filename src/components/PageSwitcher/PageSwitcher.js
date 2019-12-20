@@ -118,6 +118,7 @@ export function PageSwitcher() {
         );
     }
     
+    console.log(localObservable$.next(1));
 
     localObservable$.subscribe({
       next(x) { 
