@@ -78,6 +78,9 @@ export function PageSwitcher() {
     const numSamplesToSave = 100;
     console.log('Saving ' + numSamplesToSave + ' samples...');
     var localObservable$ = null;
+    const dataToSave = [];
+
+
 
     switch (value) {
       case translations.types.intro:
@@ -97,6 +100,20 @@ export function PageSwitcher() {
         break;
       case translations.types.bands:
         localObservable$ = window.pipeBands$.pipe(
+          take(1)
+        );
+        localObservable$.subscribe({
+          next(x) {
+            dataToSave.push(
+              Object.keys(x).join(",") + "," +
+              Object.keys(x).join(",") + "," + 
+              Object.keys(x).join(",") + "," + 
+              Object.keys(x).join(",") + "," + 
+              Object.keys(x).join(",") + "\n"
+            );
+          }
+        })
+        localObservable$ = window.pipeBands$.pipe(
           take(numSamplesToSave)
         );
         break;
@@ -106,12 +123,12 @@ export function PageSwitcher() {
         );
     }
     
-    const dataToSave = [];
+
     localObservable$.subscribe({
       next(x) { 
-        dataToSave.push(JSON.stringify(x));
+        dataToSave.push(Object.values(x).join(",") + "\n");
         // logging is useful for debugging
-        // console.log(x);
+        console.log(x);
       },
       error(err) { console.log(err); },
       complete() { 
