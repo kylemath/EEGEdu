@@ -13,6 +13,8 @@ import * as translations from "./translations/en.json";
 import { MuseClient } from "muse-js";
 import * as generalTranslations from "./components/translations/en";
 import { emptyChannelData } from "./components/chartOptions";
+import { saveAs } from 'file-saver';
+import { take } from "rxjs/operators";
 
 export function PageSwitcher() {
 
@@ -71,6 +73,35 @@ export function PageSwitcher() {
         );
     }
   }
+
+  function saveToCSV() {
+    const numSamplesToSave = 100;
+    console.log('Saving ' + numSamplesToSave + ' samples...');
+
+    // Create a limited observable
+    const observable = mockMuseEEG(256).pipe(
+      take(numSamplesToSave)
+    );
+    
+    const dataToSave = [];
+    observable.subscribe({
+      next(x) { 
+        dataToSave.push(JSON.stringify(x));
+        // logging is useful for debugging
+        // console.log(x);
+      },
+      error(err) { console.log(err); },
+      complete() { 
+        var blob = new Blob(
+          dataToSave, 
+          {type: "text/plain;charset=utf-8"}
+        );
+        saveAs(blob, "dataToSave.txt");
+        console.log('Completed');
+      }
+    });
+  }
+
 
   async function connect() {
     try {
@@ -199,6 +230,9 @@ export function PageSwitcher() {
               disabled={status === generalTranslations.connect}
             >
               {generalTranslations.disconnect}
+            </Button>     
+            <Button onClick={saveToCSV}> 
+              {'Save to CSV'}  
             </Button>
           </ButtonGroup>
         </Stack>

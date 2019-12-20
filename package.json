@@ -18,6 +18,7 @@
     "react-chartjs-2": "^2.7.2",
     "react-dom": "^16.4.1",
     "react-scripts": "^3.2.0",
+    "streamsaver": "^2.0.3",
     "rxjs": "^6.5.3"
   },
   "scripts": {
