@@ -75,7 +75,7 @@ export function PageSwitcher() {
   }
 
   function saveToCSV(value) {
-    const numSamplesToSave = 1;
+    const numSamplesToSave = 10;
     console.log('Saving ' + numSamplesToSave + ' samples...');
     var localObservable$ = null;
     const dataToSave = [];
