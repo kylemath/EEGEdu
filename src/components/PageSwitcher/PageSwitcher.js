@@ -30,7 +30,7 @@ export function PageSwitcher() {
 
   const [status, setStatus] = useState(generalTranslations.connect);
   // module at load:
-  const [selected, setSelected] = useState(translations.types.raw);
+  const [selected, setSelected] = useState(translations.types.bands);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 
@@ -74,17 +74,40 @@ export function PageSwitcher() {
     }
   }
 
-  function saveToCSV() {
+  function saveToCSV(value) {
     const numSamplesToSave = 100;
     console.log('Saving ' + numSamplesToSave + ' samples...');
+    var localObservable$ = null;
 
-    // Create a limited observable
-    const observable = mockMuseEEG(256).pipe(
-      take(numSamplesToSave)
-    );
+    switch (value) {
+      case translations.types.intro:
+        localObservable$ = window.pipeIntro$.pipe(
+          take(numSamplesToSave)
+        );
+        break;
+      case translations.types.raw:
+        localObservable$ = window.pipeRaw$.pipe(
+          take(numSamplesToSave)
+        );
+        break;
+      case translations.types.spectra:
+        localObservable$ = window.pipeSpectra$.pipe(
+          take(numSamplesToSave)
+        );
+        break;
+      case translations.types.bands:
+        localObservable$ = window.pipeBands$.pipe(
+          take(numSamplesToSave)
+        );
+        break;
+      default:
+        console.log(
+          "Error on saveto CSV: " + value
+        );
+    }
     
     const dataToSave = [];
-    observable.subscribe({
+    localObservable$.subscribe({
       next(x) { 
         dataToSave.push(JSON.stringify(x));
         // logging is useful for debugging
@@ -248,7 +271,7 @@ export function PageSwitcher() {
         <Stack>
           <ButtonGroup>
             <Button 
-              onClick={saveToCSV}
+              onClick={() => {saveToCSV(selected);}}
               primary={status !== generalTranslations.connect}
               disabled={status === generalTranslations.connect}
             > 
