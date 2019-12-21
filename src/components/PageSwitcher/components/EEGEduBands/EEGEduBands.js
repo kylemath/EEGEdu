@@ -1,5 +1,5 @@
 import React from "react";
-import { catchError, multicast } from "rxjs/operators";
+import { catchError, multicast, take } from "rxjs/operators";
 
 import { Card, Stack, TextContainer, RangeSlider } from "@shopify/polaris";
 import { Subject } from "rxjs";
@@ -40,6 +40,11 @@ export function buildPipe(Settings) {
     window.pipeBands$ = null;
     window.multicastBands$ = null;
     window.subscriptionBands$ = null;
+
+
+    console.log(window.source$.eegReadings);
+    const takeSingle = window.source$.eegReadings.pipe(take(3));
+    takeSingle.subscribe((v) => {console.log(v);})
 
     window.pipeBands$ = zipSamples(window.source$.eegReadings).pipe(
       bandpassFilter({ 
