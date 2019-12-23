@@ -4,6 +4,8 @@ import { Select, Card, Stack, Button, ButtonGroup, Modal, TextContainer } from "
 
 import { mockMuseEEG } from "./utils/mockMuseEEG";
 
+import { customCount, generateXTics } from "./utils/chartUtils";
+
 import * as Intro from "./components/EEGEduIntro/EEGEduIntro"
 import * as Raw from "./components/EEGEduRaw/EEGEduRaw";
 import * as Spectra from "./components/EEGEduSpectra/EEGEduSpectra";
@@ -34,7 +36,7 @@ export function PageSwitcher() {
   const recordPopChange = useCallback(() => setRecordPop(!recordPop), [recordPop]);
 
   // module at load:
-  const [selected, setSelected] = useState(translations.types.bands);
+  const [selected, setSelected] = useState(translations.types.raw);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 
@@ -47,6 +49,8 @@ export function PageSwitcher() {
     if (window.subscriptionBands$) window.subscriptionBands$.unsubscribe();
 
     // buildPipe(value);
+    // if the case statements are uncommented below,
+    // need this, but then this crashes since runs before source is ready
     subscriptionSetup(value);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -98,26 +102,68 @@ export function PageSwitcher() {
   }
 
   function saveToCSV(value) {
-    const numSamplesToSave = 10;
+    const numSamplesToSave = 1;
     console.log('Saving ' + numSamplesToSave + ' samples...');
     var localObservable$ = null;
     const dataToSave = [];
 
-    // var myDate = Date();
-
+    // for each module subscribe to multicast and make header
     switch (value) {
       case translations.types.raw:
+        //take one sample to get header info
+        localObservable$ = window.multicastRaw$.pipe(
+          take(1)
+        );
+        localObservable$.subscribe({ 
+          next(x) { 
+            dataToSave.push(
+              "Timestamp (ms),",
+              generateXTics(x.info.samplingRate,x.data[0].length,false).map(function(f) {return "ch0_" + f + "ms"}) + ",", 
+              generateXTics(x.info.samplingRate,x.data[0].length,false).map(function(f) {return "ch1_" + f + "ms"}) + ",", 
+              generateXTics(x.info.samplingRate,x.data[0].length,false).map(function(f) {return "ch2_" + f + "ms"}) + ",", 
+              generateXTics(x.info.samplingRate,x.data[0].length,false).map(function(f) {return "ch3_" + f + "ms"}) + ",", 
+              generateXTics(x.info.samplingRate,x.data[0].length,false).map(function(f) {return "chAux_" + f + "ms"}) + ",", 
+              "info", 
+              "\n"
+            );   
+          }
+        });
+        console.log('making spectra headers')
+           
+
         localObservable$ = window.multicastRaw$.pipe(
           take(numSamplesToSave)
         );
         break;
       case translations.types.spectra:
+        //take one sample to get header info
+        localObservable$ = window.multicastSpectra$.pipe(
+          take(1)
+        );
+        localObservable$.subscribe({ 
+          next(x) { 
+            let freqs = Object.values(x.freqs);
+            dataToSave.push(
+              "Timestamp (ms),",
+              freqs.map(function(f) {return "ch0_" + f + "Hz"}) + ",", 
+              freqs.map(function(f) {return "ch1_" + f + "Hz"}) + ",", 
+              freqs.map(function(f) {return "ch2_" + f + "Hz"}) + ",", 
+              freqs.map(function(f) {return "ch3_" + f + "Hz"}) + ",", 
+              freqs.map(function(f) {return "chAux_" + f + "Hz"}) + ",", 
+              freqs.map(function(f) {return "f_" + f + "Hz"}) + "," , 
+              "info", 
+              "\n"
+            );   
+          }
+        });
+        console.log('making spectra headers')
+             
         localObservable$ = window.multicastSpectra$.pipe(
           take(numSamplesToSave)
         );
         break;
       case translations.types.bands:
-        console.log('making headers')
+        console.log('making bands headers')
         dataToSave.push(
           "Timestamp (ms),",
           "delta0,delta1,delta2,delta3,deltaAux,", 
@@ -132,17 +178,15 @@ export function PageSwitcher() {
         break;
       default:
         console.log(
-          "Error on saveto CSV: " + value
+          "Error on save to CSV: " + value
         );
     }
-    const startTime = Date.now();
+
     localObservable$.subscribe({
       next(x) { 
-        console.log('can we get into the local subscribe?')
-        // something in here doesn't run on real data
-        dataToSave.push(Date.now()-startTime + "," + Object.values(x).join(",") + "\n");
+        dataToSave.push(Date.now() + "," + Object.values(x).join(",") + "\n");
         // logging is useful for debugging
-        // console.log(x);
+        console.log(x);
       },
       error(err) { console.log(err); },
       complete() { 
@@ -151,7 +195,7 @@ export function PageSwitcher() {
           dataToSave, 
           {type: "text/plain;charset=utf-8"}
         );
-        saveAs(blob, "Bands_Recording.csv");
+        saveAs(blob, value + "_Recording.csv");
         console.log('Completed');
       }
     });
@@ -280,7 +324,8 @@ export function PageSwitcher() {
                   <p>
                     Your data is currently recording, 
                     once complete it will be downloaded as a .csv file 
-                    and can be opened with your favorite spreadsheet program.
+                    and can be opened with your favorite spreadsheet program. 
+                    Close this window once the download completes.
                   </p>
                 </TextContainer>
               </Modal.Section>
