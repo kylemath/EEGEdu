@@ -4,7 +4,7 @@ import { Select, Card, Stack, Button, ButtonGroup, Modal, TextContainer } from "
 
 import { mockMuseEEG } from "./utils/mockMuseEEG";
 
-import { customCount, generateXTics } from "./utils/chartUtils";
+import { generateXTics } from "./utils/chartUtils";
 
 import * as Intro from "./components/EEGEduIntro/EEGEduIntro"
 import * as Raw from "./components/EEGEduRaw/EEGEduRaw";
@@ -102,7 +102,7 @@ export function PageSwitcher() {
   }
 
   function saveToCSV(value) {
-    const numSamplesToSave = 1;
+    const numSamplesToSave = 50;
     console.log('Saving ' + numSamplesToSave + ' samples...');
     var localObservable$ = null;
     const dataToSave = [];
@@ -298,6 +298,49 @@ export function PageSwitcher() {
     if (selected === translations.types.intro) {
       console.log('No record on intro')
       return null
+    } else if (selected === translations.types.raw) {
+      return (
+        <Card title={'Record Raw Data'} sectioned>
+          <Card.Section>
+            <p>
+              {"If you are recording raw data it is recommended you set the "}
+              {"number of sampling points between epochs onsets to be equal to the epoch duration. "}
+              {"This will ensure that consecutive rows of your output file are not overlapping in time."}
+              {"It will make the live plots appear more choppy."}
+            </p>        
+          </Card.Section>
+          <Stack>
+            <ButtonGroup>
+              <Button 
+                onClick={() => {
+                  saveToCSV(selected);
+                  recordPopChange();
+                }}
+                primary={status !== generalTranslations.connect}
+                disabled={status === generalTranslations.connect}
+              > 
+                {'Save to CSV'}  
+              </Button>
+            </ButtonGroup>
+            <Modal
+              open={recordPop}
+              onClose={recordPopChange}
+              title="Recording Data"
+            >
+              <Modal.Section>
+                <TextContainer>
+                  <p>
+                    Your data is currently recording, 
+                    once complete it will be downloaded as a .csv file 
+                    and can be opened with your favorite spreadsheet program. 
+                    Close this window once the download completes.
+                  </p>
+                </TextContainer>
+              </Modal.Section>
+            </Modal>
+          </Stack>
+        </Card>
+      )
     } else {
       return (
         <Card title={'Record Data'} sectioned>
@@ -332,7 +375,7 @@ export function PageSwitcher() {
             </Modal>
           </Stack>
         </Card>
-      )
+      )    
     }
   }
 
