@@ -75,27 +75,26 @@ export function PageSwitcher() {
   }
 
   function saveToCSV(value) {
-    const numSamplesToSave = 10;
+    const numSamplesToSave = 1000;
     console.log('Saving ' + numSamplesToSave + ' samples...');
     var localObservable$ = null;
     const dataToSave = [];
 
-    var d = Date();
-    dataToSave.push(d.toString() + "\n");
+    var myDate = Date();
 
     switch (value) {
       case translations.types.intro:
-        localObservable$ = window.pipeIntro$.pipe(
+        localObservable$ = window.multicastIntro$.pipe(
           take(numSamplesToSave)
         );
         break;
       case translations.types.raw:
-        localObservable$ = window.pipeRaw$.pipe(
+        localObservable$ = window.multicastRaw$.pipe(
           take(numSamplesToSave)
         );
         break;
       case translations.types.spectra:
-        localObservable$ = window.pipeSpectra$.pipe(
+        localObservable$ = window.multicastSpectra$.pipe(
           take(numSamplesToSave)
         );
         break;
@@ -109,21 +108,19 @@ export function PageSwitcher() {
           "beta0,beta1,beta2,beta3,betaAux,", 
           "delta0,delta1,delta2,delta3,deltaAux\n"
         );
-        localObservable$ = window.pipeBands$.pipe(
+        localObservable$ = window.multicastBands$.pipe(
           take(numSamplesToSave)
         );
-        console.log(localObservable$)
         break;
       default:
         console.log(
           "Error on saveto CSV: " + value
         );
     }
-    
     const startTime = Date.now();
     localObservable$.subscribe({
       next(x) { 
-        console.log('here?')
+        console.log('can we get into the local subscribe?')
         // something in here doesn't run on real data
         dataToSave.push(Date.now()-startTime + "," + Object.values(x).join(",") + "\n");
         // logging is useful for debugging
