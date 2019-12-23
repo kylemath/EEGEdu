@@ -185,8 +185,8 @@ export function PageSwitcher() {
     localObservable$.subscribe({
       next(x) { 
         dataToSave.push(Date.now() + "," + Object.values(x).join(",") + "\n");
-        // logging is useful for debugging
-        console.log(x);
+        // logging is useful for debugging -yup
+        // console.log(x);
       },
       error(err) { console.log(err); },
       complete() { 
