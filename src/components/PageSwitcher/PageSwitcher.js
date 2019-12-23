@@ -34,7 +34,7 @@ export function PageSwitcher() {
   const recordPopChange = useCallback(() => setRecordPop(!recordPop), [recordPop]);
 
   // module at load:
-  const [selected, setSelected] = useState(translations.types.intro);
+  const [selected, setSelected] = useState(translations.types.bands);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 
@@ -46,6 +46,7 @@ export function PageSwitcher() {
     if (window.subscriptionSpectra$) window.subscriptionSpectra$.unsubscribe();
     if (window.subscriptionBands$) window.subscriptionBands$.unsubscribe();
 
+    // buildPipe(value);
     subscriptionSetup(value);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -56,6 +57,24 @@ export function PageSwitcher() {
     { label: translations.types.spectra, value: translations.types.spectra },
     { label: translations.types.bands, value: translations.types.bands }
   ];
+
+  function buildPipe(value) {
+    // switch (value) {
+    //   case translations.types.intro:
+        Intro.buildPipe(introSettings);
+        // break;
+      // case translations.types.raw:
+        Raw.buildPipe(rawSettings);
+        // break;
+      // case translations.types.spectra:
+        Spectra.buildPipe(spectraSettings);
+        // break;
+      // case translations.types.bands:
+        Bands.buildPipe(bandsSettings);
+        // break;
+      // default: console.log('Error building pipe')
+    // }
+  }
 
   function subscriptionSetup(value) {
     switch (value) {
@@ -87,11 +106,6 @@ export function PageSwitcher() {
     // var myDate = Date();
 
     switch (value) {
-      case translations.types.intro:
-        localObservable$ = window.multicastIntro$.pipe(
-          take(numSamplesToSave)
-        );
-        break;
       case translations.types.raw:
         localObservable$ = window.multicastRaw$.pipe(
           take(numSamplesToSave)
@@ -172,17 +186,14 @@ export function PageSwitcher() {
         window.source$.eegReadings
       ) {
         console.log("Connected to data source observable");
+
+        // Build the data source
         console.log("Starting to build the data pipes from the data source...");
-
-        Intro.buildPipe(introSettings);
-        Raw.buildPipe(rawSettings);
-        Spectra.buildPipe(spectraSettings);
-        Bands.buildPipe(bandsSettings);
-
-        // Build the data source from the data source
+        buildPipe(selected);
         console.log("Finished building the data pipes from the data source");
-
         subscriptionSetup(selected);
+        console.log("Finished subscribing to the data source");
+
       }
     } catch (err) {
       setStatus(generalTranslations.connect);
@@ -239,6 +250,47 @@ export function PageSwitcher() {
     }
   }
 
+  function renderRecord() {
+    if (selected === translations.types.intro) {
+      console.log('No record on intro')
+      return null
+    } else {
+      return (
+        <Card title={'Record Data'} sectioned>
+          <Stack>
+            <ButtonGroup>
+              <Button 
+                onClick={() => {
+                  saveToCSV(selected);
+                  recordPopChange();
+                }}
+                primary={status !== generalTranslations.connect}
+                disabled={status === generalTranslations.connect}
+              > 
+                {'Save to CSV'}  
+              </Button>
+            </ButtonGroup>
+            <Modal
+              open={recordPop}
+              onClose={recordPopChange}
+              title="Recording Data"
+            >
+              <Modal.Section>
+                <TextContainer>
+                  <p>
+                    Your data is currently recording, 
+                    once complete it will be downloaded as a .csv file 
+                    and can be opened with your favorite spreadsheet program.
+                  </p>
+                </TextContainer>
+              </Modal.Section>
+            </Modal>
+          </Stack>
+        </Card>
+      )
+    }
+  }
+
   return (
     <React.Fragment>
       <Card sectioned>
@@ -284,47 +336,7 @@ export function PageSwitcher() {
       </Card>
       {pipeSettingsDisplay()}
       {renderCharts()}
-      <Card title={'Record Data'} sectioned>
-        <Stack>
-          <ButtonGroup>
-            <Button 
-              onClick={() => {
-                saveToCSV(selected);
-                recordPopChange();
-              }}
-              primary={status !== generalTranslations.connect}
-              disabled={status === generalTranslations.connect}
-            > 
-              {'Save to CSV'}  
-            </Button>
-          </ButtonGroup>
-          <Modal
-            open={recordPop}
-            onClose={recordPopChange}
-            title="Recording Data"
-            // primaryAction={{
-            //   content: 'Add Instagram',
-            //   onAction: recordPopChange,
-            // }}
-            // secondaryActions={[
-            //   {
-            //     content: 'Learn more',
-            //     onAction: recordPopChange,
-            //   },
-            // ]}
-          >
-            <Modal.Section>
-              <TextContainer>
-                <p>
-                  Your data is currently recording, 
-                  once complete it will be downloaded as a .csv file 
-                  and can be opened with your favorite spreadsheet program.
-                </p>
-              </TextContainer>
-            </Modal.Section>
-          </Modal>
-        </Stack>
-      </Card>
+      {renderRecord()}
     </React.Fragment>
   );
 }
