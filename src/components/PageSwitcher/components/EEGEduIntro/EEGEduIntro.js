@@ -2,7 +2,7 @@ import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 import { Subject } from "rxjs";
 
-import { Card } from "@shopify/polaris";
+import { Card, Link } from "@shopify/polaris";
 
 import { Line } from "react-chartjs-2";
 
@@ -299,23 +299,23 @@ export function EEGEdu(channels) {
         <Card.Section>
           <p>
             {specificTranslations.credits1}
-            <a href="http://learn.neurotechedu.com/">NeurotechEdu. </a>
+            <Link url="http://learn.neurotechedu.com/">NeurotechEdu. </Link>
           </p>
           <p>
             {specificTranslations.credits2}
-            <a href="https://choosemuse.com/muse-research/">Interaxon. </a>
+            <Link url="https://choosemuse.com/muse-research/">Interaxon. </Link>
           </p>
           <p>
             {specificTranslations.credits3}
-            <a href="https://github.com/urish/muse-js">muse-js </a>
+            <Link url="https://github.com/urish/muse-js">muse-js </Link>
             {specificTranslations.credits4}
-            <a href="https://medium.com/neurotechx/a-techys-introduction-to-neuroscience-3f492df4d3bf">A Techy's Introduction to Neuroscience. </a>
+            <Link url="https://medium.com/neurotechx/a-techys-introduction-to-neuroscience-3f492df4d3bf">A Techy's Introduction to Neuroscience. </Link>
           </p>
           <p>
             {specificTranslations.credits5}
-            <a href="https://github.com/neurosity/eeg-pipes">eeg-pipes </a>
+            <Link url="https://github.com/neurosity/eeg-pipes">eeg-pipes </Link>
             {specificTranslations.credits6}
-            <a href="https://medium.com/@castillo.io/muse-2016-headband-web-bluetooth-11ddcfa74c83">Muse 2016 Headband + Web Bluetooth.</a>
+            <Link url="https://medium.com/@castillo.io/muse-2016-headband-web-bluetooth-11ddcfa74c83">Muse 2016 Headband + Web Bluetooth.</Link>
           </p>
         </Card.Section>
       </Card>
