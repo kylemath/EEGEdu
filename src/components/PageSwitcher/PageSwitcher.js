@@ -34,7 +34,7 @@ export function PageSwitcher() {
   const recordPopChange = useCallback(() => setRecordPop(!recordPop), [recordPop]);
 
   // module at load:
-  const [selected, setSelected] = useState(translations.types.bands);
+  const [selected, setSelected] = useState(translations.types.intro);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 
