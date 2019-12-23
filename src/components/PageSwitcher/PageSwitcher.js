@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 
-import { Select, Card, Stack, Button, ButtonGroup } from "@shopify/polaris";
+import { Select, Card, Stack, Button, ButtonGroup, Modal, TextContainer } from "@shopify/polaris";
 
 import { mockMuseEEG } from "./utils/mockMuseEEG";
 
@@ -22,6 +22,7 @@ export function PageSwitcher() {
   const [rawData, setRawData] = useState(emptyChannelData);
   const [spectraData, setSpectraData] = useState(emptyChannelData);
   const [bandsData, setBandsData] = useState(emptyChannelData);
+  const [recordPop, setRecordPop] = useState(false);
 
   const [introSettings] = useState(Intro.getSettings);
   const [spectraSettings, setSpectraSettings] = useState(Spectra.getSettings);
@@ -29,6 +30,9 @@ export function PageSwitcher() {
   const [bandsSettings, setBandsSettings] = useState(Bands.getSettings);
 
   const [status, setStatus] = useState(generalTranslations.connect);
+  
+  const recordPopChange = useCallback(() => setRecordPop(!recordPop), [recordPop]);
+
   // module at load:
   const [selected, setSelected] = useState(translations.types.bands);
   const handleSelectChange = useCallback(value => {
@@ -75,12 +79,12 @@ export function PageSwitcher() {
   }
 
   function saveToCSV(value) {
-    const numSamplesToSave = 1000;
+    const numSamplesToSave = 10;
     console.log('Saving ' + numSamplesToSave + ' samples...');
     var localObservable$ = null;
     const dataToSave = [];
 
-    var myDate = Date();
+    // var myDate = Date();
 
     switch (value) {
       case translations.types.intro:
@@ -138,7 +142,6 @@ export function PageSwitcher() {
       }
     });
   }
-
 
   async function connect() {
     try {
@@ -236,7 +239,7 @@ export function PageSwitcher() {
     }
   }
 
- return (
+  return (
     <React.Fragment>
       <Card sectioned>
         <Stack>
@@ -285,13 +288,41 @@ export function PageSwitcher() {
         <Stack>
           <ButtonGroup>
             <Button 
-              onClick={() => {saveToCSV(selected);}}
+              onClick={() => {
+                saveToCSV(selected);
+                recordPopChange();
+              }}
               primary={status !== generalTranslations.connect}
               disabled={status === generalTranslations.connect}
             > 
               {'Save to CSV'}  
             </Button>
           </ButtonGroup>
+          <Modal
+            open={recordPop}
+            onClose={recordPopChange}
+            title="Recording Data"
+            // primaryAction={{
+            //   content: 'Add Instagram',
+            //   onAction: recordPopChange,
+            // }}
+            // secondaryActions={[
+            //   {
+            //     content: 'Learn more',
+            //     onAction: recordPopChange,
+            //   },
+            // ]}
+          >
+            <Modal.Section>
+              <TextContainer>
+                <p>
+                  Your data is currently recording, 
+                  once complete it will be downloaded as a .csv file 
+                  and can be opened with your favorite spreadsheet program.
+                </p>
+              </TextContainer>
+            </Modal.Section>
+          </Modal>
         </Stack>
       </Card>
     </React.Fragment>
