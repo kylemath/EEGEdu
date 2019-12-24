@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from "react";
-
+import { MuseClient } from "muse-js";
 import { Select, Card, Stack, Button, ButtonGroup, Modal, TextContainer } from "@shopify/polaris";
+import { saveAs } from 'file-saver';
+import { take } from "rxjs/operators";
 
 import { mockMuseEEG } from "./utils/mockMuseEEG";
-
 import { generateXTics } from "./utils/chartUtils";
 
 import * as Intro from "./components/EEGEduIntro/EEGEduIntro"
@@ -12,11 +13,8 @@ import * as Spectra from "./components/EEGEduSpectra/EEGEduSpectra";
 import * as Bands from "./components/EEGEduBands/EEGEduBands";
 
 import * as translations from "./translations/en.json";
-import { MuseClient } from "muse-js";
 import * as generalTranslations from "./components/translations/en";
 import { emptyChannelData } from "./components/chartOptions";
-import { saveAs } from 'file-saver';
-import { take } from "rxjs/operators";
 
 export function PageSwitcher() {
 
@@ -24,7 +22,6 @@ export function PageSwitcher() {
   const [rawData, setRawData] = useState(emptyChannelData);
   const [spectraData, setSpectraData] = useState(emptyChannelData);
   const [bandsData, setBandsData] = useState(emptyChannelData);
-  const [recordPop, setRecordPop] = useState(false);
 
   const [introSettings] = useState(Intro.getSettings);
   const [spectraSettings, setSpectraSettings] = useState(Spectra.getSettings);
@@ -32,14 +29,16 @@ export function PageSwitcher() {
   const [bandsSettings, setBandsSettings] = useState(Bands.getSettings);
 
   const [status, setStatus] = useState(generalTranslations.connect);
-  
+
+  const [recordPop, setRecordPop] = useState(false);
   const recordPopChange = useCallback(() => setRecordPop(!recordPop), [recordPop]);
 
   // module at load:
   const [selected, setSelected] = useState(translations.types.intro);
+  // What happens when user selected new mondule
   const handleSelectChange = useCallback(value => {
-    setSelected(value);
 
+    setSelected(value);
     console.log("Switching to: " + value);
 
     // Unsubscribe from all possible subscriptions
@@ -54,13 +53,6 @@ export function PageSwitcher() {
     subscriptionSetup(value);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const chartTypes = [
-    { label: translations.types.intro, value: translations.types.intro },
-    { label: translations.types.raw, value: translations.types.raw },
-    { label: translations.types.spectra, value: translations.types.spectra },
-    { label: translations.types.bands, value: translations.types.bands }
-  ];
 
   function buildPipe(value) {
     // switch (value) {
@@ -100,10 +92,12 @@ export function PageSwitcher() {
         );
     }
   }
-
+  
   function saveToCSV(value) {
+
     const numSamplesToSave = 50;
     console.log('Saving ' + numSamplesToSave + ' samples...');
+    
     var localObservable$ = null;
     const dataToSave = [];
 
