@@ -1,5 +1,5 @@
 // Function to count by n to something
-function customCount(start, end, step = 1) {
+export function customCount(start, end, step = 1) {
   const len = Math.floor((end - start) / step) + 1;
   return Array(len)
     .fill()
@@ -19,14 +19,26 @@ function average(data){
 export const bandLabels = ["Delta", "Theta", "Alpha", "Beta", "Gamma"];
 
 // Generate xTics
-export function generateXTics(srate, duration) {
-  return customCount(
-    (1000 / srate) * duration,
-    1000 / srate,
-    -(1000 / srate)
-  ).map(function(each_element) {
-    return Number(each_element.toFixed(0));
-  });
+export function generateXTics(srate, duration, reverse = true) {
+  let tics = [];
+  if (reverse) {
+    tics = customCount(
+      (1000 / srate) * duration,
+      1000 / srate,
+      -(1000 / srate)
+    )
+  } else {
+    tics = customCount(
+      1000 / srate, 
+      (1000 / srate) * duration, 
+      1000/srate
+    )
+  }
+  return (
+    tics.map(function(each_element) {
+      return Number(each_element.toFixed(0));
+    })
+  )
 }
 
 // Standard deviation of values in values
