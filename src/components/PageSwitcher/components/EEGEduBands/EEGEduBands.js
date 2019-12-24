@@ -41,6 +41,9 @@ export function buildPipe(Settings) {
     window.multicastBands$ = null;
     window.subscriptionBands$ = null;
 
+    // const takeSingle = window.source$.eegReadings.pipe(take(3));
+    // takeSingle.subscribe((v) => {console.log(v);})
+
     window.pipeBands$ = zipSamples(window.source$.eegReadings).pipe(
       bandpassFilter({ 
         cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 

@@ -194,7 +194,7 @@ export function renderSliders(setData, setSettings, status, Settings) {
       />          
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        min={10} step={5} max={Settings.duration}
+        min={10} step={1} max={Settings.duration}
         label={'Sampling points between epochs onsets: ' + Settings.interval} 
         value={Settings.interval} 
         onChange={handleIntervalRangeSliderChange} 
