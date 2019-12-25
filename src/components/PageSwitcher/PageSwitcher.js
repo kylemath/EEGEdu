@@ -274,13 +274,13 @@ export function PageSwitcher() {
     console.log("Rendering " + selected + " Component");
     switch (selected) {
       case intro:
-        return <funIntro.EEGEdu data={introData} />;
+        return <funIntro.renderModule data={introData} />;
       case raw:
-        return <funRaw.EEGEdu data={rawData} />;
+        return <funRaw.renderModule data={rawData} />;
       case spectra:
-        return <funSpectra.EEGEdu data={spectraData} />;
+        return <funSpectra.renderModule data={spectraData} />;
       case bands:
-        return <funBands.EEGEdu data={bandsData} />;
+        return <funBands.renderModule data={bandsData} />;
       default:
         console.log("Error on renderCharts switch.");
     }

@@ -85,7 +85,7 @@ export function setup(setData, Settings) {
   }
 }
 
-export function EEGEdu(channels) {
+export function renderModule(channels) {
   function renderCharts() {
     return Object.values(channels.data).map((channel, index) => {
       const options = {
