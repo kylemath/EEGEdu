@@ -1,105 +1,98 @@
 import React, { useState, useCallback } from "react";
-
-import { Select, Card, Stack, Button, ButtonGroup, Modal, TextContainer } from "@shopify/polaris";
-
-import { mockMuseEEG } from "./utils/mockMuseEEG";
-
-import { generateXTics } from "./utils/chartUtils";
-
-import * as Intro from "./components/EEGEduIntro/EEGEduIntro"
-import * as Raw from "./components/EEGEduRaw/EEGEduRaw";
-import * as Spectra from "./components/EEGEduSpectra/EEGEduSpectra";
-import * as Bands from "./components/EEGEduBands/EEGEduBands";
-
-import * as translations from "./translations/en.json";
 import { MuseClient } from "muse-js";
-import * as generalTranslations from "./components/translations/en";
-import { emptyChannelData } from "./components/chartOptions";
+import { Select, Card, Stack, Button, ButtonGroup, Modal, TextContainer } from "@shopify/polaris";
 import { saveAs } from 'file-saver';
 import { take } from "rxjs/operators";
 
+import { mockMuseEEG } from "./utils/mockMuseEEG";
+import { generateXTics } from "./utils/chartUtils";
+
+import * as translations from "./translations/en.json";
+import * as generalTranslations from "./components/translations/en";
+import { emptyChannelData } from "./components/chartOptions";
+
+import * as funIntro from "./components/EEGEduIntro/EEGEduIntro"
+import * as funRaw from "./components/EEGEduRaw/EEGEduRaw";
+import * as funSpectra from "./components/EEGEduSpectra/EEGEduSpectra";
+import * as funBands from "./components/EEGEduBands/EEGEduBands";
+
+const intro = translations.types.intro;
+const raw = translations.types.raw;
+const spectra = translations.types.spectra;
+const bands = translations.types.bands;
+
 export function PageSwitcher() {
 
+  // data pulled out of multicast$
   const [introData, setIntroData] = useState(emptyChannelData)
   const [rawData, setRawData] = useState(emptyChannelData);
-  const [spectraData, setSpectraData] = useState(emptyChannelData);
+  const [spectraData, setSpectraData] = useState(emptyChannelData); 
   const [bandsData, setBandsData] = useState(emptyChannelData);
-  const [recordPop, setRecordPop] = useState(false);
 
-  const [introSettings] = useState(Intro.getSettings);
-  const [spectraSettings, setSpectraSettings] = useState(Spectra.getSettings);
-  const [rawSettings, setRawSettings] = useState(Raw.getSettings); 
-  const [bandsSettings, setBandsSettings] = useState(Bands.getSettings);
+  // pipe settings
+  const [introSettings] = useState(funIntro.getSettings);
+  const [rawSettings, setRawSettings] = useState(funRaw.getSettings); 
+  const [spectraSettings, setSpectraSettings] = useState(funSpectra.getSettings); 
+  const [bandsSettings, setBandsSettings] = useState(funBands.getSettings);
 
+  // connection status
   const [status, setStatus] = useState(generalTranslations.connect);
-  
-  const recordPopChange = useCallback(() => setRecordPop(!recordPop), [recordPop]);
 
-  // module at load:
-  const [selected, setSelected] = useState(translations.types.intro);
+  // for picking a new module
+  const [selected, setSelected] = useState(intro);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 
     console.log("Switching to: " + value);
 
-    // Unsubscribe from all possible subscriptions
-    if (window.subscriptionIntro$) window.subscriptionIntro$.unsubscribe();
-    if (window.subscriptionRaw$) window.subscriptionRaw$.unsubscribe();
-    if (window.subscriptionSpectra$) window.subscriptionSpectra$.unsubscribe();
-    if (window.subscriptionBands$) window.subscriptionBands$.unsubscribe();
+    if (window.subscriptionIntro) window.subscriptionIntro.unsubscribe();
+    if (window.subscriptionRaw) window.subscriptionRaw.unsubscribe();
+    if (window.subscriptionSpectra) window.subscriptionSpectra.unsubscribe();
+    if (window.subscriptionBands) window.subscriptionBands.unsubscribe();
 
-    // buildPipe(value);
-    // if the case statements are uncommented below,
-    // need this, but then this crashes since runs before source is ready
     subscriptionSetup(value);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // for popup flag when recording
+  const [recordPop, setRecordPop] = useState(false);
+  const recordPopChange = useCallback(() => setRecordPop(!recordPop), [recordPop]);
+
   const chartTypes = [
-    { label: translations.types.intro, value: translations.types.intro },
-    { label: translations.types.raw, value: translations.types.raw },
-    { label: translations.types.spectra, value: translations.types.spectra },
-    { label: translations.types.bands, value: translations.types.bands }
+    { label: intro, value: intro },
+    { label: raw, value: raw },
+    { label: spectra, value: spectra }, 
+    { label: bands, value: bands }
   ];
 
-  function buildPipe(value) {
-    // switch (value) {
-    //   case translations.types.intro:
-        Intro.buildPipe(introSettings);
-        // break;
-      // case translations.types.raw:
-        Raw.buildPipe(rawSettings);
-        // break;
-      // case translations.types.spectra:
-        Spectra.buildPipe(spectraSettings);
-        // break;
-      // case translations.types.bands:
-        Bands.buildPipe(bandsSettings);
-        // break;
-      // default: console.log('Error building pipe')
-    // }
+  function buildPipes(value) {
+    funIntro.buildPipe(introSettings);
+    funRaw.buildPipe(rawSettings);
+    funSpectra.buildPipe(spectraSettings)
+    funBands.buildPipe(bandsSettings)
   }
 
   function subscriptionSetup(value) {
     switch (value) {
-      case translations.types.intro:
-        Intro.setup(setIntroData, introSettings);
+      case intro:
+        funIntro.setup(setIntroData, introSettings);
         break;
-      case translations.types.raw:
-        Raw.setup(setRawData, rawSettings);
+      case raw:
+        funRaw.setup(setRawData, rawSettings);
         break;
-      case translations.types.spectra:
-        Spectra.setup(setSpectraData);
+      case spectra:
+        funSpectra.setup(setSpectraData, spectraSettings);
         break;
-      case translations.types.bands:
-        Bands.setup(setBandsData);
+      case bands:
+        funBands.setup(setBandsData, bandsSettings)
         break;
       default:
         console.log(
-          "Error on handleSubscriptions. Couldn't switch to: " + value
+          "Error on handle Subscriptions. Couldn't switch to: " + value
         );
     }
   }
+
 
   function saveToCSV(value) {
     const numSamplesToSave = 50;
@@ -107,13 +100,16 @@ export function PageSwitcher() {
     var localObservable$ = null;
     const dataToSave = [];
 
+    console.log('making ' + value + ' headers')
+
     // for each module subscribe to multicast and make header
     switch (value) {
-      case translations.types.raw:
-        //take one sample to get header info
+      case raw:
+        // take one sample from selected observable object for headers
         localObservable$ = window.multicastRaw$.pipe(
           take(1)
         );
+        //take one sample to get header info
         localObservable$.subscribe({ 
           next(x) { 
             dataToSave.push(
@@ -128,18 +124,17 @@ export function PageSwitcher() {
             );   
           }
         });
-        console.log('making spectra headers')
-           
-
+        // put selected observable object into local and start taking samples
         localObservable$ = window.multicastRaw$.pipe(
           take(numSamplesToSave)
         );
         break;
-      case translations.types.spectra:
-        //take one sample to get header info
+      case spectra:
+        // take one sample from selected observable object for headers
         localObservable$ = window.multicastSpectra$.pipe(
           take(1)
         );
+
         localObservable$.subscribe({ 
           next(x) { 
             let freqs = Object.values(x.freqs);
@@ -156,14 +151,12 @@ export function PageSwitcher() {
             );   
           }
         });
-        console.log('making spectra headers')
-             
+        // put selected observable object into local and start taking samples
         localObservable$ = window.multicastSpectra$.pipe(
           take(numSamplesToSave)
         );
         break;
-      case translations.types.bands:
-        console.log('making bands headers')
+      case bands:
         dataToSave.push(
           "Timestamp (ms),",
           "delta0,delta1,delta2,delta3,deltaAux,", 
@@ -172,16 +165,18 @@ export function PageSwitcher() {
           "beta0,beta1,beta2,beta3,betaAux,", 
           "delta0,delta1,delta2,delta3,deltaAux\n"
         );
+        // put selected observable object into local and start taking samples
         localObservable$ = window.multicastBands$.pipe(
           take(numSamplesToSave)
         );
         break;
       default:
         console.log(
-          "Error on save to CSV: " + value
+          "Error on creating header in module: " + value
         );
     }
 
+    // now with header in place subscribe to each epoch and log it
     localObservable$.subscribe({
       next(x) { 
         dataToSave.push(Date.now() + "," + Object.values(x).join(",") + "\n");
@@ -209,32 +204,32 @@ export function PageSwitcher() {
         console.log("Connecting to mock data source...");
         setStatus(generalTranslations.connectingMock);
 
-        window.source$ = {};
-        window.source$.connectionStatus = {};
-        window.source$.connectionStatus.value = true;
-        window.source$.eegReadings = mockMuseEEG(256);
+        window.source = {};
+        window.source.connectionStatus = {};
+        window.source.connectionStatus.value = true;
+        window.source.eegReadings$ = mockMuseEEG(256);
         setStatus(generalTranslations.connectedMock);
       } else {
         // Connect with the Muse EEG Client
         console.log("Connecting to data source observable...");
         setStatus(generalTranslations.connecting);
 
-        window.source$ = new MuseClient();
-        await window.source$.connect();
-        await window.source$.start();
+        window.source = new MuseClient();
+        await window.source.connect();
+        await window.source.start();
+        window.source.eegReadings$ = window.source.eegReadings;
         setStatus(generalTranslations.connected);
       }
 
       if (
-        window.source$.connectionStatus.value === true &&
-        window.source$.eegReadings
+        window.source.connectionStatus.value === true &&
+        window.source.eegReadings$
       ) {
-        console.log("Connected to data source observable");
-
-        // Build the data source
         console.log("Starting to build the data pipes from the data source...");
-        buildPipe(selected);
+        
+        buildPipes(selected);
         console.log("Finished building the data pipes from the data source");
+        
         subscriptionSetup(selected);
         console.log("Finished subscribing to the data source");
 
@@ -251,24 +246,24 @@ export function PageSwitcher() {
 
   function pipeSettingsDisplay() {
     switch(selected) {
-      case translations.types.intro:
+      case intro:
         return null
-      case translations.types.raw:
-        return(
-          <Card title={'Raw Settings'} sectioned>
-            {Raw.renderSliders(setRawData, setRawSettings, status, rawSettings)}
+      case raw:
+        return (
+          <Card title={selected + ' Settings'} sectioned>
+            {funRaw.renderSliders(setRawData, setRawSettings, status, rawSettings)}
           </Card>
         );
-      case translations.types.spectra:
-        return(
-          <Card title={'Spectra Settings'} sectioned>
-            {Spectra.renderSliders(setSpectraData, setSpectraSettings, status, spectraSettings)}
+      case spectra:
+        return (
+          <Card title={selected + ' Settings'} sectioned>
+            {funSpectra.renderSliders(setSpectraData, setSpectraSettings, status, spectraSettings)}
           </Card>
         );
-      case translations.types.bands:
-        return(
-          <Card title={'Bands Settings'} sectioned>
-            {Bands.renderSliders(setBandsData, setBandsSettings, status, bandsSettings)}
+      case bands: 
+        return (
+          <Card title={selected + ' Settings'} sectioned>
+            {funBands.renderSliders(setBandsData, setBandsSettings, status, bandsSettings)}
           </Card>
         );
       default: console.log('Error rendering settings display');
@@ -276,106 +271,148 @@ export function PageSwitcher() {
   }
 
   function renderCharts() {
+    console.log("Rendering " + selected + " Component");
     switch (selected) {
-      case translations.types.intro:
-        console.log("Rendering Intro Component");
-        return <Intro.EEGEdu data={introData} />;
-      case translations.types.raw:
-        console.log("Rendering Raw Component");
-        return <Raw.EEGEdu data={rawData} />;
-      case translations.types.spectra:
-        console.log("Rendering Spectra Component");
-        return <Spectra.EEGEdu data={spectraData} />;
-      case translations.types.bands:
-        console.log("Rendering Bands Component");
-        return <Bands.EEGEdu data={bandsData} />;
+      case intro:
+        return <funIntro.renderModule data={introData} />;
+      case raw:
+        return <funRaw.renderModule data={rawData} />;
+      case spectra:
+        return <funSpectra.renderModule data={spectraData} />;
+      case bands:
+        return <funBands.renderModule data={bandsData} />;
       default:
         console.log("Error on renderCharts switch.");
     }
   }
 
   function renderRecord() {
-    if (selected === translations.types.intro) {
-      console.log('No record on intro')
-      return null
-    } else if (selected === translations.types.raw) {
-      return (
-        <Card title={'Record Raw Data'} sectioned>
-          <Card.Section>
-            <p>
-              {"If you are recording raw data it is recommended you set the "}
-              {"number of sampling points between epochs onsets to be equal to the epoch duration. "}
-              {"This will ensure that consecutive rows of your output file are not overlapping in time."}
-              {"It will make the live plots appear more choppy."}
-            </p>        
-          </Card.Section>
-          <Stack>
-            <ButtonGroup>
-              <Button 
-                onClick={() => {
-                  saveToCSV(selected);
-                  recordPopChange();
-                }}
-                primary={status !== generalTranslations.connect}
-                disabled={status === generalTranslations.connect}
-              > 
-                {'Save to CSV'}  
-              </Button>
-            </ButtonGroup>
-            <Modal
-              open={recordPop}
-              onClose={recordPopChange}
-              title="Recording Data"
-            >
-              <Modal.Section>
-                <TextContainer>
-                  <p>
-                    Your data is currently recording, 
-                    once complete it will be downloaded as a .csv file 
-                    and can be opened with your favorite spreadsheet program. 
-                    Close this window once the download completes.
-                  </p>
-                </TextContainer>
-              </Modal.Section>
-            </Modal>
-          </Stack>
-        </Card>
-      )
-    } else {
-      return (
-        <Card title={'Record Data'} sectioned>
-          <Stack>
-            <ButtonGroup>
-              <Button 
-                onClick={() => {
-                  saveToCSV(selected);
-                  recordPopChange();
-                }}
-                primary={status !== generalTranslations.connect}
-                disabled={status === generalTranslations.connect}
-              > 
-                {'Save to CSV'}  
-              </Button>
-            </ButtonGroup>
-            <Modal
-              open={recordPop}
-              onClose={recordPopChange}
-              title="Recording Data"
-            >
-              <Modal.Section>
-                <TextContainer>
-                  <p>
-                    Your data is currently recording, 
-                    once complete it will be downloaded as a .csv file 
-                    and can be opened with your favorite spreadsheet program. 
-                    Close this window once the download completes.
-                  </p>
-                </TextContainer>
-              </Modal.Section>
-            </Modal>
-          </Stack>
-        </Card>
-      )    
+    switch (selected) {
+      case intro: 
+        return null
+      case raw: 
+        return (
+          <Card title={'Record Raw Data'} sectioned>
+            <Card.Section>
+              <p>
+                {"When you are recording raw data it is recommended you set the "}
+                {"number of sampling points between epochs onsets to be equal to the epoch duration. "}
+                {"This will ensure that consecutive rows of your output file are not overlapping in time."}
+                {"It will make the live plots appear more choppy."}
+              </p>        
+            </Card.Section>
+            <Stack>
+              <ButtonGroup>
+                <Button 
+                  onClick={() => {
+                    saveToCSV(selected);
+                    recordPopChange();
+                  }}
+                  primary={status !== generalTranslations.connect}
+                  disabled={status === generalTranslations.connect}
+                > 
+                  {'Save to CSV'}  
+                </Button>
+              </ButtonGroup>
+              <Modal
+                open={recordPop}
+                onClose={recordPopChange}
+                title="Recording Data"
+              >
+                <Modal.Section>
+                  <TextContainer>
+                    <p>
+                      Your data is currently recording, 
+                      once complete it will be downloaded as a .csv file 
+                      and can be opened with your favorite spreadsheet program. 
+                      Close this window once the download completes.
+                    </p>
+                  </TextContainer>
+                </Modal.Section>
+              </Modal>
+            </Stack>
+          </Card>
+        )
+      case spectra:
+        return (
+          <Card title={'Record Raw Data'} sectioned>
+            <Card.Section>
+              <p>
+                {"When you are recording raw data it is recommended you set the "}
+                {"number of sampling points between epochs onsets to be equal to the epoch duration. "}
+                {"This will ensure that consecutive rows of your output file are not overlapping in time."}
+                {"It will make the live plots appear more choppy."}
+              </p>        
+            </Card.Section>
+            <Stack>
+              <ButtonGroup>
+                <Button 
+                  onClick={() => {
+                    saveToCSV(selected);
+                    recordPopChange();
+                  }}
+                  primary={status !== generalTranslations.connect}
+                  disabled={status === generalTranslations.connect}
+                > 
+                  {'Save to CSV'}  
+                </Button>
+              </ButtonGroup>
+              <Modal
+                open={recordPop}
+                onClose={recordPopChange}
+                title="Recording Data"
+              >
+                <Modal.Section>
+                  <TextContainer>
+                    <p>
+                      Your data is currently recording, 
+                      once complete it will be downloaded as a .csv file 
+                      and can be opened with your favorite spreadsheet program. 
+                      Close this window once the download completes.
+                    </p>
+                  </TextContainer>
+                </Modal.Section>
+              </Modal>
+            </Stack>
+          </Card>
+        )      
+      case bands:
+        return (
+          <Card title={'Record Data'} sectioned>
+            <Stack>
+              <ButtonGroup>
+                <Button 
+                  onClick={() => {
+                    saveToCSV(selected);
+                    recordPopChange();
+                  }}
+                  primary={status !== generalTranslations.connect}
+                  disabled={status === generalTranslations.connect}
+                > 
+                  {'Save to CSV'}  
+                </Button>
+              </ButtonGroup>
+              <Modal
+                open={recordPop}
+                onClose={recordPopChange}
+                title="Recording Data"
+              >
+                <Modal.Section>
+                  <TextContainer>
+                    <p>
+                      Your data is currently recording, 
+                      once complete it will be downloaded as a .csv file 
+                      and can be opened with your favorite spreadsheet program. 
+                      Close this window once the download completes.
+                    </p>
+                  </TextContainer>
+                </Modal.Section>
+              </Modal>
+            </Stack>
+          </Card>
+        ) 
+      default:   
+        console.log("Error on renderRecord.");
     }
   }
 

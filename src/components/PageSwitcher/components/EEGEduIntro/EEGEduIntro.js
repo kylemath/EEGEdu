@@ -36,10 +36,10 @@ export function buildPipe(Settings) {
 
   window.pipeIntro$ = null;
   window.multicastIntro$ = null;
-  window.subscriptionIntro$ = null;
+  window.subscriptionIntro = null;
 
   // Build Pipe
-  window.pipeIntro$ = zipSamples(window.source$.eegReadings).pipe(
+ window.pipeIntro$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
       nbChannels: Settings.nbChannels }),
@@ -61,7 +61,7 @@ export function setup(setData, Settings) {
   console.log("Subscribing to " + Settings.name);
 
   if (window.multicastIntro$) {
-    window.subscriptionIntro$ = window.multicastIntro$.subscribe(data => {
+    window.subscriptionIntro = window.multicastIntro$.subscribe(data => {
       setData(introData => {
         Object.values(introData).forEach((channel, index) => {
           if (index === 0) {
@@ -85,7 +85,7 @@ export function setup(setData, Settings) {
   }
 }
 
-export function EEGEdu(channels) {
+export function renderModule(channels) {
   function renderCharts() {
     return Object.values(channels.data).map((channel, index) => {
       const options = {
