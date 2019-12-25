@@ -33,14 +33,14 @@ export function getSettings () {
 };
 
 export function buildPipe(Settings) {
-  if (window.subscriptionRaw$) window.subscriptionRaw$.unsubscribe();
+  if (window.subscriptionRaw) window.subscriptionRaw.unsubscribe();
 
   window.pipeRaw$ = null;
   window.multicastRaw$ = null;
-  window.subscriptionRaw$ = null;
+  window.subscriptionRaw = null;
 
-  // Build Pipe Raw
-  window.pipeRaw$ = zipSamples(window.source$.eegReadings).pipe(
+  // Build Pipe
+  window.pipeRaw$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
       nbChannels: Settings.nbChannels }),
@@ -59,10 +59,10 @@ export function buildPipe(Settings) {
 }
 
 export function setup(setData, Settings) {
-  console.log("Subscribing to Raw");
+  console.log("Subscribing to " + Settings.name);
 
   if (window.multicastRaw$) {
-    window.subscriptionRaw$ = window.multicastRaw$.subscribe(data => {
+    window.subscriptionRaw = window.multicastRaw$.subscribe(data => {
       setData(rawData => {
         Object.values(rawData).forEach((channel, index) => {
           if (index < 4) {
@@ -86,7 +86,7 @@ export function setup(setData, Settings) {
   }
 }
 
-export function EEGEdu(channels) {
+export function renderModule(channels) {
   function renderCharts() {
     return Object.values(channels.data).map((channel, index) => {
       const options = {
@@ -158,30 +158,30 @@ export function EEGEdu(channels) {
   
 export function renderSliders(setData, setSettings, status, Settings) {
 
+  function resetPipeSetup(value) {
+    buildPipe(Settings);
+    setup(setData, Settings)
+  }
+  
   function handleIntervalRangeSliderChange(value) {
     setSettings(prevState => ({...prevState, interval: value}));
-    buildPipe(Settings);
-    setup(setData, Settings);
+    resetPipeSetup();
   }
 
   function handleCutoffLowRangeSliderChange(value) {
     setSettings(prevState => ({...prevState, cutOffLow: value}));
-    buildPipe(Settings);
-    setup(setData, Settings);
+    resetPipeSetup();
   }
 
   function handleCutoffHighRangeSliderChange(value) {
     setSettings(prevState => ({...prevState, cutOffHigh: value}));
-    buildPipe(Settings);
-    setup(setData, Settings);
-  }
+    resetPipeSetup();
+ }
 
   function handleDurationRangeSliderChange(value) {
     setSettings(prevState => ({...prevState, duration: value}));
-    buildPipe(Settings);
-    setup(setData, Settings);
-  }
-
+    resetPipeSetup();
+ }
 
   return (
     <React.Fragment>
