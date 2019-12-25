@@ -35,40 +35,38 @@ export function getSettings () {
 };
 
 export function buildPipe(Settings) {
-  if (window.subscriptionBands$) window.subscriptionBands$.unsubscribe();
+  if (window.subscriptionBands) window.subscriptionBands.unsubscribe();
 
-    window.pipeBands$ = null;
-    window.multicastBands$ = null;
-    window.subscriptionBands$ = null;
+  window.pipeBands$ = null;
+  window.multicastBands$ = null;
+  window.subscriptionBands = null;
 
-    // const takeSingle = window.source$.eegReadings.pipe(take(3));
-    // takeSingle.subscribe((v) => {console.log(v);})
-
-    window.pipeBands$ = zipSamples(window.source$.eegReadings).pipe(
-      bandpassFilter({ 
-        cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
-        nbChannels: Settings.nbChannels }),
-      epoch({
-        duration: Settings.duration,
-        interval: Settings.interval,
-        samplingRate: Settings.srate
-      }),
-      fft({ bins: Settings.bins }),
-      powerByBand(),
-      catchError(err => {
-        console.log(err);
-      })
-    );
-    window.multicastBands$ = window.pipeBands$.pipe(
-      multicast(() => new Subject())
+  // Build Pipe
+  window.pipeBands$ = zipSamples(window.source.eegReadings$).pipe(
+    bandpassFilter({ 
+      cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
+      nbChannels: Settings.nbChannels }),
+    epoch({
+      duration: Settings.duration,
+      interval: Settings.interval,
+      samplingRate: Settings.srate
+    }),
+    fft({ bins: Settings.bins }),
+    powerByBand(),
+    catchError(err => {
+      console.log(err);
+    })
+  );
+  window.multicastBands$ = window.pipeBands$.pipe(
+    multicast(() => new Subject())
   );
 }
 
-export function setup(setData) {
-  console.log("Subscribing to Bands");
+export function setup(setData, Settings) {
+  console.log("Subscribing to " + Settings.name);
 
   if (window.multicastBands$) {
-    window.subscriptionBands$ = window.multicastBands$.subscribe(data => {
+    window.subscriptionBands = window.multicastBands$.subscribe(data => {
       setData(bandsData => {
         Object.values(bandsData).forEach((channel, index) => {
           if (index < 4) {
@@ -93,7 +91,7 @@ export function setup(setData) {
     });
 
     window.multicastBands$.connect();
-    console.log("Subscribed to Bands");
+    console.log("Subscribed to " + Settings.name);
   }
 }
 
@@ -157,28 +155,29 @@ export function EEGEdu(channels) {
 
 export function renderSliders(setData, setSettings, status, Settings) {
 
+  function resetPipeSetup(value) {
+    buildPipe(Settings);
+    setup(setData, Settings);
+  }
+
   function handleIntervalRangeSliderChange(value) {
     setSettings(prevState => ({...prevState, interval: value}));
-    buildPipe(Settings);
-    setup(setData);
+    resetPipeSetup();
   }
 
   function handleCutoffLowRangeSliderChange(value) {
     setSettings(prevState => ({...prevState, cutOffLow: value}));
-    buildPipe(Settings);
-    setup(setData);
+    resetPipeSetup();
   }
 
   function handleCutoffHighRangeSliderChange(value) {
     setSettings(prevState => ({...prevState, cutOffHigh: value}));
-    buildPipe(Settings);
-    setup(setData);
+    resetPipeSetup();
   }
 
   function handleDurationRangeSliderChange(value) {
     setSettings(prevState => ({...prevState, duration: value}));
-    buildPipe(Settings);
-    setup(setData);
+    resetPipeSetup();
   }
 
   return (

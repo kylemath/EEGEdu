@@ -35,27 +35,29 @@ export function getSettings() {
   }
 };
 
+
 export function buildPipe(Settings) {
-  if (window.subscriptionSpectra$) window.subscriptionSpectra$.unsubscribe();
+  if (window.subscriptionSpectra) window.subscriptionSpectra.unsubscribe();
 
-    window.pipeSpectra$ = null;
-    window.multicastSpectra$ = null;
-    window.subscriptionSpectra$ = null;
+  window.pipeSpectra$ = null;
+  window.multicastSpectra$ = null;
+  window.subscriptionSpectra = null;
 
-    window.pipeSpectra$ = zipSamples(window.source$.eegReadings).pipe(
-      bandpassFilter({ 
-        cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
-        nbChannels: Settings.nbChannels }),
-      epoch({
-        duration: Settings.duration,
-        interval: Settings.interval,
-        samplingRate: Settings.srate
-      }),
-      fft({ bins: Settings.bins }),
-      sliceFFT([Settings.sliceFFTLow, Settings.sliceFFTHigh]),
-      catchError(err => {
-        console.log(err);
-      })
+  // Build Pipe 
+  window.pipeSpectra$ = zipSamples(window.source.eegReadings$).pipe(
+    bandpassFilter({ 
+      cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
+      nbChannels: Settings.nbChannels }),
+    epoch({
+      duration: Settings.duration,
+      interval: Settings.interval,
+      samplingRate: Settings.srate
+    }),
+    fft({ bins: Settings.bins }),
+    sliceFFT([Settings.sliceFFTLow, Settings.sliceFFTHigh]),
+    catchError(err => {
+      console.log(err);
+    })
   );
 
   window.multicastSpectra$ = window.pipeSpectra$.pipe(
@@ -63,11 +65,11 @@ export function buildPipe(Settings) {
   );
 }
 
-export function setup(setData) {
-  console.log("Subscribing to Spectra");
+export function setup(setData, Settings) {
+  console.log("Subscribing to " + Settings.name);
 
   if (window.multicastSpectra$) {
-    window.subscriptionSpectra$ = window.multicastSpectra$.subscribe(data => {
+    window.subscriptionSpectra = window.multicastSpectra$.subscribe(data => {
       setData(spectraData => {
         Object.values(spectraData).forEach((channel, index) => {
           if (index < 4) {
@@ -86,7 +88,7 @@ export function setup(setData) {
     });
 
     window.multicastSpectra$.connect();
-    console.log("Subscribed to Spectra");
+    console.log("Subscribed to " + Settings.name);
   }
 }
 
@@ -154,40 +156,39 @@ export function EEGEdu(channels) {
 
 export function renderSliders(setData, setSettings, status, Settings) {
 
+  function resetPipeSetup(value) {
+    buildPipe(Settings);
+    setup(setData, Settings)
+  }
+
   function handleIntervalRangeSliderChange(value) {
     setSettings(prevState => ({...prevState, interval: value}));
-    buildPipe(Settings);
-    setup(setData);
+    resetPipeSetup();
   }
 
   function handleCutoffLowRangeSliderChange(value) {
     setSettings(prevState => ({...prevState, cutOffLow: value}));
-    buildPipe(Settings);
-    setup(setData);
+    resetPipeSetup();
   }
 
   function handleCutoffHighRangeSliderChange(value) {
     setSettings(prevState => ({...prevState, cutOffHigh: value}));
-    buildPipe(Settings);
-    setup(setData);
+    resetPipeSetup();
   }
 
   function handleSliceFFTLowRangeSliderChange(value) {
     setSettings(prevState => ({...prevState, sliceFFTLow: value}));
-    buildPipe(Settings);
-    setup(setData);
+    resetPipeSetup();
   }
 
   function handleSliceFFTHighRangeSliderChange(value) {
     setSettings(prevState => ({...prevState, sliceFFTHigh: value}));
-    buildPipe(Settings);
-    setup(setData);
+    resetPipeSetup();
   }
 
   function handleDurationRangeSliderChange(value) {
     setSettings(prevState => ({...prevState, duration: value}));
-    buildPipe(Settings);
-    setup(setData);
+    resetPipeSetup();
   }
 
   return (
