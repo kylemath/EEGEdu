@@ -207,7 +207,7 @@ export function PageSwitcher() {
         window.source = {};
         window.source.connectionStatus = {};
         window.source.connectionStatus.value = true;
-        window.source.eegReadings = mockMuseEEG(256);
+        window.source.eegReadings$ = mockMuseEEG(256);
         setStatus(generalTranslations.connectedMock);
       } else {
         // Connect with the Muse EEG Client
