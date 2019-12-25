@@ -32,15 +32,15 @@ export function getSettings () {
   }
 };
 
-export function buildPipe(Settings, thisObs) {
-  if (thisObs.subscription) thisObs.subscription.unsubscribe();
+export function buildPipe(Settings) {
+  if (window.subscriptionRaw) window.subscriptionRaw.unsubscribe();
 
-  thisObs.pipe$ = null;
-  thisObs.multicast$ = null;
-  thisObs.subscription = null;
+  window.pipeRaw$ = null;
+  window.multicastRaw$ = null;
+  window.subscriptionRaw = null;
 
-  // Build Pipe Raw
- thisObs.pipe$ = zipSamples(window.source.eegReadings$).pipe(
+  // Build Pipe
+  window.pipeRaw$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
       nbChannels: Settings.nbChannels }),
@@ -53,18 +53,18 @@ export function buildPipe(Settings, thisObs) {
       console.log(err);
     })
   );
-  thisObs.multicast$ = thisObs.pipe$.pipe(
+  window.multicastRaw$ = window.pipeRaw$.pipe(
     multicast(() => new Subject())
   );
 }
 
-export function setup(setData, Settings, thisObs, thisData) {
-  console.log("Subscribing to Raw");
+export function setup(setData, Settings) {
+  console.log("Subscribing to " + Settings.name);
 
-  if (thisObs.multicast$) {
-    thisObs.subscription = thisObs.multicast$.subscribe(data => {
-      setData(thisData => {
-        Object.values(thisData).forEach((channel, index) => {
+  if (window.multicastRaw$) {
+    window.subscriptionRaw = window.multicastRaw$.subscribe(data => {
+      setData(rawData => {
+        Object.values(rawData).forEach((channel, index) => {
           if (index < 4) {
             channel.datasets[0].data = data.data[index];
             channel.xLabels = generateXTics(Settings.srate, Settings.duration);
@@ -73,15 +73,15 @@ export function setup(setData, Settings, thisObs, thisData) {
         });
 
         return {
-          ch0: thisData.ch0,
-          ch1: thisData.ch1,
-          ch2: thisData.ch2,
-          ch3: thisData.ch3
+          ch0: rawData.ch0,
+          ch1: rawData.ch1,
+          ch2: rawData.ch2,
+          ch3: rawData.ch3
         };
       });
     });
 
-    thisObs.multicast$.connect();
+    window.multicastRaw$.connect();
     console.log("Subscribed to Raw");
   }
 }
@@ -156,32 +156,32 @@ export function EEGEdu(channels) {
 }
 
   
-export function renderSliders(setData, setSettings, status, Settings, thisObs, thisData) {
+export function renderSliders(setData, setSettings, status, Settings) {
 
+  function resetPipeSetup(value) {
+    buildPipe(Settings);
+    setup(setData, Settings)
+  }
+  
   function handleIntervalRangeSliderChange(value) {
     setSettings(prevState => ({...prevState, interval: value}));
-    buildPipe(Settings, thisObs);
-    setup(setData, Settings, thisObs, thisData);
+    resetPipeSetup();
   }
 
   function handleCutoffLowRangeSliderChange(value) {
     setSettings(prevState => ({...prevState, cutOffLow: value}));
-    buildPipe(Settings, thisObs);
-    setup(setData, Settings, thisObs, thisData);
+    resetPipeSetup();
   }
 
   function handleCutoffHighRangeSliderChange(value) {
     setSettings(prevState => ({...prevState, cutOffHigh: value}));
-    buildPipe(Settings, thisObs);
-    setup(setData, Settings, thisObs, thisData);
-  }
+    resetPipeSetup();
+ }
 
   function handleDurationRangeSliderChange(value) {
     setSettings(prevState => ({...prevState, duration: value}));
-    buildPipe(Settings, thisObs);
-    setup(setData, Settings, thisObs, thisData);
-  }
-
+    resetPipeSetup();
+ }
 
   return (
     <React.Fragment>
