@@ -23,6 +23,12 @@ export const emptyChannelData = {
   }
 };
 
+export const emptyObs = { 
+  pipe$: null,
+  multicast$: null,
+  subscription:null
+};
+
 export const generalOptions = {
   scales: {
     xAxes: [
