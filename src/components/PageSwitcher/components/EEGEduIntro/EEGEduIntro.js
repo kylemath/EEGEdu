@@ -39,7 +39,7 @@ export function buildPipe(Settings) {
   window.subscriptionIntro = null;
 
   // Build Pipe
- window.pipeIntro$ = zipSamples(window.source.eegReadings).pipe(
+ window.pipeIntro$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
       nbChannels: Settings.nbChannels }),
