@@ -31,15 +31,15 @@ export function getSettings () {
   }
 };
 
-export function buildPipe(Settings) {
-  if (window.subscriptionIntro$) window.subscriptionIntro$.unsubscribe();
+export function buildPipe(Settings, thisObs) {
+  if (thisObs.subscription) thisObs.subscription.unsubscribe();
 
-  window.pipeIntro$ = null;
-  window.multicastIntro$ = null;
-  window.subscriptionIntro$ = null;
+  thisObs.pipe$ = null;
+  thisObs.multicast$ = null;
+  thisObs.subscription = null;
 
-  // Build Pipe
-  window.pipeIntro$ = zipSamples(window.source$.eegReadings).pipe(
+  // Build Pipe Raw
+ thisObs.pipe$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
       nbChannels: Settings.nbChannels }),
@@ -52,18 +52,18 @@ export function buildPipe(Settings) {
       console.log(err);
     })
   );
-  window.multicastIntro$ = window.pipeIntro$.pipe(
+  thisObs.multicast$ = thisObs.pipe$.pipe(
     multicast(() => new Subject())
   );
 }
 
-export function setup(setData, Settings) {
-  console.log("Subscribing to " + Settings.name);
+export function setup(setData, Settings, thisObs, thisData) {
+  console.log("Subscribing to Raw");
 
-  if (window.multicastIntro$) {
-    window.subscriptionIntro$ = window.multicastIntro$.subscribe(data => {
-      setData(introData => {
-        Object.values(introData).forEach((channel, index) => {
+  if (thisObs.multicast$) {
+    thisObs.subscription = thisObs.multicast$.subscribe(data => {
+      setData(thisData => {
+        Object.values(thisData).forEach((channel, index) => {
           if (index === 0) {
             channel.datasets[0].data = data.data[index];
             channel.xLabels = generateXTics(Settings.srate, Settings.duration);
@@ -72,15 +72,15 @@ export function setup(setData, Settings) {
         });
 
         return {
-          ch0: introData.ch0,
-          ch1: introData.ch1,
-          ch2: introData.ch2,
-          ch3: introData.ch3
+          ch0: thisData.ch0,
+          ch1: thisData.ch1,
+          ch2: thisData.ch2,
+          ch3: thisData.ch3
         };
       });
     });
 
-    window.multicastIntro$.connect();
+    thisObs.multicast$.connect();
     console.log("Subscribed to " + Settings.name);
   }
 }
