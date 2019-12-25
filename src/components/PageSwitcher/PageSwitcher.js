@@ -39,7 +39,7 @@ export function PageSwitcher() {
   const [status, setStatus] = useState(generalTranslations.connect);
 
   // for picking a new module
-  const [selected, setSelected] = useState(intro);
+  const [selected, setSelected] = useState(raw);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 
@@ -321,6 +321,7 @@ export function PageSwitcher() {
               >
                 <Modal.Section>
                   <TextContainer>
+
                     <p>
                       Your data is currently recording, 
                       once complete it will be downloaded as a .csv file 
@@ -328,6 +329,14 @@ export function PageSwitcher() {
                       Close this window once the download completes.
                     </p>
                   </TextContainer>
+                <p>
+  `               <img 
+                    src={ require("./assets/20Hzflicker.gif")} 
+                    alt="SingleElectrode"
+                    width="100%"
+                    height="auto"
+                  ></img> `
+                </p>
                 </Modal.Section>
               </Modal>
             </Stack>
