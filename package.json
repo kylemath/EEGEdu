@@ -14,10 +14,12 @@
     "firebase": "^7.5.0",
     "firebase-tools": "^7.9.0",
     "muse-js": "^3.0.1",
+    "p5": "^0.10.2",
     "prettier": "^1.19.1",
     "react": "^16.12.0",
     "react-chartjs-2": "^2.7.2",
     "react-dom": "^16.4.1",
+    "react-p5-wrapper": "^2.0.0",
     "react-scripts": "^3.2.0",
     "rxjs": "^6.5.3"
   },

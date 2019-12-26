@@ -39,7 +39,7 @@ export function PageSwitcher() {
   const [status, setStatus] = useState(generalTranslations.connect);
 
   // for picking a new module
-  const [selected, setSelected] = useState(raw);
+  const [selected, setSelected] = useState(bands);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 
