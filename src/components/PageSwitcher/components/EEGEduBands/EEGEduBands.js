@@ -22,6 +22,8 @@ import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 import { bandLabels } from "../../utils/chartUtils";
 
+import P5Wrapper from 'react-p5-wrapper';
+
 export function getSettings () {
   return {
     cutOffLow: 2,
@@ -127,17 +129,29 @@ export function renderModule(channels) {
           text: generalTranslations.channel + channelNames[index]
         }
       };
+      // console.log(channel) 
+      if (channel.datasets[0].data) {
+        // console.log( channel.datasets[0].data[2])
+        window.dinkDink = channel.datasets[0].data[0];
+
+      }
 
       return (
-        <Card.Section key={"Card_" + index}>
-          <Bar key={"Line_" + index} data={channel} options={options} />
-        </Card.Section>
+        <React.Fragment>
+          <Card.Section key={"Card_" + index}>
+            <Bar key={"Line_" + index} data={channel} options={options} />
+          </Card.Section>
+          <Card.Section>
+            <P5Wrapper sketch={sketch} rotation={window.dinkDink}/>
+          </Card.Section>
+        </React.Fragment>
       );
     });
   }
 
   return (
     <Card title={specificTranslations.title}>
+
       <Card.Section>
         <Stack>
           <TextContainer>
@@ -151,6 +165,43 @@ export function renderModule(channels) {
     </Card>
   );
 }
+
+
+export default function sketch (p) {
+  let rotation = 0;
+
+  p.setup = function () {
+    p.createCanvas(600, 400, p.WEBGL);
+  };
+
+  p.myCustomRedrawAccordingToNewPropsHandler = function (props) {
+    if (props.rotation){
+      rotation = props.rotation * Math.PI / 180;
+    }
+  };
+
+  // p.polygon = function (x, y, radius, npoints) {
+  //   let angle = 6.28 / npoints;
+  //   p.beginShape();
+  //   for (let a = 0; a < 6.28; a += angle) {
+  //     let sx = x + p.cos(a) * radius;
+  //     let sy = y + p.sin(a) * radius;
+  //     p.vertex(sx, sy);
+  //   }
+  //   p.endShape(p.CLOSE);
+  // }
+
+  p.draw = function () {
+    p.background(100);
+    p.normalMaterial();
+    p.noStroke();
+    p.push();
+    p.rotateY(rotation);
+    // p.polygon(0, 0, 82, 7);
+    p.box(100);
+    p.pop();
+  };
+};
 
 
 export function renderSliders(setData, setSettings, status, Settings) {
