@@ -22,7 +22,8 @@ import { bandLabels } from "../../utils/chartUtils";
 import sketchBands from './sketchBands'
 import sketchTone from './sketchTone'
 import sketchCube from './sketchCube'
-import sketchFlock  from './sketchFlock'
+import sketchFlock from './sketchFlock'
+import sketchDraw from './sketchDraw'
 
 import P5Wrapper from 'react-p5-wrapper';
 
@@ -106,16 +107,18 @@ export function renderModule(channels) {
     const tone = 'tone';
     const cube = 'cube';
     const flock = 'flock';
+    const draw = 'draw';
 
     const chartTypes = [
       { label: bands, value: bands },
       { label: tone, value: tone },
       { label: cube, value: cube },
-      { label: flock, value: flock }
+      { label: flock, value: flock },
+      { label: draw, value: draw}
     ];
 
     // for picking a new animation
-    const [selectedAnimation, setSelectedAnimation] = useState(flock);
+    const [selectedAnimation, setSelectedAnimation] = useState(draw);
     const handleSelectChangeAnimation = useCallback(value => {
       setSelectedAnimation(value);
       console.log("Switching to: " + value);
@@ -147,6 +150,9 @@ export function renderModule(channels) {
         case flock:
           thisSketch = sketchFlock;
           break
+        case draw:
+          thisSketch = sketchDraw;
+          break
         default: console.log("Error on switch to " + selectedAnimation)
       }
 
@@ -154,11 +160,6 @@ export function renderModule(channels) {
       if (index === 1) {
         return (
           <React.Fragment key={'dum'}>
-          {/*}
-            <Card.Section key={"Card_" + index}>
-              <Bar key={"Line_" + index} data={channel} options={options} />
-            </Card.Section>
-          */}
             <Card.Section 
               title={"Choice of Sketch"}
             >
