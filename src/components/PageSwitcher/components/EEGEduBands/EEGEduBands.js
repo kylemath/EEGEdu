@@ -23,6 +23,8 @@ import * as specificTranslations from "./translations/en";
 import { bandLabels } from "../../utils/chartUtils";
 
 import P5Wrapper from 'react-p5-wrapper';
+import p5 from "p5";
+import "p5/lib/addons/p5.sound";
 
 export function getSettings () {
   return {
@@ -132,20 +134,33 @@ export function renderModule(channels) {
       // console.log(channel) 
       if (channel.datasets[0].data) {
         // console.log( channel.datasets[0].data[2])
-        window.dinkDink = channel.datasets[0].data[0];
+        window.delta = channel.datasets[0].data[0];
+        window.theta = channel.datasets[0].data[1];
+        window.alpha = channel.datasets[0].data[2];
+        window.beta  = channel.datasets[0].data[3];
+        window.gamma = channel.datasets[0].data[4];
+      }   
 
+      if (index === 0) {
+        return (
+          <React.Fragment>
+            <Card.Section key={"Card_" + index}>
+              <Bar key={"Line_" + index} data={channel} options={options} />
+            </Card.Section>
+            <Card.Section key={"Dum_ " + index}>
+              <P5Wrapper sketch={sketch} 
+                delta={window.delta}
+                theta={window.theta}
+                alpha={window.alpha}
+                beta={window.beta}
+                gamma={window.gamma}
+              />
+            </Card.Section>
+          </React.Fragment>
+        );
+      } else {
+        return null
       }
-
-      return (
-        <React.Fragment>
-          <Card.Section key={"Card_" + index}>
-            <Bar key={"Line_" + index} data={channel} options={options} />
-          </Card.Section>
-          <Card.Section>
-            <P5Wrapper sketch={sketch} rotation={window.dinkDink}/>
-          </Card.Section>
-        </React.Fragment>
-      );
     });
   }
 
@@ -167,40 +182,117 @@ export function renderModule(channels) {
 }
 
 
-export default function sketch (p) {
-  let rotation = 0;
+export function sketch (p) {
+  let delta = 0;
+  let theta = 0;
+  let alpha = 0;
+  let beta = 0;
+  let gamma = 0;
+
+  let osc, envelope, fft;
+
+  let scaleArray = [50, 50, 50, 50];
+  let note = 0;
 
   p.setup = function () {
-    p.createCanvas(600, 400, p.WEBGL);
+    p.createCanvas(710, 200);
+    osc = new p5.SinOsc();
+
+    // Instantiate the envelope
+    envelope = new p5.Env();
+
+    // set attackTime, decayTime, sustainRatio, releaseTime
+    envelope.setADSR(0.001, 0.5, 0.1, 0.5);
+
+    // set attackLevel, releaseLevel
+    envelope.setRange(1, 0);
+
+    osc.start();
+
+    fft = new p5.FFT();
+    p.noStroke();
   };
 
   p.myCustomRedrawAccordingToNewPropsHandler = function (props) {
-    if (props.rotation){
-      rotation = props.rotation * Math.PI / 180;
-    }
-  };
+    delta = props.delta;
+    theta = props.theta;
+    alpha = props.alpha;
+    beta = props.beta;
+    gamma = props.gamma;
 
-  // p.polygon = function (x, y, radius, npoints) {
-  //   let angle = 6.28 / npoints;
-  //   p.beginShape();
-  //   for (let a = 0; a < 6.28; a += angle) {
-  //     let sx = x + p.cos(a) * radius;
-  //     let sy = y + p.sin(a) * radius;
-  //     p.vertex(sx, sy);
-  //   }
-  //   p.endShape(p.CLOSE);
-  // }
+    // if (props.rotation){
+    //   rotation = props.rotation * Math.PI / 180;
+    // }
+  };
 
   p.draw = function () {
-    p.background(100);
-    p.normalMaterial();
-    p.noStroke();
-    p.push();
-    p.rotateY(rotation);
-    // p.polygon(0, 0, 82, 7);
-    p.box(100);
-    p.pop();
+    p.background(20);
+
+    if (p.frameCount % Math.floor(alpha)*100 === 0 || p.frameCount === 1) {
+      let midiValue = scaleArray[note];
+      let freqValue = p.midiToFreq(midiValue);
+      osc.freq(freqValue);
+
+      envelope.play(osc, 0, 0.1);
+      note = (note + 1) % scaleArray.length;
+    }
+
+    let spectrum = fft.analyze();
+    for (let i = 0; i < spectrum.length / 20; i++) {
+      p.fill(spectrum[i], spectrum[i] / 10, 0);
+      let x = p.map(i, 0, spectrum.length / 20, 0, p.width);
+      let h = p.map(spectrum[i], 0, 255, 0, p.height);
+      p.rect(x, p.height, spectrum.length / 20, -h);
+    }
+
+
+    // p.background(256);
+    // p.ambientMaterial(250);
+    // p.noStroke();
+
+    // let locX = p.mouseX - p.height / 2;
+    // let locY = p.mouseY - p.width / 2;
+
+    // p.ambientLight(60, 60, 60);
+    // p.pointLight(255, 255, 255, locX, locY, 100);
+
+
+    // p.push();
+    // p.translate(-100,0);
+    // p.rotateY(50);
+    // p.rotateX(50);
+    // p.box(50, delta* 10, 100);
+    // p.pop();
+
+    // p.push();
+    // p.translate(-50,0);
+    // p.rotateY(50);
+    // p.rotateX(50);
+    // p.box(50, theta* 10, 100);
+    // p.pop();
+
+    // p.push();
+    // p.translate(0,0);
+    // p.rotateY(50);
+    // p.rotateX(50);
+    // p.box(50, alpha* 10, 100);
+    // p.pop();
+
+    // p.push();
+    // p.translate(50,0);
+    // p.rotateY(50);
+    // p.rotateX(50);
+    // p.box(50, beta* 10, 100);
+    // p.pop();
+
+    // p.push();
+    // p.translate(100,0);
+    // p.rotateY(50);
+    // p.rotateX(50);
+    // p.box(50, gamma* 10, 100);
+    // p.pop();
   };
+
 };
 
 
