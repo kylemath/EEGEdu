@@ -25,6 +25,7 @@ import { bandLabels } from "../../utils/chartUtils";
 import sketchBands from './sketchBands'
 import sketchTone from './sketchTone'
 import sketchCube from './sketchCube'
+import sketchFlock  from './sketchFlock'
 
 import P5Wrapper from 'react-p5-wrapper';
 
@@ -107,15 +108,17 @@ export function renderModule(channels) {
     const bands = 'bands';
     const tone = 'tone';
     const cube = 'cube';
+    const flock = 'flock';
 
     const chartTypes = [
       { label: bands, value: bands },
       { label: tone, value: tone },
-      { label: cube, value: cube }
+      { label: cube, value: cube },
+      { label: flock, value: flock }
     ];
 
     // for picking a new animation
-    const [selectedAnimation, setSelectedAnimation] = useState(tone);
+    const [selectedAnimation, setSelectedAnimation] = useState(flock);
     const handleSelectChangeAnimation = useCallback(value => {
       setSelectedAnimation(value);
       console.log("Switching to: " + value);
@@ -173,15 +176,20 @@ export function renderModule(channels) {
         case cube:
           thisSketch = sketchCube;
           break
+        case flock:
+          thisSketch = sketchFlock;
+          break
         default: console.log("Error on switch to " + selectedAnimation)
       }
 
       if (index === 0) {
         return (
           <React.Fragment key={'dum'}>
+          {/*}
             <Card.Section key={"Card_" + index}>
               <Bar key={"Line_" + index} data={channel} options={options} />
             </Card.Section>
+          */}
             <Card.Section 
               title={"Choice of Sketch"}
             >
