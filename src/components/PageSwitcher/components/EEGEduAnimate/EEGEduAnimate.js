@@ -24,6 +24,7 @@ import { bandLabels } from "../../utils/chartUtils";
 
 import sketchBands from './sketchBands'
 import sketchTone from './sketchTone'
+import sketchCube from './sketchCube'
 
 import P5Wrapper from 'react-p5-wrapper';
 
@@ -105,14 +106,16 @@ export function renderModule(channels) {
 
     const bands = 'bands';
     const tone = 'tone';
+    const cube = 'cube';
 
     const chartTypes = [
       { label: bands, value: bands },
       { label: tone, value: tone },
+      { label: cube, value: cube }
     ];
 
     // for picking a new animation
-    const [selectedAnimation, setSelectedAnimation] = useState(bands);
+    const [selectedAnimation, setSelectedAnimation] = useState(cube);
     const handleSelectChangeAnimation = useCallback(value => {
       setSelectedAnimation(value);
       console.log("Switching to: " + value);
@@ -166,6 +169,9 @@ export function renderModule(channels) {
           break
         case tone:
           thisSketch = sketchTone;
+          break
+        case cube:
+          thisSketch = sketchCube;
           break
         default: console.log("Error on switch to " + selectedAnimation)
       }
