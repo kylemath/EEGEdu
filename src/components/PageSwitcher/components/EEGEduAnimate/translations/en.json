@@ -1,0 +1,9 @@
+{
+  "title": "P5js integration",
+  "description": [
+    "In the next demo we look at the traditional frequency bands. ",
+    "This time instead of graphing them we pipe them into a live web animation."
+  ],
+  "xlabel": "Frequency (Hz)",
+  "ylabel": "Power (\u03BCV\u00B2)"
+}
