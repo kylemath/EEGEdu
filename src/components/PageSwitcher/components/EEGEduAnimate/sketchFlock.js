@@ -8,11 +8,13 @@ export default function sketchTone (p) {
   let beta = 0;
   let gamma = 0;
 
+  let xVar = 0;
+  let yVar = 0;
   var flock;
 
 
   p.setup = function () {
-    p.createCanvas(p.windowWidth, p.windowHeight);
+    p.createCanvas(p.windowWidth*.6, 500);
     flock = new p.Flock();
 
     for (var i = 0; i < 100; i++) {
@@ -21,23 +23,37 @@ export default function sketchTone (p) {
     }
   };
 
+  p.windowResized = function() {
+    p.createCanvas(p.windowWidth*.6, 500);
+  }
   p.myCustomRedrawAccordingToNewPropsHandler = function (props) {
     delta = Math.floor(props.delta);
-    theta = Math.floor(props.theta);
-    alpha = Math.floor(props.alpha);
-    beta = Math.floor(props.beta);
+    theta = Math.floor(100*props.theta);
+    alpha = Math.floor(100*props.alpha);
+    beta =  Math.floor(300*props.beta);
     gamma = Math.floor(props.gamma);
 
-    console.log(alpha*10)
-    console.log(beta*10)
-  };
+    xVar = beta;
+    yVar = alpha;
 
-  p.windowResized = function() {
-    p.createCanvas(p.windowWidth*.6, 800, p.WEBGL);
-  }
+    if (xVar > p.width) {
+      xVar = p.width;
+    }
+    if (yVar > p.height) {
+      yVar = p.height;
+    }
+
+    console.log(xVar)
+    console.log(yVar)
+  };
 
   p.draw = function () {
     p.background(0);
+    p.fill(255,0,0)
+    p.push();
+    p.translate(xVar, yVar);
+    p.ellipse(0,0,5,5);
+    p.pop();
     flock.run();
   }
 
@@ -122,13 +138,13 @@ export default function sketchTone (p) {
     p.noStroke();
     p.push();
     p.translate(this.position.x, this.position.y);
-    p.ellipse(0,0,5,5);
-    // rotate(theta);
-    // beginShape();
-    // vertex(0, -this.r * 2);
-    // vertex(-this.r, this.r * 2);
-    // vertex(this.r, this.r * 2);
-    // endShape(CLOSE);
+    // p.ellipse(0,0,5,5);
+    p.rotate(theta);
+    p.beginShape();
+    p.vertex(0, -this.r * 2);
+    p.vertex(-this.r, this.r * 2);
+    p.vertex(this.r, this.r * 2);
+    p.endShape(p.CLOSE);
     p.pop();
   };
 
@@ -216,7 +232,7 @@ export default function sketchTone (p) {
 
   p.Boid.prototype.mouuse = function(boids) {
     var neighbordist = 100;
-    var m = p.createVector(alpha*10, beta*10);
+    var m = p.createVector(xVar, yVar);
     var d = p5.Vector.dist(this.position, m);
     if ((d > 0) && (d < neighbordist)) {
       return this.seek(m); // Steer towards the mouse location 
