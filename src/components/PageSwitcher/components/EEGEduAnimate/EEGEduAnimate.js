@@ -1,11 +1,8 @@
-import React from "react";
+import React, { useState, useCallback } from "react";
 import { catchError, multicast } from "rxjs/operators";
 
-import { Card, Stack, TextContainer, RangeSlider } from "@shopify/polaris";
+import { Card, Stack, TextContainer, RangeSlider, Select} from "@shopify/polaris";
 import { Subject } from "rxjs";
-
-import { channelNames } from "muse-js";
-import { Bar } from "react-chartjs-2";
 
 import { zipSamples } from "muse-js";
 
@@ -16,20 +13,28 @@ import {
   powerByBand
 } from "@neurosity/pipes";
 
-import { chartStyles, generalOptions } from "../chartOptions";
+import { chartStyles } from "../chartOptions";
 
 import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 import { bandLabels } from "../../utils/chartUtils";
+
+import sketchBands from './sketchBands'
+import sketchTone from './sketchTone'
+import sketchCube from './sketchCube'
+import sketchFlock from './sketchFlock'
+import sketchDraw from './sketchDraw'
+
+import P5Wrapper from 'react-p5-wrapper';
 
 export function getSettings () {
   return {
     cutOffLow: 2,
     cutOffHigh: 20,
     nbChannels: 4,
-    interval: 100,
+    interval: 16,
     bins: 256,
-    duration: 1024,
+    duration: 128,
     srate: 256
   }
 };
@@ -96,48 +101,95 @@ export function setup(setData, Settings) {
 }
 
 export function renderModule(channels) {
-  function renderCharts() {
-    return Object.values(channels.data).map((channel, index) => {
-      const options = {
-        ...generalOptions,
-        scales: {
-          xAxes: [
-            {
-              scaleLabel: {
-                ...generalOptions.scales.xAxes[0].scaleLabel,
-                labelString: specificTranslations.xlabel
-              }
-            }
-          ],
-          yAxes: [
-            {
-              scaleLabel: {
-                ...generalOptions.scales.yAxes[0].scaleLabel,
-                labelString: specificTranslations.ylabel
-              },
-              ticks: {
-                max: 25,
-                min: 0
-              }
-            }
-          ]
-        },
-        title: {
-          ...generalOptions.title,
-          text: generalTranslations.channel + channelNames[index]
-        }
-      };
+  function RenderCharts() {
 
-      return (
-          <Card.Section key={"Card_" + index}>
-            <Bar key={"Line_" + index} data={channel} options={options} />
-          </Card.Section>
-      );
+    const bands = 'bands';
+    const tone = 'tone';
+    const cube = 'cube';
+    const flock = 'flock';
+    const draw = 'draw';
+
+    const chartTypes = [
+      { label: bands, value: bands },
+      { label: tone, value: tone },
+      { label: cube, value: cube },
+      { label: flock, value: flock },
+      { label: draw, value: draw}
+    ];
+
+    // for picking a new animation
+    const [selectedAnimation, setSelectedAnimation] = useState(draw);
+    const handleSelectChangeAnimation = useCallback(value => {
+      setSelectedAnimation(value);
+      console.log("Switching to: " + value);
+    }, []);
+
+    return Object.values(channels.data).map((channel, index) => {
+      // console.log(channel) 
+      if (channel.datasets[0].data) {
+        // console.log( channel.datasets[0].data[2])
+        window.delta = channel.datasets[0].data[0];
+        window.theta = channel.datasets[0].data[1];
+        window.alpha = channel.datasets[0].data[2];
+        window.beta  = channel.datasets[0].data[3];
+        window.gamma = channel.datasets[0].data[4];
+      }   
+
+      let thisSketch = sketchTone;
+
+      switch (selectedAnimation) {
+        case bands:
+          thisSketch = sketchBands;
+          break
+        case tone:
+          thisSketch = sketchTone;
+          break
+        case cube:
+          thisSketch = sketchCube;
+          break
+        case flock:
+          thisSketch = sketchFlock;
+          break
+        case draw:
+          thisSketch = sketchDraw;
+          break
+        default: console.log("Error on switch to " + selectedAnimation)
+      }
+
+      //only left frontal channel
+      if (index === 1) {
+        return (
+          <React.Fragment key={'dum'}>
+            <Card.Section 
+              title={"Choice of Sketch"}
+            >
+              <Select
+                label={""}
+                options={chartTypes}
+                onChange={handleSelectChangeAnimation}
+                value={selectedAnimation}
+              />
+            </Card.Section>
+            <Card.Section>
+              <P5Wrapper sketch={thisSketch} 
+                delta={window.delta}
+                theta={window.theta}
+                alpha={window.alpha}
+                beta={window.beta}
+                gamma={window.gamma}
+              />          
+            </Card.Section>
+          </React.Fragment>
+        );
+      } else {
+        return null
+      }
     });
   }
 
   return (
     <Card title={specificTranslations.title}>
+
       <Card.Section>
         <Stack>
           <TextContainer>
@@ -146,7 +198,7 @@ export function renderModule(channels) {
         </Stack>
       </Card.Section>
       <Card.Section>
-        <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
+        <div style={chartStyles.wrapperStyle.style}>{RenderCharts()}</div>
       </Card.Section>
     </Card>
   );

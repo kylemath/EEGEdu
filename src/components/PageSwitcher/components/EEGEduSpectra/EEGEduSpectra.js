@@ -113,7 +113,7 @@ export function renderModule(channels) {
                 labelString: specificTranslations.ylabel
               },
               ticks: {
-                max: 100,
+                max: 25,
                 min: 0
               }
             }
