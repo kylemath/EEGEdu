@@ -158,7 +158,6 @@ export function renderModule(channels) {
         window.gamma = channel.datasets[0].data[4];
       }   
 
-
       let thisSketch = sketchTone;
 
       switch (selectedAnimation) {
