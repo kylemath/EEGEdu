@@ -103,7 +103,6 @@ export function PageSwitcher() {
     }
   }
 
-
   function saveToCSV(value) {
     const numSamplesToSave = 50;
     console.log('Saving ' + numSamplesToSave + ' samples...');

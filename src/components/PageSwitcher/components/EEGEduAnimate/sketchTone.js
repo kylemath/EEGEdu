@@ -3,11 +3,11 @@ import "p5/lib/addons/p5.sound";
 
 
 export default function sketchTone (p) {
-  let delta = 0;
-  let theta = 0;
+  // let delta = 0;
+  // let theta = 0;
   let alpha = 0;
-  let beta = 0;
-  let gamma = 0;
+  // let beta = 0;
+  // let gamma = 0;
 
   let osc, envelope, fft;
 
@@ -29,12 +29,16 @@ export default function sketchTone (p) {
   };
 
   p.myCustomRedrawAccordingToNewPropsHandler = function (props) {
-    delta = props.delta;
-    theta = props.theta;
+    // delta = props.delta;
+    // theta = props.theta;
     alpha = props.alpha;
-    beta = props.beta;
-    gamma = props.gamma;
+    // beta = props.beta;
+    // gamma = props.gamma;
   };
+
+  p.windowResized = function() {
+    p.createCanvas(p.windowWidth*.6, 800, p.WEBGL);
+  }
 
   p.draw = function () {
     p.background(20);
