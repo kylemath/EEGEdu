@@ -4,6 +4,7 @@
   	"intro": "Introduction",
     "raw": "Raw and Filtered Data",
     "spectra": "Frequency Spectra",
-    "bands": "Frequency Bands"
+    "bands": "Frequency Bands",
+    "animate": "Brain Controlled Animation"
   }
 }
