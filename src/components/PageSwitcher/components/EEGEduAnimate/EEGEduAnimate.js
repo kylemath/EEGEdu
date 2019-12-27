@@ -4,9 +4,6 @@ import { catchError, multicast } from "rxjs/operators";
 import { Card, Stack, TextContainer, RangeSlider, Select} from "@shopify/polaris";
 import { Subject } from "rxjs";
 
-import { channelNames } from "muse-js";
-import { Bar } from "react-chartjs-2";
-
 import { zipSamples } from "muse-js";
 
 import {
@@ -16,7 +13,7 @@ import {
   powerByBand
 } from "@neurosity/pipes";
 
-import { chartStyles, generalOptions } from "../chartOptions";
+import { chartStyles } from "../chartOptions";
 
 import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
@@ -34,9 +31,9 @@ export function getSettings () {
     cutOffLow: 2,
     cutOffHigh: 20,
     nbChannels: 4,
-    interval: 100,
+    interval: 16,
     bins: 256,
-    duration: 1024,
+    duration: 128,
     srate: 256
   }
 };
@@ -125,35 +122,6 @@ export function renderModule(channels) {
     }, []);
 
     return Object.values(channels.data).map((channel, index) => {
-      const options = {
-        ...generalOptions,
-        scales: {
-          xAxes: [
-            {
-              scaleLabel: {
-                ...generalOptions.scales.xAxes[0].scaleLabel,
-                labelString: specificTranslations.xlabel
-              }
-            }
-          ],
-          yAxes: [
-            {
-              scaleLabel: {
-                ...generalOptions.scales.yAxes[0].scaleLabel,
-                labelString: specificTranslations.ylabel
-              },
-              ticks: {
-                max: 50,
-                min: 0
-              }
-            }
-          ]
-        },
-        title: {
-          ...generalOptions.title,
-          text: generalTranslations.channel + channelNames[index]
-        }
-      };
       // console.log(channel) 
       if (channel.datasets[0].data) {
         // console.log( channel.datasets[0].data[2])
@@ -182,7 +150,8 @@ export function renderModule(channels) {
         default: console.log("Error on switch to " + selectedAnimation)
       }
 
-      if (index === 0) {
+      //only left frontal channel
+      if (index === 1) {
         return (
           <React.Fragment key={'dum'}>
           {/*}
