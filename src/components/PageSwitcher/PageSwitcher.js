@@ -15,11 +15,13 @@ import * as funIntro from "./components/EEGEduIntro/EEGEduIntro"
 import * as funRaw from "./components/EEGEduRaw/EEGEduRaw";
 import * as funSpectra from "./components/EEGEduSpectra/EEGEduSpectra";
 import * as funBands from "./components/EEGEduBands/EEGEduBands";
+import * as funAnimate from "./components/EEGEduAnimate/EEGEduAnimate"
 
 const intro = translations.types.intro;
 const raw = translations.types.raw;
 const spectra = translations.types.spectra;
 const bands = translations.types.bands;
+const animate = translations.types.animate;
 
 export function PageSwitcher() {
 
@@ -28,18 +30,20 @@ export function PageSwitcher() {
   const [rawData, setRawData] = useState(emptyChannelData);
   const [spectraData, setSpectraData] = useState(emptyChannelData); 
   const [bandsData, setBandsData] = useState(emptyChannelData);
+  const [animateData, setAnimateData] = useState(emptyChannelData);
 
   // pipe settings
   const [introSettings] = useState(funIntro.getSettings);
   const [rawSettings, setRawSettings] = useState(funRaw.getSettings); 
   const [spectraSettings, setSpectraSettings] = useState(funSpectra.getSettings); 
   const [bandsSettings, setBandsSettings] = useState(funBands.getSettings);
+  const [animateSettings, setAnimateSettings] = useState(funAnimate.getSettings);
 
   // connection status
   const [status, setStatus] = useState(generalTranslations.connect);
 
   // for picking a new module
-  const [selected, setSelected] = useState(bands);
+  const [selected, setSelected] = useState(animate);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 
@@ -49,6 +53,7 @@ export function PageSwitcher() {
     if (window.subscriptionRaw) window.subscriptionRaw.unsubscribe();
     if (window.subscriptionSpectra) window.subscriptionSpectra.unsubscribe();
     if (window.subscriptionBands) window.subscriptionBands.unsubscribe();
+    if (window.subscriptionAnimate) window.subscriptionAnimate.unsubscribe();
 
     subscriptionSetup(value);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -62,14 +67,16 @@ export function PageSwitcher() {
     { label: intro, value: intro },
     { label: raw, value: raw },
     { label: spectra, value: spectra }, 
-    { label: bands, value: bands }
+    { label: bands, value: bands },
+    { label: animate, value: animate }
   ];
 
   function buildPipes(value) {
     funIntro.buildPipe(introSettings);
     funRaw.buildPipe(rawSettings);
-    funSpectra.buildPipe(spectraSettings)
-    funBands.buildPipe(bandsSettings)
+    funSpectra.buildPipe(spectraSettings);
+    funBands.buildPipe(bandsSettings);
+    funAnimate.buildPipe(animateSettings);
   }
 
   function subscriptionSetup(value) {
@@ -85,6 +92,9 @@ export function PageSwitcher() {
         break;
       case bands:
         funBands.setup(setBandsData, bandsSettings)
+        break;
+      case animate:
+        funAnimate.setup(setAnimateData, animateSettings)
         break;
       default:
         console.log(
@@ -266,6 +276,12 @@ export function PageSwitcher() {
             {funBands.renderSliders(setBandsData, setBandsSettings, status, bandsSettings)}
           </Card>
         );
+      case animate:
+        return (
+          <Card title={selected + ' Settings'} sectioned>
+            {funAnimate.renderSliders(setAnimateData, setAnimateSettings, status, animateSettings)}
+          </Card>
+        );
       default: console.log('Error rendering settings display');
     }
   }
@@ -281,6 +297,10 @@ export function PageSwitcher() {
         return <funSpectra.renderModule data={spectraData} />;
       case bands:
         return <funBands.renderModule data={bandsData} />;
+      case animate:
+        return <funAnimate.renderModule 
+          data={animateData}
+          />;
       default:
         console.log("Error on renderCharts switch.");
     }
@@ -329,14 +349,6 @@ export function PageSwitcher() {
                       Close this window once the download completes.
                     </p>
                   </TextContainer>
-                <p>
-  `               <img 
-                    src={ require("./assets/20Hzflicker.gif")} 
-                    alt="SingleElectrode"
-                    width="100%"
-                    height="auto"
-                  ></img> `
-                </p>
                 </Modal.Section>
               </Modal>
             </Stack>
@@ -420,6 +432,8 @@ export function PageSwitcher() {
             </Stack>
           </Card>
         ) 
+      case animate:
+        return null
       default:   
         console.log("Error on renderRecord.");
     }
