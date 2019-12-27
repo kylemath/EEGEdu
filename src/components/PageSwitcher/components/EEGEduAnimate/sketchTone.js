@@ -3,15 +3,15 @@ import "p5/lib/addons/p5.sound";
 
 
 export default function sketchTone (p) {
-  // let delta = 0;
-  // let theta = 0;
+  let delta = 0;
+  let theta = 0;
   let alpha = 0;
-  // let beta = 0;
-  // let gamma = 0;
+  let beta = 0;
+  let gamma = 0;
 
   let osc, envelope, fft;
 
-  let scaleArray = [50, 50, 50, 50];
+  let scaleArray = [delta+30, theta+50 , beta+60, gamma*10+70];
   let note = 0;
 
   p.setup = function () {
@@ -29,11 +29,11 @@ export default function sketchTone (p) {
   };
 
   p.myCustomRedrawAccordingToNewPropsHandler = function (props) {
-    // delta = props.delta;
-    // theta = props.theta;
-    alpha = props.alpha;
-    // beta = props.beta;
-    // gamma = props.gamma;
+    delta = Math.floor(props.delta);
+    theta = Math.floor(props.theta);
+    alpha = Math.floor(props.alpha);
+    beta = Math.floor(props.beta);
+    gamma = Math.floor(props.gamma);
   };
 
   p.windowResized = function() {
@@ -43,7 +43,7 @@ export default function sketchTone (p) {
   p.draw = function () {
     p.background(20);
 
-    if (p.frameCount % Math.floor(alpha)*100 === 0 || p.frameCount === 1) {
+    if (p.frameCount % alpha === 0 || p.frameCount === 1) {
       let midiValue = scaleArray[note];
       let freqValue = p.midiToFreq(midiValue);
       osc.freq(freqValue);

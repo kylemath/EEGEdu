@@ -115,7 +115,7 @@ export function renderModule(channels) {
     ];
 
     // for picking a new animation
-    const [selectedAnimation, setSelectedAnimation] = useState(cube);
+    const [selectedAnimation, setSelectedAnimation] = useState(tone);
     const handleSelectChangeAnimation = useCallback(value => {
       setSelectedAnimation(value);
       console.log("Switching to: " + value);
