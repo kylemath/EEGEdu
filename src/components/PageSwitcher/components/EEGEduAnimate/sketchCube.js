@@ -1,5 +1,5 @@
 export default function sketchCube (p) {
-  // let delta = 0;
+  let delta = 0;
   // let theta = 0;
   // let alpha = 0;
   // let beta = 0;
@@ -16,7 +16,7 @@ export default function sketchCube (p) {
   }
 
   p.myCustomRedrawAccordingToNewPropsHandler = function (props) {
-    // delta = props.delta;
+    delta = Math.floor(props.delta);
     // theta = props.theta;
     // alpha = props.alpha;
     // beta = props.beta;
@@ -34,7 +34,7 @@ export default function sketchCube (p) {
     p.push();
     p.rotateX(25 + p.frameCount/10);
     p.rotateY(rotation);
-    p.box(100);
+    p.box(delta*10);
     p.pop();
   };
 
