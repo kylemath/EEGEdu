@@ -43,7 +43,7 @@ export function PageSwitcher() {
   const [status, setStatus] = useState(generalTranslations.connect);
 
   // for picking a new module
-  const [selected, setSelected] = useState(animate);
+  const [selected, setSelected] = useState(intro);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 
@@ -341,7 +341,6 @@ export function PageSwitcher() {
               >
                 <Modal.Section>
                   <TextContainer>
-
                     <p>
                       Your data is currently recording, 
                       once complete it will be downloaded as a .csv file 
