@@ -17,8 +17,8 @@ export default function sketchFlock (p) {
     p.createCanvas(p.windowWidth*.6, 500);
     flock = new p.Flock();
 
-    for (var i = 0; i < 100; i++) {
-      var b = new p.Boid(p.width / 2, p.height / 2, 2000);
+    for (var i = 0; i < 150; i++) {
+      var b = new p.Boid(p.width / 2, p.height / 2);
       flock.addBoid(b)
     }
   };
