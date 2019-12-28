@@ -2,11 +2,8 @@ import p5 from "p5";
 import "p5/lib/addons/p5.sound";
 
 export default function sketchFlock (p) {
-  let delta = 0;
-  let theta = 0;
   let alpha = 0;
   let beta = 0;
-  let gamma = 0;
 
   let xVar = 0;
   let yVar = 0;
@@ -27,11 +24,8 @@ export default function sketchFlock (p) {
     p.createCanvas(p.windowWidth*.6, 500);
   }
   p.myCustomRedrawAccordingToNewPropsHandler = function (props) {
-    delta = Math.floor(props.delta);
-    theta = Math.floor(100*props.theta);
     alpha = Math.floor(100*props.alpha);
     beta =  Math.floor(300*props.beta);
-    gamma = Math.floor(props.gamma);
 
     xVar = beta;
     yVar = alpha;
