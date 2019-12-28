@@ -48,11 +48,11 @@ export default function sketchFlock (p) {
   };
 
   p.draw = function () {
-    p.background(0);
+    p.background(255);
     p.fill(255,0,0)
     p.push();
     p.translate(xVar, yVar);
-    p.ellipse(0,0,5,5);
+    p.ellipse(0,0,10,10);
     p.pop();
     flock.run();
   }
@@ -80,8 +80,8 @@ export default function sketchFlock (p) {
     this.velocity = p.createVector(p.random(-1, 1), p.random(-1, 1));
     this.position = p.createVector(x, y);
     this.r = 2.0; //Size of object Boid
-    this.maxspeed = 3; // Maximum speed
-    this.maxforce = 0.05; // Maximum steer ing force
+    this.maxspeed = 5; // Maximum speed
+    this.maxforce = 0.1; // Maximum steer ing force
   }
 
   p.Boid.prototype.run = function(boids) {
@@ -134,7 +134,7 @@ export default function sketchFlock (p) {
   p.Boid.prototype.render = function() {
     // Draw a triangle rotated in the direction of velocity
     var theta = this.velocity.heading() + p.radians(90);
-    p.fill(255);
+    p.fill(0);
     p.noStroke();
     p.push();
     p.translate(this.position.x, this.position.y);
@@ -231,7 +231,7 @@ export default function sketchFlock (p) {
   };
 
   p.Boid.prototype.mouuse = function(boids) {
-    var neighbordist = 100;
+    var neighbordist = 500;
     var m = p.createVector(xVar, yVar);
     var d = p5.Vector.dist(this.position, m);
     if ((d > 0) && (d < neighbordist)) {
