@@ -2,7 +2,9 @@ import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 import { Subject } from "rxjs";
 
-import { TextContainer, Card, Stack, RangeSlider } from "@shopify/polaris";
+import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal } from "@shopify/polaris";
+import { saveAs } from 'file-saver';
+import { take } from "rxjs/operators";
 
 import { channelNames } from "muse-js";
 import { Line } from "react-chartjs-2";
@@ -28,7 +30,8 @@ export function getSettings () {
     nbChannels: 4,
     interval: 50,
     srate: 256,
-    duration: 1024
+    duration: 1024,
+    name: 'Raw'
   }
 };
 
@@ -154,7 +157,6 @@ export function renderModule(channels) {
     </Card>
   );
 }
-
   
 export function renderSliders(setData, setSettings, status, Settings) {
 
@@ -184,7 +186,7 @@ export function renderSliders(setData, setSettings, status, Settings) {
  }
 
   return (
-    <Card title={selected + ' Settings'} sectioned>
+    <Card title={Settings.name + ' Settings'} sectioned>
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
         min={128} step={128} max={4096}
@@ -217,9 +219,9 @@ export function renderSliders(setData, setSettings, status, Settings) {
   )
 }
 
-export function renderRecord() {
+export function renderRecord(recordPopChange, recordPop, status, Settings) {
   return (
-    <Card title={'Record Raw Data'} sectioned>
+    <Card title={'Record ' + Settings.name + ' Data'} sectioned>
       <Card.Section>
         <p>
           {"When you are recording raw data it is recommended you set the "}
@@ -232,7 +234,7 @@ export function renderRecord() {
         <ButtonGroup>
           <Button 
             onClick={() => {
-              saveToCSV(selected);
+              saveToCSV(Settings);
               recordPopChange();
             }}
             primary={status !== generalTranslations.connect}
@@ -265,13 +267,13 @@ export function renderRecord() {
 
 
 
-function saveToCSV(value) {
+function saveToCSV(Settings) {
   const numSamplesToSave = 50;
   console.log('Saving ' + numSamplesToSave + ' samples...');
   var localObservable$ = null;
   const dataToSave = [];
 
-  console.log('making ' + value + ' headers')
+  console.log('making ' + Settings.name + ' headers')
 
   // for each module subscribe to multicast and make header
   // take one sample from selected observable object for headers
@@ -312,7 +314,7 @@ function saveToCSV(value) {
         dataToSave, 
         {type: "text/plain;charset=utf-8"}
       );
-      saveAs(blob, value + "_Recording.csv");
+      saveAs(blob, Settings.name + "_Recording.csv");
       console.log('Completed');
     }
   });

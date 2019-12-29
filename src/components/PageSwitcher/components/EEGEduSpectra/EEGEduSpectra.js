@@ -1,7 +1,9 @@
 import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 
-import { Card, Stack, TextContainer, RangeSlider } from "@shopify/polaris";
+import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal } from "@shopify/polaris";
+import { saveAs } from 'file-saver';
+import { take } from "rxjs/operators";
 import { Subject } from "rxjs";
 
 import { channelNames } from "muse-js";
@@ -31,7 +33,8 @@ export function getSettings() {
     sliceFFTLow: 1,
     sliceFFTHigh: 30,
     duration: 1024,
-    srate: 256
+    srate: 256,
+    name: 'Spectra'
   }
 };
 
@@ -192,7 +195,7 @@ export function renderSliders(setData, setSettings, status, Settings) {
   }
 
   return (
-    <React.Fragment>
+    <Card title={Settings.name + ' Settings'} sectioned>
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
         min={128} step={128} max={4096}
@@ -235,9 +238,99 @@ export function renderSliders(setData, setSettings, status, Settings) {
         value={Settings.sliceFFTHigh} 
         onChange={handleSliceFFTHighRangeSliderChange} 
       />
-    </React.Fragment>
+    </Card>
+  )
+}
+
+export function renderRecord(recordPopChange, recordPop, status, Settings) {
+  return(
+    <Card title={'Record ' + Settings.name +' Data'} sectioned>
+      <Stack>
+        <ButtonGroup>
+          <Button 
+            onClick={() => {
+              saveToCSV(Settings);
+              recordPopChange();
+            }}
+            primary={status !== generalTranslations.connect}
+            disabled={status === generalTranslations.connect}
+          > 
+            {'Save to CSV'}  
+          </Button>
+        </ButtonGroup>
+        <Modal
+          open={recordPop}
+          onClose={recordPopChange}
+          title="Recording Data"
+        >
+          <Modal.Section>
+            <TextContainer>
+              <p>
+                Your data is currently recording, 
+                once complete it will be downloaded as a .csv file 
+                and can be opened with your favorite spreadsheet program. 
+                Close this window once the download completes.
+              </p>
+            </TextContainer>
+          </Modal.Section>
+        </Modal>
+      </Stack>
+    </Card>
   )
 }
 
 
+function saveToCSV(Settings) {
+  const numSamplesToSave = 50;
+  console.log('Saving ' + numSamplesToSave + ' samples...');
+  var localObservable$ = null;
+  const dataToSave = [];
 
+  console.log('making ' + Settings.name + ' headers')
+
+  // take one sample from selected observable object for headers
+  localObservable$ = window.multicastSpectra$.pipe(
+    take(1)
+  );
+
+  localObservable$.subscribe({ 
+    next(x) { 
+      let freqs = Object.values(x.freqs);
+      dataToSave.push(
+        "Timestamp (ms),",
+        freqs.map(function(f) {return "ch0_" + f + "Hz"}) + ",", 
+        freqs.map(function(f) {return "ch1_" + f + "Hz"}) + ",", 
+        freqs.map(function(f) {return "ch2_" + f + "Hz"}) + ",", 
+        freqs.map(function(f) {return "ch3_" + f + "Hz"}) + ",", 
+        freqs.map(function(f) {return "chAux_" + f + "Hz"}) + ",", 
+        freqs.map(function(f) {return "f_" + f + "Hz"}) + "," , 
+        "info", 
+        "\n"
+      );   
+    }
+  });
+  // put selected observable object into local and start taking samples
+  localObservable$ = window.multicastSpectra$.pipe(
+    take(numSamplesToSave)
+  );   
+
+
+  // now with header in place subscribe to each epoch and log it
+  localObservable$.subscribe({
+    next(x) { 
+      dataToSave.push(Date.now() + "," + Object.values(x).join(",") + "\n");
+      // logging is useful for debugging -yup
+      // console.log(x);
+    },
+    error(err) { console.log(err); },
+    complete() { 
+      console.log('Trying to save')
+      var blob = new Blob(
+        dataToSave, 
+        {type: "text/plain;charset=utf-8"}
+      );
+      saveAs(blob, Settings.name + "_Recording.csv");
+      console.log('Completed');
+    }
+  });
+}
