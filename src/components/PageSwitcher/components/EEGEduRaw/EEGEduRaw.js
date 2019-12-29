@@ -184,7 +184,7 @@ export function renderSliders(setData, setSettings, status, Settings) {
  }
 
   return (
-    <React.Fragment>
+    <Card title={selected + ' Settings'} sectioned>
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
         min={128} step={128} max={4096}
@@ -213,6 +213,107 @@ export function renderSliders(setData, setSettings, status, Settings) {
         value={Settings.cutOffHigh} 
         onChange={handleCutoffHighRangeSliderChange} 
       />
-    </React.Fragment>
+    </Card>
   )
+}
+
+export function renderRecord() {
+  return (
+    <Card title={'Record Raw Data'} sectioned>
+      <Card.Section>
+        <p>
+          {"When you are recording raw data it is recommended you set the "}
+          {"number of sampling points between epochs onsets to be equal to the epoch duration. "}
+          {"This will ensure that consecutive rows of your output file are not overlapping in time."}
+          {"It will make the live plots appear more choppy."}
+        </p>        
+      </Card.Section>
+      <Stack>
+        <ButtonGroup>
+          <Button 
+            onClick={() => {
+              saveToCSV(selected);
+              recordPopChange();
+            }}
+            primary={status !== generalTranslations.connect}
+            disabled={status === generalTranslations.connect}
+          > 
+            {'Save to CSV'}  
+          </Button>
+        </ButtonGroup>
+        <Modal
+          open={recordPop}
+          onClose={recordPopChange}
+          title="Recording Data"
+        >
+          <Modal.Section>
+            <TextContainer>
+
+              <p>
+                Your data is currently recording, 
+                once complete it will be downloaded as a .csv file 
+                and can be opened with your favorite spreadsheet program. 
+                Close this window once the download completes.
+              </p>
+            </TextContainer>
+          </Modal.Section>
+        </Modal>
+      </Stack>
+    </Card>
+  )
+}
+
+
+
+function saveToCSV(value) {
+  const numSamplesToSave = 50;
+  console.log('Saving ' + numSamplesToSave + ' samples...');
+  var localObservable$ = null;
+  const dataToSave = [];
+
+  console.log('making ' + value + ' headers')
+
+  // for each module subscribe to multicast and make header
+  // take one sample from selected observable object for headers
+  localObservable$ = window.multicastRaw$.pipe(
+  take(1)
+  );
+  //take one sample to get header info
+  localObservable$.subscribe({ 
+  next(x) { 
+    dataToSave.push(
+      "Timestamp (ms),",
+      generateXTics(x.info.samplingRate,x.data[0].length,false).map(function(f) {return "ch0_" + f + "ms"}) + ",", 
+      generateXTics(x.info.samplingRate,x.data[0].length,false).map(function(f) {return "ch1_" + f + "ms"}) + ",", 
+      generateXTics(x.info.samplingRate,x.data[0].length,false).map(function(f) {return "ch2_" + f + "ms"}) + ",", 
+      generateXTics(x.info.samplingRate,x.data[0].length,false).map(function(f) {return "ch3_" + f + "ms"}) + ",", 
+      generateXTics(x.info.samplingRate,x.data[0].length,false).map(function(f) {return "chAux_" + f + "ms"}) + ",", 
+      "info", 
+      "\n"
+    );   
+  }
+  });
+  // put selected observable object into local and start taking samples
+  localObservable$ = window.multicastRaw$.pipe(
+  take(numSamplesToSave)
+  );
+
+  // now with header in place subscribe to each epoch and log it
+  localObservable$.subscribe({
+    next(x) { 
+      dataToSave.push(Date.now() + "," + Object.values(x).join(",") + "\n");
+      // logging is useful for debugging -yup
+      // console.log(x);
+    },
+    error(err) { console.log(err); },
+    complete() { 
+      console.log('Trying to save')
+      var blob = new Blob(
+        dataToSave, 
+        {type: "text/plain;charset=utf-8"}
+      );
+      saveAs(blob, value + "_Recording.csv");
+      console.log('Completed');
+    }
+  });
 }
