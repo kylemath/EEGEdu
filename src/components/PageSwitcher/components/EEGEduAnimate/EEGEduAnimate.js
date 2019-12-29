@@ -27,6 +27,14 @@ import sketchDraw from './sketchDraw'
 
 import P5Wrapper from 'react-p5-wrapper';
 
+import styled from 'styled-components';
+import {
+  LiveProvider,
+  LiveEditor,
+  LiveError,
+  LivePreview
+} from 'react-live'
+
 export function getSettings () {
   return {
     cutOffLow: 2,
@@ -124,6 +132,16 @@ export function renderModule(channels) {
       console.log("Switching to: " + value);
     }, []);
 
+    // Default values for the headerProps
+    window.headerProps = { 
+      delta: 0,
+      theta: 0,
+      alpha: 0,
+      beta: 0,
+      gamma: 0,
+      textMsg: 'No data.',
+     };   
+
     return Object.values(channels.data).map((channel, index) => {
       // console.log(channel) 
       if (channel.datasets[0].data) {
@@ -133,6 +151,15 @@ export function renderModule(channels) {
         window.alpha = channel.datasets[0].data[2];
         window.beta  = channel.datasets[0].data[3];
         window.gamma = channel.datasets[0].data[4];
+
+        window.headerProps = { 
+          delta: window.delta,
+          theta: window.theta,
+          alpha: window.alpha,
+          beta: window.beta,
+          gamma: window.gamma,
+          textMsg: 'Data Recieved.',
+         };        
       }   
 
       let thisSketch = sketchTone;
@@ -156,10 +183,54 @@ export function renderModule(channels) {
         default: console.log("Error on switch to " + selectedAnimation)
       }
 
+      const headerProps = window.headerProps;
+      const scope = {styled, headerProps};
+      const code = `const Wrapper = ({ children }) => (
+      <div style={{
+        background: 'papayawhip',
+        width: '100%',
+        padding: '2rem'
+      }}>
+        {children}
+      </div>
+    )
+    
+    const Title = () => (
+      <h2>{headerProps.textMsg}</h2>
+    )
+      
+    const Data = () => (
+      <h3 style={{ color: 'palevioletred' }}>
+        Delta Value:
+        {headerProps.delta} <br />
+        Theta Value:
+        {headerProps.theta} <br />
+        Alpha Value:
+        {headerProps.alpha} <br />
+        Beta Value:
+        {headerProps.beta} <br />
+        Gamma Value:
+        {headerProps.gamma} <br />
+      </h3>
+    )
+    
+    render(
+      <Wrapper>
+        <Title />
+        <Data />
+      </Wrapper>
+    )`
+
       //only left frontal channel
       if (index === 1) {
         return (
           <React.Fragment key={'dum'}>
+            <LiveProvider code={code} scope={scope} noInline={true}>
+              <LiveEditor />
+              <LiveError />
+              <LivePreview />
+            </LiveProvider>
+
             <Card.Section 
               title={"Choice of Sketch"}
             >
