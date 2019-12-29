@@ -6,12 +6,10 @@ export default function sketchFlock3D (p) {
   let depth = 800; // The Z location of the boid tend to stay between +depth/2 and -depth/2
   let gap = 300; // Boids can go further than the edges, this further distance is the gap
   let quadTree; // A quad tree to minimize the cost of distance calculation
-  let unitX, unitY, unitZ; // Unit vectors pointing in the X, Y, and Z directions
 
   let useQuadTree = true; // Toogle the use of a quad tree
   let showPerceptionRadius = false; // Toogle vizualization of perception radius
   let goMiddle = false; // Pressing "a" toogle it, making all boids go to the center
-  let downloadCanvas = false; // Make it true to lower frameRate and download the canvas each 2 frames
 
   let boidsSlider, perceptionSlider, alignmentSlider, cohesionSlider, separationSlider; // Sliders
   let boidsP, perceptionP, alignmentP, cohesionP, separationP; // Paragraphs
@@ -27,9 +25,6 @@ export default function sketchFlock3D (p) {
 
     // Declaration of depth (z axis), unit vectors, and the camera
     p.depth = p.height;
-    unitX = p.createVector(1, 0, 0);
-    unitY = p.createVector(0, 1, 0);
-    unitZ = p.createVector(0, 0, 1);
     let cameraX = 1000 / 600 * p.width;
     let cameraY = 500 / 500 * p.height;
     let cameraZ = -500 / 500 * p.depth;
@@ -108,7 +103,7 @@ export default function sketchFlock3D (p) {
 
   // Go to the middle
   function keyPressed() {
-    if (p.keyCode == 65) {
+    if (p.keyCode === 65) {
       goMiddle = !goMiddle; // Toogles goMiddle, forcing the boids to go to the middle or releasing them
       t = 0; // Resets t so that boids do not have cohesion in the next 40 frames
     }
@@ -132,7 +127,6 @@ export default function sketchFlock3D (p) {
 
     // Position the DOM elements on the top left corner
     let DOMoffset = 500; // Place the DOM elements underneath the canvas when we want to download the canvas
-    if (!downloadCanvas) DOMoffset = 0; // Otherwise keep the DOM elements on the top left corner
     let DOMgap = 15; // Gap between the DOM elements
     boidsSlider.position(			DOMgap, DOMoffset + boidsSlider.height * 0 + 1 * DOMgap);
     perceptionSlider.position(DOMgap, DOMoffset + boidsSlider.height * 1 + 2 * DOMgap);
@@ -226,12 +220,12 @@ export default function sketchFlock3D (p) {
       // Go to the middle if goMiddle is true
       // Create a large force towards the middle, apply it to the boid, and "return" to not apply other forces
       let force = p.createVector(p.mouseX, p.mouseY, 0);
-      this.acc.add(force);
+      this.acc.add(force/100);
     
       let radius = perceptionSlider.value(); // Max distance of a neighbor
       let neighbors = [];
       
-      if (useQuadTree == true) {
+      if (useQuadTree === true) {
         // VERSION WITH QUADTREE
         // Make an array of neighbors, i.e. all boids closer than the perception radius
         // The array will be passed to the different flocking behaviors
@@ -239,7 +233,7 @@ export default function sketchFlock3D (p) {
         let maybeNeighbors = quadTree.query(range);
         for (let other of maybeNeighbors) {
           let distance = this.pos.dist(other.pos);
-          if (other != this && distance < radius) {
+          if (other !== this && distance < radius) {
             other.distance = distance; // Record the distance so it can be used later
             neighbors.push(other); // Put this neighbor in the "neighbors" array
           }
@@ -250,7 +244,7 @@ export default function sketchFlock3D (p) {
         // The array will be passed to the different flocking behaviors
         for (let other of boids) {
           let distance = this.pos.dist(other.pos);
-          if (other != this && distance < radius) {
+          if (other !== this && distance < radius) {
             other.distance = distance; // Record the distance so it can be used later
             neighbors.push(other); // Put this neighbor in the "neighbors" array
           }
@@ -283,7 +277,7 @@ export default function sketchFlock3D (p) {
       }
       
       // If the boid has no neighbor, apply random forces so it can go find other boids
-      if (neighbors.length == 0) {
+      if (neighbors.length === 0) {
         let force = p5.Vector.random3D().mult(this.maxForce/4);
         force.z = 0; // Only go find other in an XY plane
         this.acc.add(force);
