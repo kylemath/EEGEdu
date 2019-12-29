@@ -184,42 +184,49 @@ export function renderModule(channels) {
       }
 
       const headerProps = window.headerProps;
-      const scope = {styled, headerProps};
+      const scope = {styled, headerProps, P5Wrapper, sketchBands, thisSketch};
       const code = `const Wrapper = ({ children }) => (
-      <div style={{
-        background: 'papayawhip',
-        width: '100%',
-        padding: '2rem'
-      }}>
-        {children}
-      </div>
-    )
-    
-    const Title = () => (
-      <h2>{headerProps.textMsg}</h2>
-    )
-      
-    const Data = () => (
-      <h3 style={{ color: 'palevioletred' }}>
-        Delta Value:
-        {headerProps.delta} <br />
-        Theta Value:
-        {headerProps.theta} <br />
-        Alpha Value:
-        {headerProps.alpha} <br />
-        Beta Value:
-        {headerProps.beta} <br />
-        Gamma Value:
-        {headerProps.gamma} <br />
-      </h3>
-    )
-    
-    render(
-      <Wrapper>
-        <Title />
-        <Data />
-      </Wrapper>
-    )`
+  <div style={{
+    background: 'papayawhip',
+    width: '100%',
+    padding: '2rem'
+  }}>
+    {children}
+  </div>
+)
+
+const Title = () => (
+  <h2>{headerProps.textMsg}</h2>
+)
+  
+const Data = () => (
+  <h3 style={{ color: 'palevioletred' }}>
+    Delta Value:
+    {headerProps.delta} <br />
+    Theta Value:
+    {headerProps.theta} <br />
+    Alpha Value:
+    {headerProps.alpha} <br />
+    Beta Value:
+    {headerProps.beta} <br />
+    Gamma Value:
+    {headerProps.gamma} <br />
+  </h3>
+)
+
+render(
+  <Wrapper>
+    <Title />
+    <P5Wrapper sketch={thisSketch} 
+    delta={window.delta}
+    theta={window.theta}
+    alpha={window.alpha}
+    beta={window.beta}
+    gamma={window.gamma}
+    /> 
+    <Data />
+  </Wrapper>
+)`
 
       //only left frontal channel
       if (index === 1) {

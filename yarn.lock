@@ -9806,6 +9806,11 @@ p5@^0.10.2:
   resolved "https://registry.yarnpkg.com/p5/-/p5-0.10.2.tgz#9437b28e803b9c8a94383c6b5f4d05b13603e1cc"
   integrity sha512-kZnC7JllCEnEUTB3sv2iETUg1ulNvB60h3MHb63u7W/nCJc3XIlMGXcKk28cuezdQ7TOlKScm0qmWCsol+302Q==
 
+p5@^0.7.3:
+  version "0.7.3"
+  resolved "https://registry.yarnpkg.com/p5/-/p5-0.7.3.tgz#a0660327feb8da3e43359a16ad62566b96a7cabe"
+  integrity sha512-Ap0Op/YlbqlBe9BEkpislygOKcID9+i6lbGHcUY/QkgZl21+Jy0GPpw+bLjgURk/wlloLcXGnUDpuGsP0xsx2Q==
+
 package-json@^4.0.0:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/package-json/-/package-json-4.0.1.tgz#8869a0401253661c4c4ca3da6c2121ed555f5eed"
@@ -11478,6 +11483,13 @@ react-p5-wrapper@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/react-p5-wrapper/-/react-p5-wrapper-2.0.0.tgz#3c7882be616713a82b8c3121873dc6f8b3f1151c"
   integrity sha512-oQvYEUAnAtquYoQvd7p5MdtzuSQX7cmcdDLJ3R22R4aSRiiUGyjicSYmY/m2aIVK6iegmA0s0/wuT1g3yl2MxQ==
+
+react-p5@^1.1.8:
+  version "1.1.8"
+  resolved "https://registry.yarnpkg.com/react-p5/-/react-p5-1.1.8.tgz#f2870b07aff1ef2c7a0627b9116dfe24d63e14b4"
+  integrity sha512-IM3GrNIuIDal/FabkGxPIpi5bbRHuQc7cP7iZTa5cMBJ8vh+lAnCWavTtU35XElofbegmojFaxXWdz1rTUhgZQ==
+  dependencies:
+    p5 "^0.7.3"
 
 react-scripts@^3.2.0:
   version "3.2.0"
