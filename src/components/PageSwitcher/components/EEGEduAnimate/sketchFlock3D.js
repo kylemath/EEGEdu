@@ -9,13 +9,19 @@ export default function sketchFlock3D (p) {
 
   let useQuadTree = true; // Toogle the use of a quad tree
   let showPerceptionRadius = false; // Toogle vizualization of perception radius
-  let goMiddle = false; // Pressing "a" toogle it, making all boids go to the center
 
   let boidsSlider, perceptionSlider, alignmentSlider, cohesionSlider, separationSlider; // Sliders
   let boidsP, perceptionP, alignmentP, cohesionP, separationP; // Paragraphs
-  let startingBoids = 10; // Amount of boid at the start of the sketch
+  let startingBoids = 50; // Amount of boid at the start of the sketch
   let startingPerception = 90; // Perception radius at the start of the sketch
   let t = 0; // Counts the frame from the time boids go out of the middle of space
+
+  let theta = 0;
+  let alpha = 0;
+  let beta = 0;
+  let xVar = 0;
+  let yVar = 0;
+  let zVar = 0;
 
   // SETUP FUNCTION ---------------------------------------------------
   // Make the canvas, declare some variables, create the DOM elements and the initial boid population
@@ -26,8 +32,9 @@ export default function sketchFlock3D (p) {
     // Declaration of depth (z axis), unit vectors, and the camera
     p.depth = p.height;
     let cameraX = 1000 / 600 * p.width;
-    let cameraY = 500 / 500 * p.height;
-    let cameraZ = -500 / 500 * p.depth;
+    let cameraY = -800 / 600 * p.height;
+    let cameraZ = -200 / 500 * p.depth;
+    console.log(p.depth)
     p.camera(cameraX, cameraY, cameraZ, 0, 0, 0, 0, 0, 1);
     
     // Create the DOM elements: sliders and paragraphs
@@ -38,6 +45,32 @@ export default function sketchFlock3D (p) {
       pushRandomBoid();
     }
   }
+
+  p.windowResized = function() {
+    p.createCanvas(p.windowWidth*.6, 500);
+  }
+
+  p.myCustomRedrawAccordingToNewPropsHandler = function (props) {
+    theta = Math.floor((props.theta/10) * p.width);
+    alpha = Math.floor((props.alpha/10) * p.height);
+    beta =  Math.floor((props.beta/10) * p.depth);
+
+    xVar = theta-(p.width/2)+200;
+    yVar = alpha-(p.height/2)+200;
+    zVar = beta-(p.depth/2)+200; 
+
+    if (Math.abs(xVar) > p.width/2) {
+      xVar = Math.sign(xVar) * (p.width/2);
+    }
+    if (Math.abs(yVar) > p.height/2) {
+      yVar = Math.sign(yVar) * (p.height/2);
+    }
+    if (Math.abs(zVar) > p.depth/2) {
+      zVar = Math.sign(zVar) * (p.depth/2);
+    }
+
+    // console.log(xVar + ' ' + yVar + ' ' + zVar)
+  };
 
   // DRAW FUNCTION ---------------------------------------------------
   p.draw = function () {
@@ -56,8 +89,8 @@ export default function sketchFlock3D (p) {
     p.fill(255);
     p.ambientMaterial(0, 0, 255);
     p.push()
-    p.translate(p.mouseX, p.mouseY, 0);
-    p.sphere(10); // A sphere where the boid is
+    p.translate(xVar, yVar, zVar);
+    p.sphere(5); // A sphere where the boid is
     p.pop();
       
 
@@ -101,13 +134,6 @@ export default function sketchFlock3D (p) {
     t++; // t counts the number of frames, it is used to not have cohesion in the first 40 frames
   }
 
-  // Go to the middle
-  function keyPressed() {
-    if (p.keyCode === 65) {
-      goMiddle = !goMiddle; // Toogles goMiddle, forcing the boids to go to the middle or releasing them
-      t = 0; // Resets t so that boids do not have cohesion in the next 40 frames
-    }
-  }
 
   // Create the DOM elements
   function createDOMs() {
@@ -121,23 +147,24 @@ export default function sketchFlock3D (p) {
     if (p.windowWidth * p.windowHeight > 1200 * 1200) startingPerception = 150; // Larger perception on a larger screen
     boidsSlider = 			p.createSlider(1, 500, startingBoids, 1);
     perceptionSlider = 	p.createSlider(0, 1000, startingPerception, 1);
-    alignmentSlider = 	p.createSlider(0, 5, 1, 0.1);
-    cohesionSlider = 		p.createSlider(0, 5, 1, 0.1);
-    separationSlider = 	p.createSlider(0, 5, 1, 0.1);
+    alignmentSlider = 	p.createSlider(0, 5, 0.2, 0.1);
+    cohesionSlider = 		p.createSlider(0, 5, 0.3, 0.1);
+    separationSlider = 	p.createSlider(0, 5, 0.7, 0.1);
 
     // Position the DOM elements on the top left corner
-    let DOMoffset = 500; // Place the DOM elements underneath the canvas when we want to download the canvas
+    let DOMoffset = 1000; // Place the DOM elements underneath the canvas when we want to download the canvas
     let DOMgap = 15; // Gap between the DOM elements
-    boidsSlider.position(			DOMgap, DOMoffset + boidsSlider.height * 0 + 1 * DOMgap);
-    perceptionSlider.position(DOMgap, DOMoffset + boidsSlider.height * 1 + 2 * DOMgap);
-    alignmentSlider.position(	DOMgap, DOMoffset + boidsSlider.height * 2 + 3 * DOMgap);
-    cohesionSlider.position(	DOMgap, DOMoffset + boidsSlider.height * 3 + 4 * DOMgap);
-    separationSlider.position(DOMgap, DOMoffset + boidsSlider.height * 4 + 5 * DOMgap);
-    boidsP.position(			boidsSlider.width + DOMgap * 2, DOMoffset + boidsSlider.height * 0 + 0 * DOMgap + 2);
-    perceptionP.position(	boidsSlider.width + DOMgap * 2, DOMoffset + boidsSlider.height * 1 + 1 * DOMgap + 2);
-    alignmentP.position(	boidsSlider.width + DOMgap * 2, DOMoffset + boidsSlider.height * 2 + 2 * DOMgap + 2);
-    cohesionP.position(		boidsSlider.width + DOMgap * 2, DOMoffset + boidsSlider.height * 3 + 3 * DOMgap + 2);
-    separationP.position(	boidsSlider.width + DOMgap * 2, DOMoffset + boidsSlider.height * 4 + 4 * DOMgap + 2);
+    let leftGap = 200;
+    boidsSlider.position(	    leftGap + DOMgap, DOMoffset + boidsSlider.height * 0 + 1 * DOMgap);
+    perceptionSlider.position(leftGap + DOMgap, DOMoffset + boidsSlider.height * 1 + 2 * DOMgap);
+    alignmentSlider.position(	leftGap + DOMgap, DOMoffset + boidsSlider.height * 2 + 3 * DOMgap);
+    cohesionSlider.position(	leftGap + DOMgap, DOMoffset + boidsSlider.height * 3 + 4 * DOMgap);
+    separationSlider.position(leftGap + DOMgap, DOMoffset + boidsSlider.height * 4 + 5 * DOMgap);
+    boidsP.position(			leftGap + boidsSlider.width + DOMgap * 2, DOMoffset + boidsSlider.height * 0 + 0 * DOMgap + 2);
+    perceptionP.position(	leftGap + boidsSlider.width + DOMgap * 2, DOMoffset + boidsSlider.height * 1 + 1 * DOMgap + 2);
+    alignmentP.position(	leftGap + boidsSlider.width + DOMgap * 2, DOMoffset + boidsSlider.height * 2 + 2 * DOMgap + 2);
+    cohesionP.position(		leftGap + boidsSlider.width + DOMgap * 2, DOMoffset + boidsSlider.height * 3 + 3 * DOMgap + 2);
+    separationP.position(	leftGap + boidsSlider.width + DOMgap * 2, DOMoffset + boidsSlider.height * 4 + 4 * DOMgap + 2);
   }
 
   // Make a new boid
@@ -161,8 +188,8 @@ export default function sketchFlock3D (p) {
       this.pos = pos; // Position
       this.vel = vel; // Velocity
       this.acc = p.createVector(0, 0, 0); // Acceleration
-      this.maxForce = 0.1; // Maximum steering force for alignment, cohesion, separation
-      this.maxSpeed = 5; // Desired velocity for the steering behaviors
+      this.maxForce = 1; // Maximum steering force for alignment, cohesion, separation
+      this.maxSpeed = 10; // Desired velocity for the steering behaviors
       this.r = 255; // red color of the boid
       this.g = p.floor(p.random(50, 120)); // green color of the boid
       this.b = p.floor(p.random(50, 120)); // blue color of the boid
@@ -219,8 +246,9 @@ export default function sketchFlock3D (p) {
     flock(boids, quadTree) {
       // Go to the middle if goMiddle is true
       // Create a large force towards the middle, apply it to the boid, and "return" to not apply other forces
-      let force = p.createVector(p.mouseX, p.mouseY, 0);
-      this.acc.add(force/100);
+      let force = p.createVector(xVar-this.pos.x, yVar-this.pos.y, zVar-this.pos.z);
+      force.setMag(this.maxForce);
+      this.acc.add(force);
     
       let radius = perceptionSlider.value(); // Max distance of a neighbor
       let neighbors = [];
@@ -310,7 +338,7 @@ export default function sketchFlock3D (p) {
       p.push()
       p.translate(this.pos.x, this.pos.y, this.pos.z);
       p.sphere(10); // A sphere where the boid is
-      let arrow = p.createVector(this.vel.x, this.vel.y, this.vel.z).setMag(12);
+      let arrow = p.createVector(this.vel.x, this.vel.y, this.vel.z).setMag(10);
       p.translate(arrow.x, arrow.y, arrow.z);
       p.sphere(5); // Another sphere, smaller, in the direction of the boid's velocity
       p.pop();

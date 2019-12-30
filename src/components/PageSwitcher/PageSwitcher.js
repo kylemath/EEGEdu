@@ -286,7 +286,7 @@ export function PageSwitcher() {
   }
 
   function renderCharts() {
-    console.log("Rendering " + selected + " Component");
+    // console.log("Rendering " + selected + " Component");
     switch (selected) {
       case intro:
         return <funIntro.renderModule data={introData} />;
