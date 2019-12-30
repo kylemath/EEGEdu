@@ -10,6 +10,7 @@
     "@neurosity/pipes": "^3.0.2",
     "@shopify/polaris": "^4.9.0",
     "chart.js": "^2.7.2",
+    "create-react-class": "^15.6.3",
     "file-saver": "^2.0.2",
     "firebase": "^7.5.0",
     "firebase-tools": "^7.9.0",

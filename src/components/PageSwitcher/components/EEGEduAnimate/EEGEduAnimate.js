@@ -26,6 +26,7 @@ import sketchFlock from './sketchFlock'
 import sketchDraw from './sketchDraw'
 
 import P5Wrapper from 'react-p5-wrapper';
+import Sketch from 'react-p5'
 
 import styled from 'styled-components';
 import {
@@ -153,11 +154,11 @@ export function renderModule(channels) {
         window.gamma = channel.datasets[0].data[4];
 
         window.headerProps = { 
-          delta: window.delta,
-          theta: window.theta,
-          alpha: window.alpha,
-          beta: window.beta,
-          gamma: window.gamma,
+          delta: 10 * window.delta,
+          theta: 10 * window.theta,
+          alpha: 10 * window.alpha,
+          beta: 10 * window.beta,
+          gamma: 10 * window.gamma,
           textMsg: 'Data Recieved.',
          };        
       }   
@@ -184,49 +185,68 @@ export function renderModule(channels) {
       }
 
       const headerProps = window.headerProps;
-      const scope = {styled, headerProps, P5Wrapper, sketchBands, thisSketch};
+      const scope = {styled, headerProps, React, Sketch};
       const code = `const Wrapper = ({ children }) => (
-  <div style={{
-    background: 'papayawhip',
-    width: '100%',
-    padding: '2rem'
-  }}>
-    {children}
-  </div>
-)
+        <div style={{
+          background: 'papayawhip',
+          width: '100%',
+          padding: '2rem'
+        }}>
+          {children}
+        </div>
+      )
 
-const Title = () => (
-  <h2>{headerProps.textMsg}</h2>
-)
-  
-const Data = () => (
-  <h3 style={{ color: 'palevioletred' }}>
-    Delta Value:
-    {headerProps.delta} <br />
-    Theta Value:
-    {headerProps.theta} <br />
-    Alpha Value:
-    {headerProps.alpha} <br />
-    Beta Value:
-    {headerProps.beta} <br />
-    Gamma Value:
-    {headerProps.gamma} <br />
-  </h3>
-)
+      class NewNewSketch extends React.Component {
+        constructor() {
+          super()
+          this.state = { x: 50, y: 50 }
+        }
+       
+        setup(p5, canvasParentRef) {
+          p5.createCanvas(200, 200).parent(canvasParentRef)
+        }
 
-render(
-  <Wrapper>
-    <Title />
-    <P5Wrapper sketch={thisSketch} 
-    delta={window.delta}
-    theta={window.theta}
-    alpha={window.alpha}
-    beta={window.beta}
-    gamma={window.gamma}
-    /> 
-    <Data />
-  </Wrapper>
-)`
+        draw(p5) {
+          p5.background(20)
+          p5.ellipse(20, 20, 20, 20)
+          
+          // NOTE: Do not use setState in draw function 
+          // or in functions that is executed in draw function... 
+          // pls use normal variables or class properties for this purposes
+
+          // this.state.x++
+        }
+       
+        render() {
+          return (
+            <center>
+            <h2>{headerProps.textMsg}</h2>
+            <h2>{this.state.x}, {this.state.y}, {headerProps.alpha}</h2>
+            <h3 style={{ color: 'palevioletred' }}>
+              Delta Value:
+              {headerProps.delta} <br />
+              Theta Value:
+              {headerProps.theta} <br />
+              Alpha Value:
+              {headerProps.alpha} <br />
+              Beta Value:
+              {headerProps.beta} <br />
+              Gamma Value:
+              {headerProps.gamma} <br />
+            </h3>
+            <Sketch setup={this.setup} draw={this.draw} />
+            </center>
+          )
+        }
+      }
+      
+      render(
+        <Wrapper>
+          <NewNewSketch />
+        </Wrapper>
+      )`
+
+
 
       //only left frontal channel
       if (index === 1) {
@@ -249,13 +269,13 @@ render(
               />
             </Card.Section>
             <Card.Section>
-              <P5Wrapper sketch={thisSketch} 
+              {/* <P5Wrapper sketch={thisSketch} 
                 delta={window.delta}
                 theta={window.theta}
                 alpha={window.alpha}
                 beta={window.beta}
                 gamma={window.gamma}
-              />          
+              />           */}
             </Card.Section>
           </React.Fragment>
         );
