@@ -3,7 +3,6 @@ import { MuseClient } from "muse-js";
 import { Select, Card, Stack, Button, ButtonGroup } from "@shopify/polaris";
 
 import { mockMuseEEG } from "./utils/mockMuseEEG";
-
 import * as translations from "./translations/en.json";
 import * as generalTranslations from "./components/translations/en";
 import { emptyChannelData } from "./components/chartOptions";
@@ -104,7 +103,6 @@ export function PageSwitcher() {
     try {
       if (window.debugWithMock) {
         // Debug with Mock EEG Data
-        // Initialize the mockMuseEEG data stream with sampleRate
         setStatus(generalTranslations.connectingMock);
         window.source = {};
         window.source.connectionStatus = {};
