@@ -105,9 +105,7 @@ export function PageSwitcher() {
       if (window.debugWithMock) {
         // Debug with Mock EEG Data
         // Initialize the mockMuseEEG data stream with sampleRate
-        console.log("Connecting to mock data source...");
         setStatus(generalTranslations.connectingMock);
-
         window.source = {};
         window.source.connectionStatus = {};
         window.source.connectionStatus.value = true;
@@ -115,28 +113,19 @@ export function PageSwitcher() {
         setStatus(generalTranslations.connectedMock);
       } else {
         // Connect with the Muse EEG Client
-        console.log("Connecting to data source observable...");
         setStatus(generalTranslations.connecting);
-
         window.source = new MuseClient();
         await window.source.connect();
         await window.source.start();
         window.source.eegReadings$ = window.source.eegReadings;
         setStatus(generalTranslations.connected);
       }
-
       if (
         window.source.connectionStatus.value === true &&
         window.source.eegReadings$
       ) {
-        console.log("Starting to build the data pipes from the data source...");
-        
         buildPipes(selected);
-        console.log("Finished building the data pipes from the data source");
-        
         subscriptionSetup(selected);
-        console.log("Finished subscribing to the data source");
-
       }
     } catch (err) {
       setStatus(generalTranslations.connect);
@@ -173,7 +162,6 @@ export function PageSwitcher() {
   }
 
   function renderCharts() {
-    console.log("Rendering " + selected + " Component");
     switch (selected) {
       case intro:
         return <funIntro.renderModule data={introData} />;
