@@ -5,6 +5,7 @@
     "raw": "Raw and Filtered Data",
     "spectra": "Frequency Spectra",
     "bands": "Frequency Bands",
-    "animate": "Brain Controlled Animation"
+    "animate": "Brain Controlled Animation",
+    "spectro": "Spectrogram (spectra over time)"
   }
 }
