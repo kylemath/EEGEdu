@@ -37,7 +37,7 @@ export default function sketchTone (p) {
   };
 
   p.windowResized = function() {
-    p.createCanvas(p.windowWidth*.6, 800, p.WEBGL);
+    p.createCanvas(p.windowWidth*.6, 200, p.WEBGL);
   }
 
   p.draw = function () {

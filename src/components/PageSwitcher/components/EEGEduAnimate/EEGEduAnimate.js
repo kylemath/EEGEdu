@@ -24,6 +24,7 @@ import sketchTone from './sketchTone'
 import sketchCube from './sketchCube'
 import sketchFlock from './sketchFlock'
 import sketchDraw from './sketchDraw'
+import sketchFlock3D from './sketchFlock3D'
 
 import P5Wrapper from 'react-p5-wrapper';
 
@@ -108,13 +109,15 @@ export function renderModule(channels) {
     const cube = 'cube';
     const flock = 'flock';
     const draw = 'draw';
+    const flock3d = 'flock3d';
 
     const chartTypes = [
       { label: bands, value: bands },
       { label: tone, value: tone },
       { label: cube, value: cube },
       { label: flock, value: flock },
-      { label: draw, value: draw}
+      { label: draw, value: draw },
+      { label: flock3d, value: flock3d }
     ];
 
     // for picking a new animation
@@ -152,6 +155,9 @@ export function renderModule(channels) {
           break
         case draw:
           thisSketch = sketchDraw;
+          break
+        case flock3d:
+          thisSketch = sketchFlock3D;
           break
         default: console.log("Error on switch to " + selectedAnimation)
       }

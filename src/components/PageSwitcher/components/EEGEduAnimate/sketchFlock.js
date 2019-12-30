@@ -2,11 +2,10 @@ import p5 from "p5";
 import "p5/lib/addons/p5.sound";
 
 export default function sketchFlock (p) {
-  // let delta = 0;
-  // let theta = 0;
+
   let alpha = 0;
   let beta = 0;
-  // let gamma = 0;
+
 
   let xVar = 0;
   let yVar = 0;
@@ -17,8 +16,8 @@ export default function sketchFlock (p) {
     p.createCanvas(p.windowWidth*.6, 500);
     flock = new p.Flock();
 
-    for (var i = 0; i < 100; i++) {
-      var b = new p.Boid(p.width / 2, p.height / 2, 2000);
+    for (var i = 0; i < 150; i++) {
+      var b = new p.Boid(p.width / 2, p.height / 2);
       flock.addBoid(b)
     }
   };
@@ -27,32 +26,31 @@ export default function sketchFlock (p) {
     p.createCanvas(p.windowWidth*.6, 500);
   }
   p.myCustomRedrawAccordingToNewPropsHandler = function (props) {
-    // delta = Math.floor(props.delta);
-    // theta = Math.floor(100*props.theta);
-    alpha = Math.floor(100*props.alpha);
-    beta =  Math.floor(300*props.beta);
-    // gamma = Math.floor(props.gamma);
 
-    xVar = beta;
-    yVar = alpha;
+    alpha = Math.floor((props.alpha/5) * p.width);
+    beta =  Math.floor((props.beta/2) * p.height);
+
+
+    xVar = alpha;
+    yVar = beta;
 
     if (xVar > p.width) {
-      xVar = p.width;
+      xVar = p.width-5;
     }
     if (yVar > p.height) {
-      yVar = p.height;
+      yVar = p.height-5;
     }
 
-    console.log(xVar)
-    console.log(yVar)
+    // console.log(xVar)
+    // console.log(yVar)
   };
 
   p.draw = function () {
-    p.background(0);
+    p.background(255);
     p.fill(255,0,0)
     p.push();
     p.translate(xVar, yVar);
-    p.ellipse(0,0,5,5);
+    p.ellipse(0,0,10,10);
     p.pop();
     flock.run();
   }
@@ -80,8 +78,8 @@ export default function sketchFlock (p) {
     this.velocity = p.createVector(p.random(-1, 1), p.random(-1, 1));
     this.position = p.createVector(x, y);
     this.r = 2.0; //Size of object Boid
-    this.maxspeed = 3; // Maximum speed
-    this.maxforce = 0.05; // Maximum steer ing force
+    this.maxspeed = 5; // Maximum speed
+    this.maxforce = 0.1; // Maximum steer ing force
   }
 
   p.Boid.prototype.run = function(boids) {
@@ -134,7 +132,7 @@ export default function sketchFlock (p) {
   p.Boid.prototype.render = function() {
     // Draw a triangle rotated in the direction of velocity
     var theta = this.velocity.heading() + p.radians(90);
-    p.fill(255);
+    p.fill(0);
     p.noStroke();
     p.push();
     p.translate(this.position.x, this.position.y);
@@ -231,7 +229,7 @@ export default function sketchFlock (p) {
   };
 
   p.Boid.prototype.mouuse = function(boids) {
-    var neighbordist = 100;
+    var neighbordist = 500;
     var m = p.createVector(xVar, yVar);
     var d = p5.Vector.dist(this.position, m);
     if ((d > 0) && (d < neighbordist)) {
