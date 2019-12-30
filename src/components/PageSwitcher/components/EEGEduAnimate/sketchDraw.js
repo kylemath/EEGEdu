@@ -8,6 +8,7 @@ export default function sketchDraw (p) {
   let xVar = 0;
   let yVar = 0;
 
+  let brushWidth = 50;
 
   p.setup = function () {
     p.createCanvas(p.windowWidth*.6, 500);
@@ -18,24 +19,24 @@ export default function sketchDraw (p) {
   }
 
   p.myCustomRedrawAccordingToNewPropsHandler = function (props) {
-    delta = Math.floor(50*props.delta);
-    theta = Math.floor(100*props.theta);
-    alpha = Math.floor(100*props.alpha);
-    beta =  Math.floor(300*props.beta);
-    gamma = Math.floor(1000*props.gamma);
+    delta = Math.floor((props.delta/20) * 255);
+    theta = Math.floor((props.theta/10) * 255);
+    alpha = Math.floor((props.alpha/5) * p.width);
+    beta =  Math.floor((props.beta/2) * p.height);
+    gamma = Math.floor((props.gamma/2) * 255);
 
-    xVar = beta;
-    yVar = alpha;
+    xVar = alpha;
+    yVar = beta;
 
     if (xVar > p.width) {
-      xVar = p.width;
+      xVar = p.width-brushWidth/2;
     }
     if (yVar > p.height) {
-      yVar = p.height;
+      yVar = p.height-brushWidth/2;
     }
 
-    console.log(xVar)
-    console.log(yVar)
+    // console.log(xVar)
+    // console.log(yVar)
   };
 
 
@@ -46,7 +47,7 @@ export default function sketchDraw (p) {
   p.draw = function () {
     p.fill(theta, delta, gamma, 20);  
     p.noStroke();
-    p.ellipse(xVar, yVar, 50);
+    p.ellipse(xVar, yVar, brushWidth);
   }
 
 };
