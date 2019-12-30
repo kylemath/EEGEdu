@@ -238,7 +238,7 @@ export function renderSliders(setData, setSettings, status, Settings) {
   }
 
   return (
-    <React.Fragment>
+    <Card title={Settings.name + ' Settings'} sectioned>
       <RangeSlider 
         disabled={status === generalTranslations.connect}
         min={128} step={128} max={4096} 
@@ -267,7 +267,7 @@ export function renderSliders(setData, setSettings, status, Settings) {
         value={Settings.cutOffHigh} 
         onChange={handleCutoffHighRangeSliderChange} 
       />
-    </React.Fragment>
+    </Card>
   )
 }
 
