@@ -185,68 +185,65 @@ export function renderModule(channels) {
       }
 
       const headerProps = window.headerProps;
-      const scope = {styled, headerProps, React, Sketch};
+      const scope = { styled, headerProps, React, Sketch };
       const code = `const Wrapper = ({ children }) => (
-        <div style={{
-          background: 'papayawhip',
-          width: '100%',
-          padding: '2rem'
-        }}>
-          {children}
-        </div>
-      )
+  <div style={{
+    background: 'papayawhip',
+    width: '100%',
+    padding: '2rem'
+  }}>
+    {children}
+  </div>
+)
 
-      class NewNewSketch extends React.Component {
-        constructor() {
-          super()
-          this.state = { x: 50, y: 50 }
-        }
-       
-        setup(p5, canvasParentRef) {
-          p5.createCanvas(200, 200).parent(canvasParentRef)
-        }
+class NewNewSketch extends React.Component {
+  
+  constructor() {
+    super()
+    this.state = { x: 20, y: 20 }
+  }
 
-        draw(p5) {
-          p5.background(20)
-          p5.ellipse(20, 20, 20, 20)
-          
-          // NOTE: Do not use setState in draw function 
-          // or in functions that is executed in draw function... 
-          // pls use normal variables or class properties for this purposes
+  setup(p5, canvasParentRef) {
+    p5.createCanvas(200, 200).parent(canvasParentRef)
+  }
 
-          // this.state.x++
-        }
-       
-        render() {
-          return (
-            <center>
-            <h2>{headerProps.textMsg}</h2>
-            <h2>{this.state.x}, {this.state.y}, {headerProps.alpha}</h2>
-            <h3 style={{ color: 'palevioletred' }}>
-              Delta Value:
-              {headerProps.delta} <br />
-              Theta Value:
-              {headerProps.theta} <br />
-              Alpha Value:
-              {headerProps.alpha} <br />
-              Beta Value:
-              {headerProps.beta} <br />
-              Gamma Value:
-              {headerProps.gamma} <br />
-            </h3>
-            <Sketch setup={this.setup} draw={this.draw} />
-            </center>
-          )
-        }
-      }
-      
-      render(
-        <Wrapper>
-          <NewNewSketch />
-        </Wrapper>
-      )`
+  draw(p5) {
+    p5.background(255)
+    p5.ellipse(headerProps.alpha, headerProps.beta, 20, 20)
+    
+    // NOTE: Do not use setState in draw function 
+    // or in functions that is executed in draw function... 
+    // pls use normal variables (headerProp) or class properties (this.state)
+  }
 
+  render() {
+    return (
+      <center>
+      <h2>{headerProps.textMsg}</h2>
+      <h2>{this.state.x}, {this.state.y}, {headerProps.alpha}</h2>
+      <h3 style={{ color: 'palevioletred' }}>
+        Delta Value:
+        {headerProps.delta} <br />
+        Theta Value:
+        {headerProps.theta} <br />
+        Alpha Value:
+        {headerProps.alpha} <br />
+        Beta Value:
+        {headerProps.beta} <br />
+        Gamma Value:
+        {headerProps.gamma} <br />
+      </h3>
+      <Sketch setup={this.setup} draw={this.draw} />
+      </center>
+    )
+  }
+}
 
+render(
+<Wrapper>
+  <NewNewSketch />
+</Wrapper>
+)`
 
       //only left frontal channel
       if (index === 1) {
