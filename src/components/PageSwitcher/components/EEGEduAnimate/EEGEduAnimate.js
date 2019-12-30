@@ -121,7 +121,7 @@ export function renderModule(channels) {
     ];
 
     // for picking a new animation
-    const [selectedAnimation, setSelectedAnimation] = useState(flock3d);
+    const [selectedAnimation, setSelectedAnimation] = useState(bands);
     const handleSelectChangeAnimation = useCallback(value => {
       setSelectedAnimation(value);
       console.log("Switching to: " + value);

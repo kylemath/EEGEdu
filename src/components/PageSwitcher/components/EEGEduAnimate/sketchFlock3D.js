@@ -27,14 +27,13 @@ export default function sketchFlock3D (p) {
   // Make the canvas, declare some variables, create the DOM elements and the initial boid population
   p.setup = function () {
     // Declaration of a canvas to allow canvas download
-    p.createCanvas(800, 800, p.WEBGL); // You can change the resolution here
+    p.createCanvas(p.windowWidth*.5, p.windowWidth*.5, p.WEBGL); // You can change the resolution here
 
     // Declaration of depth (z axis), unit vectors, and the camera
     p.depth = p.height;
     let cameraX = 1000 / 600 * p.width;
     let cameraY = -800 / 600 * p.height;
     let cameraZ = -200 / 500 * p.depth;
-    console.log(p.depth)
     p.camera(cameraX, cameraY, cameraZ, 0, 0, 0, 0, 0, 1);
     
     // Create the DOM elements: sliders and paragraphs
@@ -47,7 +46,13 @@ export default function sketchFlock3D (p) {
   }
 
   p.windowResized = function() {
-    p.createCanvas(p.windowWidth*.6, 500);
+    p.createCanvas(p.windowWidth*.5, p.windowWidth*.5);
+    p.depth = p.height;
+    let cameraX = 1000 / 600 * p.width;
+    let cameraY = -800 / 600 * p.height;
+    let cameraZ = -200 / 500 * p.depth;
+    p.camera(cameraX, cameraY, cameraZ, 0, 0, 0, 0, 0, 1);
+    
   }
 
   p.myCustomRedrawAccordingToNewPropsHandler = function (props) {

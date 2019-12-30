@@ -24,21 +24,21 @@ export default function sketchFlock (p) {
     p.createCanvas(p.windowWidth*.6, 500);
   }
   p.myCustomRedrawAccordingToNewPropsHandler = function (props) {
-    alpha = Math.floor(100*props.alpha);
-    beta =  Math.floor(300*props.beta);
+    alpha = Math.floor((props.alpha/5) * p.width);
+    beta =  Math.floor((props.beta/2) * p.height);
 
-    xVar = beta;
-    yVar = alpha;
+    xVar = alpha;
+    yVar = beta;
 
     if (xVar > p.width) {
-      xVar = p.width;
+      xVar = p.width-5;
     }
     if (yVar > p.height) {
-      yVar = p.height;
+      yVar = p.height-5;
     }
 
-    console.log(xVar)
-    console.log(yVar)
+    // console.log(xVar)
+    // console.log(yVar)
   };
 
   p.draw = function () {
