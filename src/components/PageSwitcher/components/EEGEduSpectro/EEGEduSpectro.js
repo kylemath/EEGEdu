@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from "react";
+import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 
-import { Card, Stack, TextContainer, RangeSlider, Select} from "@shopify/polaris";
+import { Card, Stack, TextContainer, RangeSlider} from "@shopify/polaris";
 import { Subject } from "rxjs";
 
 import { zipSamples } from "muse-js";
@@ -10,45 +10,42 @@ import {
   bandpassFilter,
   epoch,
   fft,
-  powerByBand
+  sliceFFT
 } from "@neurosity/pipes";
 
 import { chartStyles } from "../chartOptions";
 
 import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
-import { bandLabels } from "../../utils/chartUtils";
 
-import sketchBands from './sketchBands'
-import sketchTone from './sketchTone'
-import sketchCube from './sketchCube'
-import sketchFlock from './sketchFlock'
-import sketchDraw from './sketchDraw'
-import sketchFlock3D from './sketchFlock3D'
+import sketchSpectro from './sketchSpectro'
 
 import P5Wrapper from 'react-p5-wrapper';
 
 export function getSettings () {
   return {
-    cutOffLow: 2,
-    cutOffHigh: 20,
+    cutOffLow: 1,
+    cutOffHigh: 100,
     nbChannels: 4,
     interval: 16,
-    bins: 256,
+    bins: 128,
     duration: 128,
-    srate: 256
+    srate: 256,
+    name: 'Spectro',
+    sliceFFTLow: 1,
+    sliceFFTHigh: 100,
   }
 };
 
 export function buildPipe(Settings) {
-  if (window.subscriptionAnimate) window.subscriptionAnimate.unsubscribe();
+  if (window.subscriptionSpectro) window.subscriptionSpectro.unsubscribe();
 
-  window.pipeAnimate$ = null;
-  window.multicastAnimate$ = null;
-  window.subscriptionAnimate = null;
+  window.pipeSpectro$ = null;
+  window.multicastSpectro$ = null;
+  window.subscriptionSpectro = null;
 
   // Build Pipe
-  window.pipeAnimate$ = zipSamples(window.source.eegReadings$).pipe(
+  window.pipeSpectro$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
       nbChannels: Settings.nbChannels }),
@@ -58,12 +55,12 @@ export function buildPipe(Settings) {
       samplingRate: Settings.srate
     }),
     fft({ bins: Settings.bins }),
-    powerByBand(),
+    sliceFFT([Settings.sliceFFTLow, Settings.sliceFFTHigh]),
     catchError(err => {
       console.log(err);
     })
   );
-  window.multicastAnimate$ = window.pipeAnimate$.pipe(
+  window.multicastSpectro$ = window.pipeSpectro$.pipe(
     multicast(() => new Subject())
   );
 }
@@ -71,119 +68,50 @@ export function buildPipe(Settings) {
 export function setup(setData, Settings) {
   console.log("Subscribing to " + Settings.name);
 
-  if (window.multicastAnimate$) {
-    window.subscriptionAnimate = window.multicastAnimate$.subscribe(data => {
-      setData(animateData => {
-        Object.values(animateData).forEach((channel, index) => {
+  if (window.multicastSpectro$) {
+    window.subscriptionSpectro = window.multicastSpectro$.subscribe(data => {
+      setData(spectroData => {
+        Object.values(spectroData).forEach((channel, index) => {
           if (index < 4) {
-            channel.datasets[0].data = [
-              data.delta[index],
-              data.theta[index],
-              data.alpha[index],
-              data.beta[index],
-              data.gamma[index]
-            ];
-            channel.xLabels = bandLabels;
+            channel.datasets[0].data = data.psd[index];
+            channel.xLabels = data.freqs
           }
         });
 
         return {
-          ch0: animateData.ch0,
-          ch1: animateData.ch1,
-          ch2: animateData.ch2,
-          ch3: animateData.ch3
+          ch0: spectroData.ch0,
+          ch1: spectroData.ch1,
+          ch2: spectroData.ch2,
+          ch3: spectroData.ch3
         };
       });
     });
 
-    window.multicastAnimate$.connect();
+    window.multicastSpectro$.connect();
     console.log("Subscribed to " + Settings.name);
   }
 }
 
 export function renderModule(channels) {
   function RenderCharts() {
-
-    const bands = 'bands';
-    const tone = 'tone';
-    const cube = 'cube';
-    const flock = 'flock';
-    const draw = 'draw';
-    const flock3d = 'flock3d';
-
-    const chartTypes = [
-      { label: bands, value: bands },
-      { label: tone, value: tone },
-      { label: cube, value: cube },
-      { label: flock, value: flock },
-      { label: draw, value: draw },
-      { label: flock3d, value: flock3d }
-    ];
-
-    // for picking a new animation
-    const [selectedAnimation, setSelectedAnimation] = useState(bands);
-    const handleSelectChangeAnimation = useCallback(value => {
-      setSelectedAnimation(value);
-      console.log("Switching to: " + value);
-    }, []);
-
     return Object.values(channels.data).map((channel, index) => {
-      // console.log(channel) 
       if (channel.datasets[0].data) {
-        // console.log( channel.datasets[0].data[2])
-        window.delta = channel.datasets[0].data[0];
-        window.theta = channel.datasets[0].data[1];
-        window.alpha = channel.datasets[0].data[2];
-        window.beta  = channel.datasets[0].data[3];
-        window.gamma = channel.datasets[0].data[4];
+        window.psd = channel.datasets[0].data;
+        window.freqs = channel.xLabels;
+        if (channel.xLabels) {
+          window.bins = channel.xLabels.length;
+        }
       }   
-
-      let thisSketch = sketchTone;
-
-      switch (selectedAnimation) {
-        case bands:
-          thisSketch = sketchBands;
-          break
-        case tone:
-          thisSketch = sketchTone;
-          break
-        case cube:
-          thisSketch = sketchCube;
-          break
-        case flock:
-          thisSketch = sketchFlock;
-          break
-        case draw:
-          thisSketch = sketchDraw;
-          break
-        case flock3d:
-          thisSketch = sketchFlock3D;
-          break
-        default: console.log("Error on switch to " + selectedAnimation)
-      }
 
       //only left frontal channel
       if (index === 1) {
         return (
           <React.Fragment key={'dum'}>
-            <Card.Section 
-              title={"Choice of Sketch"}
-            >
-              <Select
-                label={""}
-                options={chartTypes}
-                onChange={handleSelectChangeAnimation}
-                value={selectedAnimation}
-              />
-            </Card.Section>
             <Card.Section>
-              <P5Wrapper sketch={thisSketch} 
-                delta={window.delta}
-                theta={window.theta}
-                alpha={window.alpha}
-                beta={window.beta}
-                gamma={window.gamma}
-              />          
+              <P5Wrapper sketch={sketchSpectro} 
+                psd={window.psd}
+                bins={window.bins}
+                 />          
             </Card.Section>
           </React.Fragment>
         );
@@ -237,6 +165,16 @@ export function renderSliders(setData, setSettings, status, Settings) {
     resetPipeSetup();
   }
 
+  function handleSliceFFTHighRangeSliderChange(value) {
+    setSettings(prevState => ({...prevState, sliceFFTHigh: value}));
+    resetPipeSetup();
+  }
+
+  function handleSliceFFTLowRangeSliderChange(value) {
+    setSettings(prevState => ({...prevState, sliceFFTLow: value}));
+    resetPipeSetup();
+  }
+
   return (
     <Card title={Settings.name + ' Settings'} sectioned>
       <RangeSlider 
@@ -266,6 +204,20 @@ export function renderSliders(setData, setSettings, status, Settings) {
         label={'Cutoff Frequency High: ' + Settings.cutOffHigh + ' Hz'} 
         value={Settings.cutOffHigh} 
         onChange={handleCutoffHighRangeSliderChange} 
+      />
+      <RangeSlider 
+        disabled={status === generalTranslations.connect} 
+        min={1} max={Settings.sliceFFTHigh - 1}
+        label={'Slice FFT Lower limit: ' + Settings.sliceFFTLow + ' Hz'} 
+        value={Settings.sliceFFTLow} 
+        onChange={handleSliceFFTLowRangeSliderChange} 
+      />
+      <RangeSlider 
+        disabled={status === generalTranslations.connect} 
+        min={Settings.sliceFFTLow + 1}
+        label={'Slice FFT Upper limit: ' + Settings.sliceFFTHigh + ' Hz'} 
+        value={Settings.sliceFFTHigh} 
+        onChange={handleSliceFFTHighRangeSliderChange} 
       />
     </Card>
   )
