@@ -12,7 +12,7 @@ export default function sketchSpectro (p) {
   p.setup = function () {
     cnv = p.createCanvas(p.windowWidth*.6, 400);
     p.noStroke();
-    p.colorMode(p.HSB);
+    p.colorMode(p.RGB);
   };
 
   p.myCustomRedrawAccordingToNewPropsHandler = function (props) {
@@ -34,8 +34,8 @@ export default function sketchSpectro (p) {
         let value;
         value = spectrum[i];
 
-        let c = (value/10)*255;
-        p.fill(c, 255, c);
+        let c = (value/5)*255;
+        p.fill(255-c, 255-c, 255-c);
         let percent = i / binCount;
         let y = percent * p.height;
         p.rect(p.width - speed, p.height - y, speed, p.height / binCount);

@@ -41,14 +41,14 @@ export function getSettings () {
 };
 
 export function buildPipe(Settings) {
-  if (window.subscriptionBands) window.subscriptionBands.unsubscribe();
+  if (window.subscriptionAnimate) window.subscriptionAnimate.unsubscribe();
 
-  window.pipeBands$ = null;
-  window.multicastBands$ = null;
-  window.subscriptionBands = null;
+  window.pipeAnimate$ = null;
+  window.multicastAnimate$ = null;
+  window.subscriptionAnimate = null;
 
   // Build Pipe
-  window.pipeBands$ = zipSamples(window.source.eegReadings$).pipe(
+  window.pipeAnimate$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
       nbChannels: Settings.nbChannels }),
@@ -63,7 +63,7 @@ export function buildPipe(Settings) {
       console.log(err);
     })
   );
-  window.multicastBands$ = window.pipeBands$.pipe(
+  window.multicastAnimate$ = window.pipeAnimate$.pipe(
     multicast(() => new Subject())
   );
 }
@@ -71,10 +71,10 @@ export function buildPipe(Settings) {
 export function setup(setData, Settings) {
   console.log("Subscribing to " + Settings.name);
 
-  if (window.multicastBands$) {
-    window.subscriptionBands = window.multicastBands$.subscribe(data => {
-      setData(bandsData => {
-        Object.values(bandsData).forEach((channel, index) => {
+  if (window.multicastAnimate$) {
+    window.subscriptionAnimate = window.multicastAnimate$.subscribe(data => {
+      setData(animateData => {
+        Object.values(animateData).forEach((channel, index) => {
           if (index < 4) {
             channel.datasets[0].data = [
               data.delta[index],
@@ -88,15 +88,15 @@ export function setup(setData, Settings) {
         });
 
         return {
-          ch0: bandsData.ch0,
-          ch1: bandsData.ch1,
-          ch2: bandsData.ch2,
-          ch3: bandsData.ch3
+          ch0: animateData.ch0,
+          ch1: animateData.ch1,
+          ch2: animateData.ch2,
+          ch3: animateData.ch3
         };
       });
     });
 
-    window.multicastBands$.connect();
+    window.multicastAnimate$.connect();
     console.log("Subscribed to " + Settings.name);
   }
 }
