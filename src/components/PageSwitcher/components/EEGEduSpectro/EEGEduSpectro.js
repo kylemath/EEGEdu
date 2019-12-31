@@ -38,14 +38,14 @@ export function getSettings () {
 };
 
 export function buildPipe(Settings) {
-  if (window.subscriptionBands) window.subscriptionBands.unsubscribe();
+  if (window.subscriptionSpectro) window.subscriptionSpectro.unsubscribe();
 
-  window.pipeBands$ = null;
-  window.multicastBands$ = null;
-  window.subscriptionBands = null;
+  window.pipeSpectro$ = null;
+  window.multicastSpectro$ = null;
+  window.subscriptionSpectro = null;
 
   // Build Pipe
-  window.pipeBands$ = zipSamples(window.source.eegReadings$).pipe(
+  window.pipeSpectro$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
       nbChannels: Settings.nbChannels }),
@@ -60,7 +60,7 @@ export function buildPipe(Settings) {
       console.log(err);
     })
   );
-  window.multicastBands$ = window.pipeBands$.pipe(
+  window.multicastSpectro$ = window.pipeSpectro$.pipe(
     multicast(() => new Subject())
   );
 }
@@ -68,8 +68,8 @@ export function buildPipe(Settings) {
 export function setup(setData, Settings) {
   console.log("Subscribing to " + Settings.name);
 
-  if (window.multicastBands$) {
-    window.subscriptionBands = window.multicastBands$.subscribe(data => {
+  if (window.multicastSpectro$) {
+    window.subscriptionSpectro = window.multicastSpectro$.subscribe(data => {
       setData(spectroData => {
         Object.values(spectroData).forEach((channel, index) => {
           if (index < 4) {
@@ -87,7 +87,7 @@ export function setup(setData, Settings) {
       });
     });
 
-    window.multicastBands$.connect();
+    window.multicastSpectro$.connect();
     console.log("Subscribed to " + Settings.name);
   }
 }
