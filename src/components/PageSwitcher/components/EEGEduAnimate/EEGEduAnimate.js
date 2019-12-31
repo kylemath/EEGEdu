@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from "react";
+import React, {useState, useCallback}  from "react";
 import { catchError, multicast } from "rxjs/operators";
 
-import { Card, Stack, TextContainer, RangeSlider, Select} from "@shopify/polaris";
+import { Card, Stack, TextContainer, RangeSlider, Button, ButtonGroup} from "@shopify/polaris";
 import { Subject } from "rxjs";
 
 import { zipSamples } from "muse-js";
@@ -19,7 +19,6 @@ import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 import { bandLabels } from "../../utils/chartUtils";
 
-import P5Wrapper from 'react-p5-wrapper';
 import Sketch from 'react-p5'
 
 import styled from 'styled-components';
@@ -175,6 +174,11 @@ export function setup(setData, Settings) {
 export function renderModule(channels) {
   function RenderCharts() {
 
+        // for popup flag when recording
+    const [sketchPop, setSketchPop] = useState(false);
+    const sketchPopChange = useCallback(() => setSketchPop(!sketchPop), [sketchPop]);
+
+
     // Default values for the headerProps
     window.headerProps = { 
       delta: 0,
@@ -186,40 +190,36 @@ export function renderModule(channels) {
      };   
 
     return Object.values(channels.data).map((channel, index) => {
-      // console.log(channel) 
-      if (channel.datasets[0].data) {
-        // console.log( channel.datasets[0].data[2])
-        window.delta = channel.datasets[0].data[0];
-        window.theta = channel.datasets[0].data[1];
-        window.alpha = channel.datasets[0].data[2];
-        window.beta  = channel.datasets[0].data[3];
-        window.gamma = channel.datasets[0].data[4];
+      //only left frontal channel
+      if (index === 1) {
+        if (channel.datasets[0].data) {
+          window.delta = channel.datasets[0].data[0];
+          window.theta = channel.datasets[0].data[1];
+          window.alpha = channel.datasets[0].data[2];
+          window.beta  = channel.datasets[0].data[3];
+          window.gamma = channel.datasets[0].data[4];
 
-        window.headerProps = { 
-          delta: 10 * window.delta,
-          theta: 10 * window.theta,
-          alpha: 10 * window.alpha,
-          beta: 10 * window.beta,
-          gamma: 10 * window.gamma,
-          textMsg: 'Data Recieved.',
-         };        
-      }   
+          window.headerProps = { 
+            delta: 10 * window.delta,
+            theta: 10 * window.theta,
+            alpha: 10 * window.alpha,
+            beta: 10 * window.beta,
+            gamma: 10 * window.gamma,
+            textMsg: 'Data Recieved.',
+           };        
+        }   
+        const brain = window.headerProps;
+        const scope = { styled, brain, React, Sketch };
+        const code =  
 
-      const brain = window.headerProps;
-      const scope = { styled, brain, React, Sketch };
-      const code = 
 `class MySketch extends React.Component {
-  constructor() {
-    super()
-    this.state = { x: 40, y: 40 }
-  }
-  setup(p5, canvasParentRef) {
-    p5.createCanvas(200, 200).parent(canvasParentRef)
+  setup(p5, whereToPlot) {
+    p5.createCanvas(400, 400, p5.WEBGL).parent(whereToPlot)
   }
   draw(p5) {
-    p5.fill(brain.theta,brain.delta, brain.gamma, 20);
-    p5.noStroke();
-    p5.ellipse(brain.beta, brain.alpha, 50);
+    {brain.delta}
+    p5.fill(brain.delta,brain.theta,brain.alpha);
+    p5.ellipse(brain.beta,brain.alpha,20);
   }
   render() {
     return (
@@ -231,21 +231,50 @@ render(
   <MySketch />
 )       
       `
-
-      //only left frontal channel
-      if (index === 1) {
-        return (
+        if (sketchPop) {
+          return (
           <React.Fragment key={'dum'}>
+            <ButtonGroup>
+              <Button 
+                onClick={() => {
+                sketchPopChange();
+                }}
+                primary={true}
+                disabled={false}
+              > 
+                {'Run Code and Show Sketch'}  
+              </Button>
+            </ButtonGroup>
             <LiveProvider code={code} scope={scope} noInline={true} theme={theme}>
               <LiveEditor />
               <LiveError />
               <LivePreview />
             </LiveProvider>
           </React.Fragment>
-        );
-      } else {
-        return null
-      }
+          );
+        } else {
+          return(
+            <React.Fragment key={'dum'}>
+              <ButtonGroup>
+                <Button 
+                  onClick={() => {
+                  sketchPopChange();
+                  }}
+                  primary={true}
+                  disabled={false}
+                > 
+                  {'Run Code and Show Sketch'}  
+                </Button>
+              </ButtonGroup>
+              <LiveProvider code={code} scope={scope} noInline={true} theme={theme}>
+                <LiveEditor />
+              </LiveProvider>
+            </React.Fragment>
+          )        
+        }
+        } else { // if single channel
+          return null
+        }
     });
   }
 
