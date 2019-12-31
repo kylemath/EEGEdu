@@ -98,7 +98,9 @@ export function renderModule(channels) {
       if (channel.datasets[0].data) {
         window.psd = channel.datasets[0].data;
         window.freqs = channel.xLabels;
-        window.bins = channel.xLabels.length;
+        if (channel.xLabels) {
+          window.bins = channel.xLabels.length;
+        }
       }   
 
       //only left frontal channel
