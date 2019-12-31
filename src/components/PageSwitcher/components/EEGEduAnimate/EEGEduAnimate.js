@@ -29,74 +29,7 @@ import {
   LivePreview
 } from 'react-live'
 
-
-
-export const theme = {
-  plain: {
-    color: "#F8F8F2",
-    backgroundColor: "#282A36"
-  },
-  styles: [
-    {
-      types: ["prolog", "constant", "builtin"],
-      style: {
-        color: "rgb(189, 147, 249)"
-      }
-    },
-    {
-      types: ["inserted", "function"],
-      style: {
-        color: "rgb(80, 250, 123)"
-      }
-    },
-    {
-      types: ["deleted"],
-      style: {
-        color: "rgb(255, 85, 85)"
-      }
-    },
-    {
-      types: ["changed"],
-      style: {
-        color: "rgb(255, 184, 108)"
-      }
-    },
-    {
-      types: ["punctuation", "symbol"],
-      style: {
-        color: "rgb(248, 248, 242)"
-      }
-    },
-    {
-      types: ["string", "char", "tag", "selector"],
-      style: {
-        color: "rgb(255, 121, 198)"
-      }
-    },
-    {
-      types: ["keyword", "variable"],
-      style: {
-        color: "rgb(189, 147, 249)",
-        fontStyle: "italic"
-      }
-    },
-    {
-      types: ["comment"],
-      style: {
-        color: "rgb(98, 114, 164)"
-      }
-    },
-    {
-      types: ["attr-name"],
-      style: {
-        color: "rgb(241, 250, 140)"
-      }
-    }
-  ]
-} 
-
-
-
+import theme from './p5Theme'
 
 export function getSettings () {
   return {
@@ -211,13 +144,15 @@ export function renderModule(channels) {
         const brain = window.headerProps;
         const scope = { styled, brain, React, Sketch };
         const code =  
-
 `class MySketch extends React.Component {
   setup(p5, whereToPlot) {
     p5.createCanvas(400, 400, p5.WEBGL).parent(whereToPlot)
   }
   draw(p5) {
-    {brain.delta}
+    let x = p5.height;
+    let y = true;
+    const test = 3;
+    text = "this is"
     p5.fill(brain.delta,brain.theta,brain.alpha);
     p5.ellipse(brain.beta,brain.alpha,20);
   }
@@ -229,8 +164,11 @@ export function renderModule(channels) {
 }
 render(
   <MySketch />
-)       
-      `
+)    
+
+`
+
+      
         if (sketchPop) {
           return (
           <React.Fragment key={'dum'}>
