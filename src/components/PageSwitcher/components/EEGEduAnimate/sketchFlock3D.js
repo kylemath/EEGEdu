@@ -81,6 +81,9 @@ export default function sketchFlock3D (p) {
   p.draw = function () {
     // Background and lightning
     p.background(200);
+    //drag to move the world.
+    p.orbitControl();
+
     p.directionalLight(150, 150, 150, 1, 1, 0);
     p.ambientLight(150);
     
