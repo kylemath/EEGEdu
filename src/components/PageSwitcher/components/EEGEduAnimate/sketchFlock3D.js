@@ -81,6 +81,9 @@ export default function sketchFlock3D (p) {
   p.draw = function () {
     // Background and lightning
     p.background(200);
+    //drag to move the world.
+    p.orbitControl();
+
     p.directionalLight(150, 150, 150, 1, 1, 0);
     p.ambientLight(150);
     
@@ -157,8 +160,8 @@ export default function sketchFlock3D (p) {
     separationSlider = 	p.createSlider(0, 5, 0.7, 0.1);
 
     // Position the DOM elements on the top left corner
-    let DOMoffset = 1000; // Place the DOM elements underneath the canvas when we want to download the canvas
-    let DOMgap = 15; // Gap between the DOM elements
+    let DOMoffset = 1050; // Place the DOM elements underneath the canvas when we want to download the canvas
+    let DOMgap = 5; // Gap between the DOM elements
     let leftGap = 200;
     boidsSlider.position(	    leftGap + DOMgap, DOMoffset + boidsSlider.height * 0 + 1 * DOMgap);
     perceptionSlider.position(leftGap + DOMgap, DOMoffset + boidsSlider.height * 1 + 2 * DOMgap);

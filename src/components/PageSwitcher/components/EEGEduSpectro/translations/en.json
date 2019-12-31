@@ -1,0 +1,12 @@
+{
+  "title": "Spectrogram (Spectra over time)",
+  "description": [
+    "Back to the full spectra, we can also look at how this changes over time in a single image. ",
+    "This image, with time on the horizontal x-axis and freqency on the vertical y-axis is like a heat map or topographic map. ",
+    "Darker regions represent frequencies and times with larger power. ",
+    "Remember that on the spectra power is the vertical dimension, here is the is the colour."
+  ],
+  "xlabel": "Time (ms)",
+  "ylabel": "Frequency (Hz)",
+  "zlabel": "Power (\u03BCV\u00B2)"
+}
