@@ -19,12 +19,6 @@ import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 import { bandLabels } from "../../utils/chartUtils";
 
-import sketchBands from './sketchBands'
-import sketchTone from './sketchTone'
-import sketchCube from './sketchCube'
-import sketchFlock from './sketchFlock'
-import sketchDraw from './sketchDraw'
-
 import P5Wrapper from 'react-p5-wrapper';
 import Sketch from 'react-p5'
 
@@ -35,6 +29,75 @@ import {
   LiveError,
   LivePreview
 } from 'react-live'
+
+
+
+export const theme = {
+  plain: {
+    color: "#F8F8F2",
+    backgroundColor: "#282A36"
+  },
+  styles: [
+    {
+      types: ["prolog", "constant", "builtin"],
+      style: {
+        color: "rgb(189, 147, 249)"
+      }
+    },
+    {
+      types: ["inserted", "function"],
+      style: {
+        color: "rgb(80, 250, 123)"
+      }
+    },
+    {
+      types: ["deleted"],
+      style: {
+        color: "rgb(255, 85, 85)"
+      }
+    },
+    {
+      types: ["changed"],
+      style: {
+        color: "rgb(255, 184, 108)"
+      }
+    },
+    {
+      types: ["punctuation", "symbol"],
+      style: {
+        color: "rgb(248, 248, 242)"
+      }
+    },
+    {
+      types: ["string", "char", "tag", "selector"],
+      style: {
+        color: "rgb(255, 121, 198)"
+      }
+    },
+    {
+      types: ["keyword", "variable"],
+      style: {
+        color: "rgb(189, 147, 249)",
+        fontStyle: "italic"
+      }
+    },
+    {
+      types: ["comment"],
+      style: {
+        color: "rgb(98, 114, 164)"
+      }
+    },
+    {
+      types: ["attr-name"],
+      style: {
+        color: "rgb(241, 250, 140)"
+      }
+    }
+  ]
+} 
+
+
+
 
 export function getSettings () {
   return {
@@ -112,27 +175,6 @@ export function setup(setData, Settings) {
 export function renderModule(channels) {
   function RenderCharts() {
 
-    const bands = 'bands';
-    const tone = 'tone';
-    const cube = 'cube';
-    const flock = 'flock';
-    const draw = 'draw';
-
-    const chartTypes = [
-      { label: bands, value: bands },
-      { label: tone, value: tone },
-      { label: cube, value: cube },
-      { label: flock, value: flock },
-      { label: draw, value: draw}
-    ];
-
-    // for picking a new animation
-    const [selectedAnimation, setSelectedAnimation] = useState(bands);
-    const handleSelectChangeAnimation = useCallback(value => {
-      setSelectedAnimation(value);
-      console.log("Switching to: " + value);
-    }, []);
-
     // Default values for the headerProps
     window.headerProps = { 
       delta: 0,
@@ -163,117 +205,42 @@ export function renderModule(channels) {
          };        
       }   
 
-      let thisSketch = sketchTone;
-
-      switch (selectedAnimation) {
-        case bands:
-          thisSketch = sketchBands;
-          break
-        case tone:
-          thisSketch = sketchTone;
-          break
-        case cube:
-          thisSketch = sketchCube;
-          break
-        case flock:
-          thisSketch = sketchFlock;
-          break
-        case draw:
-          thisSketch = sketchDraw;
-          break
-        default: console.log("Error on switch to " + selectedAnimation)
-      }
-
-      const headerProps = window.headerProps;
-      const scope = { styled, headerProps, React, Sketch };
-      const code = `const Wrapper = ({ children }) => (
-  <div style={{
-    background: 'papayawhip',
-    width: '100%',
-    padding: '2rem'
-  }}>
-    {children}
-  </div>
-)
-
-class NewNewSketch extends React.Component {
-  
+      const brain = window.headerProps;
+      const scope = { styled, brain, React, Sketch };
+      const code = 
+`class MySketch extends React.Component {
   constructor() {
     super()
-    this.state = { x: 20, y: 20 }
+    this.state = { x: 40, y: 40 }
   }
-
   setup(p5, canvasParentRef) {
     p5.createCanvas(200, 200).parent(canvasParentRef)
   }
-
   draw(p5) {
-    p5.background(255)
-    p5.ellipse(headerProps.alpha, headerProps.beta, 20, 20)
-    
-    // NOTE: Do not use setState in draw function 
-    // or in functions that is executed in draw function... 
-    // pls use normal variables (headerProp) or class properties (this.state)
+    p5.fill(brain.theta,brain.delta, brain.gamma, 20);
+    p5.noStroke();
+    p5.ellipse(brain.beta, brain.alpha, 50);
   }
-
   render() {
     return (
-      <center>
-      <h2>{headerProps.textMsg}</h2>
-      <h2>{this.state.x}, {this.state.y}, {headerProps.alpha}</h2>
-      <h3 style={{ color: 'palevioletred' }}>
-        Delta Value:
-        {headerProps.delta} <br />
-        Theta Value:
-        {headerProps.theta} <br />
-        Alpha Value:
-        {headerProps.alpha} <br />
-        Beta Value:
-        {headerProps.beta} <br />
-        Gamma Value:
-        {headerProps.gamma} <br />
-      </h3>
-      <Sketch setup={this.setup} draw={this.draw} />
-      </center>
+       <Sketch setup={this.setup} draw={this.draw} />
     )
   }
 }
-
 render(
-<Wrapper>
-  <NewNewSketch />
-</Wrapper>
-)`
+  <MySketch />
+)       
+      `
 
       //only left frontal channel
       if (index === 1) {
         return (
           <React.Fragment key={'dum'}>
-            <LiveProvider code={code} scope={scope} noInline={true}>
+            <LiveProvider code={code} scope={scope} noInline={true} theme={theme}>
               <LiveEditor />
               <LiveError />
               <LivePreview />
             </LiveProvider>
-
-            <Card.Section 
-              title={"Choice of Sketch"}
-            >
-              <Select
-                label={""}
-                options={chartTypes}
-                onChange={handleSelectChangeAnimation}
-                value={selectedAnimation}
-              />
-            </Card.Section>
-            <Card.Section>
-              {/* <P5Wrapper sketch={thisSketch} 
-                delta={window.delta}
-                theta={window.theta}
-                alpha={window.alpha}
-                beta={window.beta}
-                gamma={window.gamma}
-              />           */}
-            </Card.Section>
           </React.Fragment>
         );
       } else {
@@ -284,7 +251,6 @@ render(
 
   return (
     <Card title={specificTranslations.title}>
-
       <Card.Section>
         <Stack>
           <TextContainer>
