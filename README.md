@@ -71,16 +71,19 @@ The guide for contributors can be found [here](https://github.com/kylemath/EEGEd
 
 We are aiming to include chances for students to interact with EEG-based brain signals. So we might break down a curriculum into 10 lessons as follows:
 
+
+
 1. Connect + hardware
-2. Biophysics + signal viewing
-3. Simple evoked example
-4. Frequency domain explanation
-5. Raw spectra
-6. Frequency bands
-7. Spectrogram
-8. Record data
-9. BCI trainer
-10. p5js demos: https://p5js.org/
+Biophysics + signal viewing
+2. Raw Data + artifacts + blinks + record
+3. Frequency domain explanation + Raw spectra + record
+4. Frequency bands + record
+5. Spectrogram
+6. Eyes closed eyes open experiment
+7. SSVEP experiment
+8. evoked experiment
+9. Neurofeedback p5js demos
+10. BCI trainer
 
 # References
 
