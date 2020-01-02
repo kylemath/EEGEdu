@@ -311,7 +311,7 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, recor
 
 
 function saveToCSV(Settings, condition) {
-  const numSamplesToSave = 2;
+  const numSamplesToSave = 50;
   console.log('Saving ' + numSamplesToSave + ' samples...');
   var localObservable$ = null;
   const dataToSave = [];
