@@ -56,13 +56,33 @@ If it is working correctly, the EEGEdu application will open in a browser window
 To start the *Local Production Environment*, you can use the following commands: 
 
 ```sh
+yarn cache clean
 yarn run build
 serve -s build
 ```
 
 ## Deployment
 
-[EEGEdu](https://eegedu.com) is running on [Firebase](https://firebase.google.com/) and deployment happens automagically using GitHub post-commit hooks, or [Actions](https://github.com/kylemath/EEGEdu/actions), as they are commonly called. You can see how the application is build and deployed by [inspecting the workflow](https://github.com/kylemath/EEGEdu/blob/master/.github/workflows/workflow.yml).
+[EEGEdu](https://eegedu.com) is running on [Firebase](https://firebase.google.com/) and deployment happens automagically using GitHub post-commit hooks, or [Actions](https://github.com/kylemath/EEGEdu/actions), as they are commonly called. You can see how the application is build and deployed by [inspecting the workflow](https://github.com/kylemath/EEGEdu/blob/master/.github/workflows/workflow.yml). 
+
+Currently this is not working and we are deploying locally with firebase
+
+```sh
+firebase deploy
+```
+
+after settings up one time with 
+
+```sh
+firebase init
+```
+options: Hosting Sites only
+public directory: build
+single-page app: No
+Overwrite - No
+Overwrite - No
+
+
 
 # Contributing
 The guide for contributors can be found [here](https://github.com/kylemath/EEGEdu/blob/master/CONTRIBUTING.md). It covers everything you need to know to start contributing to EEGEdu.
