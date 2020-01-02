@@ -11,8 +11,9 @@ import * as funIntro from "./components/EEGEduIntro/EEGEduIntro"
 import * as funRaw from "./components/EEGEduRaw/EEGEduRaw";
 import * as funSpectra from "./components/EEGEduSpectra/EEGEduSpectra";
 import * as funBands from "./components/EEGEduBands/EEGEduBands";
-import * as funAnimate from "./components/EEGEduAnimate/EEGEduAnimate"
-import * as funSpectro from "./components/EEGEduSpectro/EEGEduSpectro"
+import * as funAnimate from "./components/EEGEduAnimate/EEGEduAnimate";
+import * as funSpectro from "./components/EEGEduSpectro/EEGEduSpectro";
+import * as funAlpha from "./components/EEGEduAlpha/EEGEduAlpha"
 
 const intro = translations.types.intro;
 const raw = translations.types.raw;
@@ -20,6 +21,7 @@ const spectra = translations.types.spectra;
 const bands = translations.types.bands;
 const animate = translations.types.animate;
 const spectro = translations.types.spectro;
+const alpha = translations.types.alpha;
 
 export function PageSwitcher() {
 
@@ -30,6 +32,7 @@ export function PageSwitcher() {
   const [bandsData, setBandsData] = useState(emptyChannelData);
   const [animateData, setAnimateData] = useState(emptyChannelData);
   const [spectroData, setSpectroData] = useState(emptyChannelData);
+  const [alphaData, setAlphaData] = useState(emptyChannelData);
 
   // pipe settings
   const [introSettings] = useState(funIntro.getSettings);
@@ -38,12 +41,13 @@ export function PageSwitcher() {
   const [bandsSettings, setBandsSettings] = useState(funBands.getSettings);
   const [animateSettings, setAnimateSettings] = useState(funAnimate.getSettings);
   const [spectroSettings, setSpectroSettings] = useState(funSpectro.getSettings);
+  const [alphaSettings, setAlphaSettings] = useState(funAlpha.getSettings);
 
   // connection status
   const [status, setStatus] = useState(generalTranslations.connect);
 
   // for picking a new module
-  const [selected, setSelected] = useState(intro);
+  const [selected, setSelected] = useState(alpha);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 
@@ -55,6 +59,7 @@ export function PageSwitcher() {
     if (window.subscriptionBands) window.subscriptionBands.unsubscribe();
     if (window.subscriptionAnimate) window.subscriptionAnimate.unsubscribe();
     if (window.subscriptionSpectro) window.subscriptionSpectro.unsubscribe();
+    if (window.subscriptionAlpha) window.subscriptionAlpha.unsubscribe();
 
     subscriptionSetup(value);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -64,13 +69,18 @@ export function PageSwitcher() {
   const [recordPop, setRecordPop] = useState(false);
   const recordPopChange = useCallback(() => setRecordPop(!recordPop), [recordPop]);
 
+  // for popup flag when recording 2nd condition
+  const [recordTwoPop, setRecordTwoPop] = useState(false);
+  const recordTwoPopChange = useCallback(() => setRecordTwoPop(!recordTwoPop), [recordTwoPop]);
+
   const chartTypes = [
     { label: intro, value: intro },
     { label: raw, value: raw },
     { label: spectra, value: spectra }, 
     { label: bands, value: bands },
     { label: animate, value: animate },
-    { label: spectro, value: spectro }
+    { label: spectro, value: spectro },
+    { label: alpha, value: alpha }
   ];
 
   function buildPipes(value) {
@@ -80,6 +90,7 @@ export function PageSwitcher() {
     funBands.buildPipe(bandsSettings);
     funAnimate.buildPipe(animateSettings);
     funSpectro.buildPipe(spectroSettings);
+    funAlpha.buildPipe(alphaSettings);
   }
 
   function subscriptionSetup(value) {
@@ -94,13 +105,16 @@ export function PageSwitcher() {
         funSpectra.setup(setSpectraData, spectraSettings);
         break;
       case bands:
-        funBands.setup(setBandsData, bandsSettings)
+        funBands.setup(setBandsData, bandsSettings);
         break;
       case animate:
-        funAnimate.setup(setAnimateData, animateSettings)
+        funAnimate.setup(setAnimateData, animateSettings);
         break;
       case spectro: 
-        funSpectro.setup(setSpectroData, spectroSettings)
+        funSpectro.setup(setSpectroData, spectroSettings);
+        break;
+      case alpha:
+        funAlpha.setup(setAlphaData, alphaSettings);
         break;
       default:
         console.log(
@@ -169,6 +183,10 @@ export function PageSwitcher() {
         return (
           funSpectro.renderSliders(setSpectroData, setSpectroSettings, status, spectroSettings)
         );
+      case alpha:
+        return (
+          funAlpha.renderSliders(setAlphaData, setAlphaSettings, status, alphaSettings)
+        );
       default: console.log('Error rendering settings display');
     }
   }
@@ -187,6 +205,8 @@ export function PageSwitcher() {
         return <funAnimate.renderModule data={animateData} />;
       case spectro:
         return <funSpectro.renderModule data={spectroData} />;
+      case alpha: 
+        return <funAlpha.renderModule data={alphaData} />;
       default:
         console.log("Error on renderCharts switch.");
     }
@@ -212,6 +232,10 @@ export function PageSwitcher() {
         return null
       case spectro:
         return null
+      case alpha:
+        return (
+          funAlpha.renderRecord(recordPopChange, recordPop, status, alphaSettings, recordTwoPopChange, recordTwoPop)
+        )
       default:   
         console.log("Error on renderRecord.");
     }

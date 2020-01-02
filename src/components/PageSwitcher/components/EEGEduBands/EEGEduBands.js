@@ -289,7 +289,7 @@ function saveToCSV(Settings) {
         dataToSave, 
         {type: "text/plain;charset=utf-8"}
       );
-      saveAs(blob, Settings.name + "_Recording.csv");
+      saveAs(blob, Settings.name + "_Recording_" + Date.now() + ".csv");
       console.log('Completed');
     }
   });
