@@ -252,12 +252,11 @@ export function renderSliders(setData, setSettings, status, Settings) {
 export function renderRecord(recordPopChange, recordPop, status, Settings, recordTwoPopChange, recordTwoPop) {
   const cond1 = "11Hz";
   const cond2 = "14Hz";
-
+  
   return(
     <Card title={'Record ' + Settings.name +' Data'} sectioned>
       <Stack>
         
-
         <ButtonGroup>
           <Button 
             onClick={() => {
