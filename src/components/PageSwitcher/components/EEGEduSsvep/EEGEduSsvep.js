@@ -1,4 +1,4 @@
- import React from "react";
+import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 
 import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal } from "@shopify/polaris";
@@ -23,6 +23,10 @@ import { chartStyles, generalOptions } from "../chartOptions";
 import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 
+import P5Wrapper from 'react-p5-wrapper';
+import sketchFlashSlow from './sketchFlashSlow';
+import sketchFlashFast from './sketchFlashFast';
+
 export function getSettings() {
   return {
     cutOffLow: 2,
@@ -34,20 +38,19 @@ export function getSettings() {
     sliceFFTHigh: 30,
     duration: 1024,
     srate: 256,
-    name: 'Alpha'
+    name: 'Ssvep'
   }
 };
 
-
 export function buildPipe(Settings) {
-  if (window.subscriptionAlpha) window.subscriptionAlpha.unsubscribe();
+  if (window.subscriptionSsvep) window.subscriptionSsvep.unsubscribe();
 
-  window.pipeAlpha$ = null;
-  window.multicastAlpha$ = null;
-  window.subscriptionAlpha = null;
+  window.pipeSsvep$ = null;
+  window.multicastSsvep$ = null;
+  window.subscriptionSsvep = null;
 
   // Build Pipe 
-  window.pipeAlpha$ = zipSamples(window.source.eegReadings$).pipe(
+  window.pipeSsvep$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
       nbChannels: Settings.nbChannels }),
@@ -63,7 +66,7 @@ export function buildPipe(Settings) {
     })
   );
 
-  window.multicastAlpha$ = window.pipeAlpha$.pipe(
+  window.multicastSsvep$ = window.pipeSsvep$.pipe(
     multicast(() => new Subject())
   );
 }
@@ -71,10 +74,10 @@ export function buildPipe(Settings) {
 export function setup(setData, Settings) {
   console.log("Subscribing to " + Settings.name);
 
-  if (window.multicastAlpha$) {
-    window.subscriptionAlpha = window.multicastAlpha$.subscribe(data => {
-      setData(alphaData => {
-        Object.values(alphaData).forEach((channel, index) => {
+  if (window.multicastSsvep$) {
+    window.subscriptionSsvep = window.multicastSsvep$.subscribe(data => {
+      setData(ssvepData => {
+        Object.values(ssvepData).forEach((channel, index) => {
           if (index < 4) {
             channel.datasets[0].data = data.psd[index];
             channel.xLabels = data.freqs;
@@ -82,15 +85,15 @@ export function setup(setData, Settings) {
         });
 
         return {
-          ch0: alphaData.ch0,
-          ch1: alphaData.ch1,
-          ch2: alphaData.ch2,
-          ch3: alphaData.ch3
+          ch0: ssvepData.ch0,
+          ch1: ssvepData.ch1,
+          ch2: ssvepData.ch2,
+          ch3: ssvepData.ch3
         };
       });
     });
 
-    window.multicastAlpha$.connect();
+    window.multicastSsvep$.connect();
     console.log("Subscribed to " + Settings.name);
   }
 }
@@ -247,37 +250,47 @@ export function renderSliders(setData, setSettings, status, Settings) {
 }
 
 export function renderRecord(recordPopChange, recordPop, status, Settings, recordTwoPopChange, recordTwoPop) {
+  const cond1 = "11Hz";
+  const cond2 = "14Hz";
+
   return(
     <Card title={'Record ' + Settings.name +' Data'} sectioned>
       <Stack>
+        
+
         <ButtonGroup>
           <Button 
             onClick={() => {
-              saveToCSV(Settings, "Closed");
+              saveToCSV(Settings, cond1);
               recordPopChange();
             }}
             primary={status !== generalTranslations.connect}
             disabled={status === generalTranslations.connect}
           > 
-            {'Record Eyes Closed Data'}  
+            {'Record ' + cond1 +' Data'}  
           </Button>
           <Button 
             onClick={() => {
-              saveToCSV(Settings, "Open");
+              saveToCSV(Settings, cond2);
               recordTwoPopChange();
             }}
             primary={status !== generalTranslations.connect}
             disabled={status === generalTranslations.connect}
           > 
-            {'Record Eyes Open Data'}  
+            {'Record ' + cond2 + ' Data'}  
           </Button> 
         </ButtonGroup>
+       
+
         <Modal
           open={recordPop}
           onClose={recordPopChange}
-          title="Recording Eye Closed Data"
+          title={"Recording " + cond1 + " Data"}
         >
           <Modal.Section>
+           <Card.Section>
+              <P5Wrapper sketch={sketchFlashSlow} />          
+            </Card.Section>
             <TextContainer>
               <p>
                 Your data is currently recording, 
@@ -288,12 +301,16 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, recor
             </TextContainer>
           </Modal.Section>
         </Modal>
+       
         <Modal
           open={recordTwoPop}
           onClose={recordTwoPopChange}
-          title="Recording Eyes Open Data"
+          title={"Recording " + cond2 + " Data"}
         >
           <Modal.Section>
+           <Card.Section>
+              <P5Wrapper sketch={sketchFlashFast} />          
+            </Card.Section>
             <TextContainer>
               <p>
                 Your data is currently recording, 
@@ -304,6 +321,7 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, recor
             </TextContainer>
           </Modal.Section>
         </Modal>        
+      
       </Stack>
     </Card>
   )
@@ -311,7 +329,7 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, recor
 
 
 function saveToCSV(Settings, condition) {
-  const numSamplesToSave = 2;
+  const numSamplesToSave = 50;
   console.log('Saving ' + numSamplesToSave + ' samples...');
   var localObservable$ = null;
   const dataToSave = [];
@@ -319,7 +337,7 @@ function saveToCSV(Settings, condition) {
   console.log('making ' + Settings.name + ' headers')
 
   // take one sample from selected observable object for headers
-  localObservable$ = window.multicastAlpha$.pipe(
+  localObservable$ = window.multicastSsvep$.pipe(
     take(1)
   );
 
@@ -340,7 +358,7 @@ function saveToCSV(Settings, condition) {
     }
   });
   // put selected observable object into local and start taking samples
-  localObservable$ = window.multicastAlpha$.pipe(
+  localObservable$ = window.multicastSsvep$.pipe(
     take(numSamplesToSave)
   );   
 
