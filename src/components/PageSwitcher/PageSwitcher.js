@@ -15,7 +15,7 @@ import * as funAnimate from "./components/EEGEduAnimate/EEGEduAnimate";
 import * as funSpectro from "./components/EEGEduSpectro/EEGEduSpectro";
 import * as funAlpha from "./components/EEGEduAlpha/EEGEduAlpha"
 import * as funSsvep from "./components/EEGEduSsvep/EEGEduSsvep"
-import * as funPredit from "./components/EEGEduPredict/EEGEduPredict"
+import * as funPredict from "./components/EEGEduPredict/EEGEduPredict"
 
 const intro = translations.types.intro;
 const raw = translations.types.raw;
@@ -275,7 +275,7 @@ export function PageSwitcher() {
         )
       case predict:
         return (
-          funPredict.rednerRecord(recordPopChange, recordPop, status, predictSettings, recordTwoPopChange, recordTwoPop)
+          funPredict.renderRecord(recordPopChange, recordPop, status, predictSettings, recordTwoPopChange, recordTwoPop)
         )
       default:   
         console.log("Error on renderRecord.");

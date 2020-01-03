@@ -100,6 +100,14 @@ export function setup(setData, Settings) {
 export function renderModule(channels) {
   function renderCharts() {
     return Object.values(channels.data).map((channel, index) => {
+      if (channel.datasets[0].data) {
+        window.psd = channel.datasets[0].data;
+        window.freqs = channel.xLabels;
+        if (channel.xLabels) {
+          window.bins = channel.xLabels.length;
+        }
+      }   
+
       const options = {
         ...generalOptions,
         scales: {
@@ -249,134 +257,20 @@ export function renderSliders(setData, setSettings, status, Settings) {
 }
 
 export function renderRecord(recordPopChange, recordPop, status, Settings, recordTwoPopChange, recordTwoPop) {
-  const cond1 = "11Hz";
-  const cond2 = "14Hz";
   
   return(
     <Card title={'Record ' + Settings.name +' Data'} sectioned>
       <Stack>
-        
-        <ButtonGroup>
-          <Button 
-            onClick={() => {
-              saveToCSV(Settings, cond1);
-              recordPopChange();
-            }}
-            primary={status !== generalTranslations.connect}
-            disabled={status === generalTranslations.connect}
-          > 
-            {'Record ' + cond1 +' Data'}  
-          </Button>
-          <Button 
-            onClick={() => {
-              saveToCSV(Settings, cond2);
-              recordTwoPopChange();
-            }}
-            primary={status !== generalTranslations.connect}
-            disabled={status === generalTranslations.connect}
-          > 
-            {'Record ' + cond2 + ' Data'}  
-          </Button> 
-        </ButtonGroup>
-       
-
-        <Modal
-          open={recordPop}
-          onClose={recordPopChange}
-          title={"Recording " + cond1 + " Data"}
-        >
-          <Modal.Section>
-           <Card.Section>
-              <P5Wrapper sketch={sketchFlashSlow} />          
-            </Card.Section>
-            <TextContainer>
-              <p>
-                Your data is currently recording, 
-                once complete it will be downloaded as a .csv file 
-                and can be opened with your favorite spreadsheet program. 
-                Close this window once the download completes.
-              </p>
-            </TextContainer>
-          </Modal.Section>
-        </Modal>
-       
-        <Modal
-          open={recordTwoPop}
-          onClose={recordTwoPopChange}
-          title={"Recording " + cond2 + " Data"}
-        >
-          <Modal.Section>
-           <Card.Section>
-              <P5Wrapper sketch={sketchFlashFast} />          
-            </Card.Section>
-            <TextContainer>
-              <p>
-                Your data is currently recording, 
-                once complete it will be downloaded as a .csv file 
-                and can be opened with your favorite spreadsheet program. 
-                Close this window once the download completes.
-              </p>
-            </TextContainer>
-          </Modal.Section>
-        </Modal>        
-      
+        <Card.Section>
+          <P5Wrapper sketch={sketchPredict} 
+            psd={window.psd}
+            freqs={window.freqs}
+            bins={window.bins}
+          />          
+        </Card.Section>
       </Stack>
     </Card>
   )
 }
 
 
-function saveToCSV(Settings, condition) {
-  const numSamplesToSave = 50;
-  console.log('Saving ' + numSamplesToSave + ' samples...');
-  var localObservable$ = null;
-  const dataToSave = [];
-
-  console.log('making ' + Settings.name + ' headers')
-
-  // take one sample from selected observable object for headers
-  localObservable$ = window.multicastPredict$.pipe(
-    take(1)
-  );
-
-  localObservable$.subscribe({ 
-    next(x) { 
-      let freqs = Object.values(x.freqs);
-      dataToSave.push(
-        "Timestamp (ms),",
-        freqs.map(function(f) {return "ch0_" + f + "Hz"}) + ",", 
-        freqs.map(function(f) {return "ch1_" + f + "Hz"}) + ",", 
-        freqs.map(function(f) {return "ch2_" + f + "Hz"}) + ",", 
-        freqs.map(function(f) {return "ch3_" + f + "Hz"}) + ",", 
-        freqs.map(function(f) {return "chAux_" + f + "Hz"}) + ",", 
-        freqs.map(function(f) {return "f_" + f + "Hz"}) + "," , 
-        "info", 
-        "\n"
-      );   
-    }
-  });
-  // put selected observable object into local and start taking samples
-  localObservable$ = window.multicastPredict$.pipe(
-    take(numSamplesToSave)
-  );   
-
-
-  // now with header in place subscribe to each epoch and log it
-  localObservable$.subscribe({
-    next(x) { 
-      dataToSave.push(Date.now() + "," + Object.values(x).join(",") + "\n");
-      // logging is useful for debugging -yup
-      // console.log(x);
-    },
-    error(err) { console.log(err); },
-    complete() { 
-      console.log('Trying to save')
-      var blob = new Blob(
-        dataToSave, 
-        {type: "text/plain;charset=utf-8"}
-      );
-      saveAs(blob, Settings.name + "_" +  condition +  "_Recording_" + Date.now() + ".csv");
-      console.log('Completed');
-    }
-  });
-}
