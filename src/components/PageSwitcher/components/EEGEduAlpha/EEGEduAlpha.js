@@ -1,10 +1,10 @@
 import React from "react";
 import { catchError, multicast } from "rxjs/operators";
-import { Subject } from "rxjs";
 
 import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal } from "@shopify/polaris";
 import { saveAs } from 'file-saver';
 import { take } from "rxjs/operators";
+import { Subject } from "rxjs";
 
 import { channelNames } from "muse-js";
 import { Line } from "react-chartjs-2";
@@ -13,7 +13,9 @@ import { zipSamples } from "muse-js";
 
 import {
   bandpassFilter,
-  epoch
+  epoch,
+  fft,
+  sliceFFT
 } from "@neurosity/pipes";
 
 import { chartStyles, generalOptions } from "../chartOptions";
@@ -21,29 +23,34 @@ import { chartStyles, generalOptions } from "../chartOptions";
 import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 
-import { generateXTics, standardDeviation } from "../../utils/chartUtils";
+import P5Wrapper from 'react-p5-wrapper';
+import sketchFixation from "./sketchFixation"
 
-export function getSettings () {
+export function getSettings() {
   return {
     cutOffLow: 2,
     cutOffHigh: 20,
     nbChannels: 4,
-    interval: 50,
-    srate: 256,
+    interval: 100,
+    bins: 256,
+    sliceFFTLow: 1,
+    sliceFFTHigh: 30,
     duration: 1024,
-    name: 'Raw'
+    srate: 256,
+    name: 'Alpha'
   }
 };
 
+
 export function buildPipe(Settings) {
-  if (window.subscriptionRaw) window.subscriptionRaw.unsubscribe();
+  if (window.subscriptionAlpha) window.subscriptionAlpha.unsubscribe();
 
-  window.pipeRaw$ = null;
-  window.multicastRaw$ = null;
-  window.subscriptionRaw = null;
+  window.pipeAlpha$ = null;
+  window.multicastAlpha$ = null;
+  window.subscriptionAlpha = null;
 
-  // Build Pipe
-  window.pipeRaw$ = zipSamples(window.source.eegReadings$).pipe(
+  // Build Pipe 
+  window.pipeAlpha$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
       nbChannels: Settings.nbChannels }),
@@ -52,11 +59,14 @@ export function buildPipe(Settings) {
       interval: Settings.interval,
       samplingRate: Settings.srate
     }),
+    fft({ bins: Settings.bins }),
+    sliceFFT([Settings.sliceFFTLow, Settings.sliceFFTHigh]),
     catchError(err => {
       console.log(err);
     })
   );
-  window.multicastRaw$ = window.pipeRaw$.pipe(
+
+  window.multicastAlpha$ = window.pipeAlpha$.pipe(
     multicast(() => new Subject())
   );
 }
@@ -64,28 +74,27 @@ export function buildPipe(Settings) {
 export function setup(setData, Settings) {
   console.log("Subscribing to " + Settings.name);
 
-  if (window.multicastRaw$) {
-    window.subscriptionRaw = window.multicastRaw$.subscribe(data => {
-      setData(rawData => {
-        Object.values(rawData).forEach((channel, index) => {
+  if (window.multicastAlpha$) {
+    window.subscriptionAlpha = window.multicastAlpha$.subscribe(data => {
+      setData(alphaData => {
+        Object.values(alphaData).forEach((channel, index) => {
           if (index < 4) {
-            channel.datasets[0].data = data.data[index];
-            channel.xLabels = generateXTics(Settings.srate, Settings.duration);
-            channel.datasets[0].qual = standardDeviation(data.data[index])          
+            channel.datasets[0].data = data.psd[index];
+            channel.xLabels = data.freqs;
           }
         });
 
         return {
-          ch0: rawData.ch0,
-          ch1: rawData.ch1,
-          ch2: rawData.ch2,
-          ch3: rawData.ch3
+          ch0: alphaData.ch0,
+          ch1: alphaData.ch1,
+          ch2: alphaData.ch2,
+          ch3: alphaData.ch3
         };
       });
     });
 
-    window.multicastRaw$.connect();
-    console.log("Subscribed to Raw");
+    window.multicastAlpha$.connect();
+    console.log("Subscribed to " + Settings.name);
   }
 }
 
@@ -110,35 +119,32 @@ export function renderModule(channels) {
                 labelString: specificTranslations.ylabel
               },
               ticks: {
-                max: 300,
-                min: -300
+                max: 25,
+                min: 0
               }
             }
           ]
         },
         elements: {
-          line: {
-            borderColor: 'rgba(' + channel.datasets[0].qual*10 + ', 128, 128)',
-            fill: false
-          },
           point: {
-            radius: 0
+            radius: 3
           }
-        },
-        animation: {
-          duration: 0
         },
         title: {
           ...generalOptions.title,
-          text: generalTranslations.channel + channelNames[index] + ' --- SD: ' + channel.datasets[0].qual 
+          text: generalTranslations.channel + channelNames[index]
         }
       };
 
-      return (
-        <Card.Section key={"Card_" + index}>
-          <Line key={"Line_" + index} data={channel} options={options} />
-        </Card.Section>
-      );
+      if (index === 0) {
+        return (
+          <Card.Section key={"Card_" + index}>
+            <Line key={"Line_" + index} data={channel} options={options} />
+          </Card.Section>
+        );
+      } else {
+        return null
+      }
     });
   }
 
@@ -157,14 +163,14 @@ export function renderModule(channels) {
     </Card>
   );
 }
-  
+
 export function renderSliders(setData, setSettings, status, Settings) {
 
   function resetPipeSetup(value) {
     buildPipe(Settings);
     setup(setData, Settings)
   }
-  
+
   function handleIntervalRangeSliderChange(value) {
     setSettings(prevState => ({...prevState, interval: value}));
     resetPipeSetup();
@@ -178,12 +184,22 @@ export function renderSliders(setData, setSettings, status, Settings) {
   function handleCutoffHighRangeSliderChange(value) {
     setSettings(prevState => ({...prevState, cutOffHigh: value}));
     resetPipeSetup();
- }
+  }
+
+  function handleSliceFFTLowRangeSliderChange(value) {
+    setSettings(prevState => ({...prevState, sliceFFTLow: value}));
+    resetPipeSetup();
+  }
+
+  function handleSliceFFTHighRangeSliderChange(value) {
+    setSettings(prevState => ({...prevState, sliceFFTHigh: value}));
+    resetPipeSetup();
+  }
 
   function handleDurationRangeSliderChange(value) {
     setSettings(prevState => ({...prevState, duration: value}));
     resetPipeSetup();
- }
+  }
 
   return (
     <Card title={Settings.name + ' Settings'} sectioned>
@@ -193,10 +209,10 @@ export function renderSliders(setData, setSettings, status, Settings) {
         label={'Epoch duration (Sampling Points): ' + Settings.duration} 
         value={Settings.duration} 
         onChange={handleDurationRangeSliderChange} 
-      />          
+      />
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        min={10} step={1} max={Settings.duration}
+        min={10} step={5} max={Settings.duration}
         label={'Sampling points between epochs onsets: ' + Settings.interval} 
         value={Settings.interval} 
         onChange={handleIntervalRangeSliderChange} 
@@ -215,42 +231,60 @@ export function renderSliders(setData, setSettings, status, Settings) {
         value={Settings.cutOffHigh} 
         onChange={handleCutoffHighRangeSliderChange} 
       />
+      <RangeSlider 
+        disabled={status === generalTranslations.connect} 
+        min={1} max={Settings.sliceFFTHigh - 1}
+        label={'Slice FFT Lower limit: ' + Settings.sliceFFTLow + ' Hz'} 
+        value={Settings.sliceFFTLow} 
+        onChange={handleSliceFFTLowRangeSliderChange} 
+      />
+      <RangeSlider 
+        disabled={status === generalTranslations.connect} 
+        min={Settings.sliceFFTLow + 1}
+        label={'Slice FFT Upper limit: ' + Settings.sliceFFTHigh + ' Hz'} 
+        value={Settings.sliceFFTHigh} 
+        onChange={handleSliceFFTHighRangeSliderChange} 
+      />
     </Card>
   )
 }
 
-export function renderRecord(recordPopChange, recordPop, status, Settings) {
-  return (
-    <Card title={'Record ' + Settings.name + ' Data'} sectioned>
-      <Card.Section>
-        <p>
-          {"When you are recording raw data it is recommended you set the "}
-          {"number of sampling points between epochs onsets to be equal to the epoch duration. "}
-          {"This will ensure that consecutive rows of your output file are not overlapping in time."}
-          {"It will make the live plots appear more choppy."}
-        </p>        
-      </Card.Section>
+export function renderRecord(recordPopChange, recordPop, status, Settings, recordTwoPopChange, recordTwoPop) {
+  return(
+    <Card title={'Record ' + Settings.name +' Data'} sectioned>
       <Stack>
         <ButtonGroup>
           <Button 
             onClick={() => {
-              saveToCSV(Settings);
+              saveToCSV(Settings, "Closed");
               recordPopChange();
             }}
             primary={status !== generalTranslations.connect}
             disabled={status === generalTranslations.connect}
           > 
-            {'Save to CSV'}  
+            {'Record Eyes Closed Data'}  
           </Button>
+          <Button 
+            onClick={() => {
+              saveToCSV(Settings, "Open");
+              recordTwoPopChange();
+            }}
+            primary={status !== generalTranslations.connect}
+            disabled={status === generalTranslations.connect}
+          > 
+            {'Record Eyes Open Data'}  
+          </Button> 
         </ButtonGroup>
         <Modal
           open={recordPop}
           onClose={recordPopChange}
-          title="Recording Data"
+          title="Recording Eye Closed Data"
         >
           <Modal.Section>
+           <Card.Section>
+              <P5Wrapper sketch={sketchFixation} />          
+            </Card.Section>
             <TextContainer>
-
               <p>
                 Your data is currently recording, 
                 once complete it will be downloaded as a .csv file 
@@ -260,14 +294,32 @@ export function renderRecord(recordPopChange, recordPop, status, Settings) {
             </TextContainer>
           </Modal.Section>
         </Modal>
+        <Modal
+          open={recordTwoPop}
+          onClose={recordTwoPopChange}
+          title="Recording Eyes Open Data"
+        >
+          <Modal.Section>
+           <Card.Section>
+              <P5Wrapper sketch={sketchFixation} />          
+            </Card.Section>
+            <TextContainer>
+              <p>
+                Your data is currently recording, 
+                once complete it will be downloaded as a .csv file 
+                and can be opened with your favorite spreadsheet program. 
+                Close this window once the download completes.
+              </p>
+            </TextContainer>
+          </Modal.Section>
+        </Modal>        
       </Stack>
     </Card>
   )
 }
 
 
-
-function saveToCSV(Settings) {
+function saveToCSV(Settings, condition) {
   const numSamplesToSave = 50;
   console.log('Saving ' + numSamplesToSave + ' samples...');
   var localObservable$ = null;
@@ -275,30 +327,32 @@ function saveToCSV(Settings) {
 
   console.log('making ' + Settings.name + ' headers')
 
-  // for each module subscribe to multicast and make header
   // take one sample from selected observable object for headers
-  localObservable$ = window.multicastRaw$.pipe(
-  take(1)
+  localObservable$ = window.multicastAlpha$.pipe(
+    take(1)
   );
-  //take one sample to get header info
+
   localObservable$.subscribe({ 
-  next(x) { 
-    dataToSave.push(
-      "Timestamp (ms),",
-      generateXTics(x.info.samplingRate,x.data[0].length,false).map(function(f) {return "ch0_" + f + "ms"}) + ",", 
-      generateXTics(x.info.samplingRate,x.data[0].length,false).map(function(f) {return "ch1_" + f + "ms"}) + ",", 
-      generateXTics(x.info.samplingRate,x.data[0].length,false).map(function(f) {return "ch2_" + f + "ms"}) + ",", 
-      generateXTics(x.info.samplingRate,x.data[0].length,false).map(function(f) {return "ch3_" + f + "ms"}) + ",", 
-      generateXTics(x.info.samplingRate,x.data[0].length,false).map(function(f) {return "chAux_" + f + "ms"}) + ",", 
-      "info", 
-      "\n"
-    );   
-  }
+    next(x) { 
+      let freqs = Object.values(x.freqs);
+      dataToSave.push(
+        "Timestamp (ms),",
+        freqs.map(function(f) {return "ch0_" + f + "Hz"}) + ",", 
+        freqs.map(function(f) {return "ch1_" + f + "Hz"}) + ",", 
+        freqs.map(function(f) {return "ch2_" + f + "Hz"}) + ",", 
+        freqs.map(function(f) {return "ch3_" + f + "Hz"}) + ",", 
+        freqs.map(function(f) {return "chAux_" + f + "Hz"}) + ",", 
+        freqs.map(function(f) {return "f_" + f + "Hz"}) + "," , 
+        "info", 
+        "\n"
+      );   
+    }
   });
   // put selected observable object into local and start taking samples
-  localObservable$ = window.multicastRaw$.pipe(
-  take(numSamplesToSave)
-  );
+  localObservable$ = window.multicastAlpha$.pipe(
+    take(numSamplesToSave)
+  );   
+
 
   // now with header in place subscribe to each epoch and log it
   localObservable$.subscribe({
@@ -314,7 +368,7 @@ function saveToCSV(Settings) {
         dataToSave, 
         {type: "text/plain;charset=utf-8"}
       );
-      saveAs(blob, Settings.name + "_Recording_" + Date.now() + ".csv");
+      saveAs(blob, Settings.name + "_" +  condition +  "_Recording_" + Date.now() + ".csv");
       console.log('Completed');
     }
   });
