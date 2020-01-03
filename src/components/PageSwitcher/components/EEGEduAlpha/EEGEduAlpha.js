@@ -1,4 +1,4 @@
- import React from "react";
+import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 
 import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal } from "@shopify/polaris";
@@ -22,6 +22,9 @@ import { chartStyles, generalOptions } from "../chartOptions";
 
 import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
+
+import P5Wrapper from 'react-p5-wrapper';
+import sketchFixation from "./sketchFixation"
 
 export function getSettings() {
   return {
@@ -278,6 +281,9 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, recor
           title="Recording Eye Closed Data"
         >
           <Modal.Section>
+           <Card.Section>
+              <P5Wrapper sketch={sketchFixation} />          
+            </Card.Section>
             <TextContainer>
               <p>
                 Your data is currently recording, 
@@ -294,6 +300,9 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, recor
           title="Recording Eyes Open Data"
         >
           <Modal.Section>
+           <Card.Section>
+              <P5Wrapper sketch={sketchFixation} />          
+            </Card.Section>
             <TextContainer>
               <p>
                 Your data is currently recording, 
