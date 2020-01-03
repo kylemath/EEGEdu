@@ -1,12 +1,12 @@
 {
-  "title": "Steady-State Visual Evoked Potential (SSVEP) Experiment",
+  "title": "Predict brain states with a trained classifier",
   "description": [
-    "In the next demo we run our second experiment, comparing the spectra in another two conditions. ",
-    "When we see or hear rhythms in our environemnts (music, flashing lights, etc.), our brain picks up on those rhythms. ",
-    "The brain starts to pick up on the rhythms and begins to oscillate at the same frequency. ", 
-    "This is called a steady-state response, or sometimes entrainement, and depends on cognitive factors like attention as well. ",
-    "Here we will compare the spectra in two conditions of different rhythmic visual stimulation.",
-    "WARNING: The following experiment utilizes flashing stimuli"
+    "In the next module we will train and test classifiers of brain data like we have been looking at so far. ",
+    "We will collect data in two different conditions, with the goal of inducing two different brain states. ",
+    "We will then train a classifier based on the pattern of activity over time, frequency, and space on the head. ",
+    "We will then use the classifier to predict on real time which of the two brain states are currently happening. ",
+    "That is, we will attempt to predict if peoples brain activity more closely resembles condition A or conditoin B ",
+    "Of the training data. "
   ],
   "xlabel": "Frequency (Hz)",
   "ylabel": "Power (\u03BCV\u00B2)"

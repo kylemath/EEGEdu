@@ -1,4 +1,4 @@
-import React from "react";
+ import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 
 import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal } from "@shopify/polaris";
@@ -24,8 +24,7 @@ import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 
 import P5Wrapper from 'react-p5-wrapper';
-import sketchFlashSlow from './sketchFlashSlow';
-import sketchFlashFast from './sketchFlashFast';
+import sketchPredict from './sketchPredict';
 
 export function getSettings() {
   return {
@@ -38,19 +37,19 @@ export function getSettings() {
     sliceFFTHigh: 30,
     duration: 1024,
     srate: 256,
-    name: 'Ssvep'
+    name: 'Predict'
   }
 };
 
 export function buildPipe(Settings) {
-  if (window.subscriptionSsvep) window.subscriptionSsvep.unsubscribe();
+  if (window.subscriptionPredict) window.subscriptionPredict.unsubscribe();
 
-  window.pipeSsvep$ = null;
-  window.multicastSsvep$ = null;
-  window.subscriptionSsvep = null;
+  window.pipePredict$ = null;
+  window.multicastPredict$ = null;
+  window.subscriptionPredict = null;
 
   // Build Pipe 
-  window.pipeSsvep$ = zipSamples(window.source.eegReadings$).pipe(
+  window.pipePredict$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
       nbChannels: Settings.nbChannels }),
@@ -66,7 +65,7 @@ export function buildPipe(Settings) {
     })
   );
 
-  window.multicastSsvep$ = window.pipeSsvep$.pipe(
+  window.multicastPredict$ = window.pipePredict$.pipe(
     multicast(() => new Subject())
   );
 }
@@ -74,10 +73,10 @@ export function buildPipe(Settings) {
 export function setup(setData, Settings) {
   console.log("Subscribing to " + Settings.name);
 
-  if (window.multicastSsvep$) {
-    window.subscriptionSsvep = window.multicastSsvep$.subscribe(data => {
-      setData(ssvepData => {
-        Object.values(ssvepData).forEach((channel, index) => {
+  if (window.multicastPredict$) {
+    window.subscriptionPredict = window.multicastPredict$.subscribe(data => {
+      setData(predictData => {
+        Object.values(predictData).forEach((channel, index) => {
           if (index < 4) {
             channel.datasets[0].data = data.psd[index];
             channel.xLabels = data.freqs;
@@ -85,15 +84,15 @@ export function setup(setData, Settings) {
         });
 
         return {
-          ch0: ssvepData.ch0,
-          ch1: ssvepData.ch1,
-          ch2: ssvepData.ch2,
-          ch3: ssvepData.ch3
+          ch0: predictData.ch0,
+          ch1: predictData.ch1,
+          ch2: predictData.ch2,
+          ch3: predictData.ch3
         };
       });
     });
 
-    window.multicastSsvep$.connect();
+    window.multicastPredict$.connect();
     console.log("Subscribed to " + Settings.name);
   }
 }
@@ -336,7 +335,7 @@ function saveToCSV(Settings, condition) {
   console.log('making ' + Settings.name + ' headers')
 
   // take one sample from selected observable object for headers
-  localObservable$ = window.multicastSsvep$.pipe(
+  localObservable$ = window.multicastPredict$.pipe(
     take(1)
   );
 
@@ -357,7 +356,7 @@ function saveToCSV(Settings, condition) {
     }
   });
   // put selected observable object into local and start taking samples
-  localObservable$ = window.multicastSsvep$.pipe(
+  localObservable$ = window.multicastPredict$.pipe(
     take(numSamplesToSave)
   );   
 
