@@ -7,6 +7,7 @@
     "bands": "Frequency Bands",
     "animate": "Brain Controlled Animation",
     "spectro": "Spectrogram (spectra over time)",
-    "alpha": "Eyes open vs. Eyes closed Experiment"
+    "alpha": "Eyes open vs. Eyes closed Experiment",
+    "ssvep": "Steady-State Visual Evoked Potential (SSVEP) Experiment"
   }
 }
