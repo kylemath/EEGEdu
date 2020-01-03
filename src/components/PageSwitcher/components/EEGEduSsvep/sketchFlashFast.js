@@ -16,8 +16,6 @@ export default function sketchFlash (p) {
 
   p.draw = function () {
     p.background(255);
-    p.fill(255, 255, 255);
-    p.text("+", p.width/2, p.height/2);
     x = x+1;
     if (x % 5 === 0) {
       p.fill(0, 0, 0);  
@@ -26,5 +24,7 @@ export default function sketchFlash (p) {
     }
     p.noStroke();
     p.ellipse(p.width/2, p.height/2, 500);
+    p.fill(255,0,0);
+    p.text("+", p.width/2, p.height/2);
   }
 };
