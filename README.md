@@ -67,6 +67,8 @@ serve -s build
 
 Currently this is not working and we are deploying locally with firebase
 
+
+
 ```sh
 firebase deploy
 ```
@@ -74,15 +76,28 @@ firebase deploy
 after settings up one time with 
 
 ```sh
+firebase login
+```
+browser opens and login to accoun
+then
+
+```sh
 firebase init
 ```
+
 options: Hosting Sites only
 public directory: build
 single-page app: No
 Overwrite - No
 Overwrite - No
 
+after first installing with 
 
+```sh
+sudo brew install firebase
+sudo yarn global add firebase-tools
+sudo yarn global add firebase
+```
 
 # Contributing
 The guide for contributors can be found [here](https://github.com/kylemath/EEGEdu/blob/master/CONTRIBUTING.md). It covers everything you need to know to start contributing to EEGEdu.
