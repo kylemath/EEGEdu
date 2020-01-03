@@ -77,6 +77,36 @@ yarn run build
 serve -s build
 ```
 
+## Local Testing of Changes
+
+1. Install any new packages `yarn install`
+1. Start the *Local Development Environment* `yarn start dev`
+1. Look for errors in terminal log
+1. Open's browser to http://localhost:3000
+1. Open Javascript console
+1. Look for errors in console
+1. Connect Mock data stream by clicking Connect button
+1. Run through the `checkFunction` below with Mock data. 
+1. Disconnect Mock data stream
+1. Turn on Interaxon Muse headband
+1. Connect Muse data stream
+1. Repeat the `checkFunction` below with Muse data. 
+
+```sh
+# Pseudocode for checking EEGEdu functionality
+checkFunction = {
+    view raw data 
+    change sliders 
+    make sure data changes and no errors
+    click spectra
+    move sliders
+    make sure changes
+    click bands
+    move sliders
+    make sure changes
+}
+```
+
 ## Deployment
 
 [EEGEdu](https://eegedu.com) is running on [Firebase](https://firebase.google.com/) and deployment happens automagically using GitHub post-commit hooks, or [Actions](https://github.com/kylemath/EEGEdu/actions), as they are commonly called. You can see how the application is build and deployed by [inspecting the workflow](https://github.com/kylemath/EEGEdu/blob/master/.github/workflows/workflow.yml). 
