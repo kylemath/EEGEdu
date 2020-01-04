@@ -1,13 +1,15 @@
 {
   "title": "Choose your Module",
   "types": {
-  	"intro": "Introduction",
-    "raw": "Raw and Filtered Data",
-    "spectra": "Frequency Spectra",
-    "bands": "Frequency Bands",
-    "animate": "Brain Controlled Animation",
-    "spectro": "Spectrogram (spectra over time)",
-    "alpha": "Eyes open vs. Eyes closed Experiment",
-    "ssvep": "Steady-State Visual Evoked Potential (SSVEP) Experiment"
+  	"intro": "1. Introduction",
+    "heartRaw": "2. Electrocardiogram (Heart beats)",
+    "heartSpectra": "3. Heart Rate (Beats per minute)", 
+    "raw": "4. Raw and Filtered Data",
+    "spectra": "5. Frequency Spectra",
+    "bands": "6. Frequency Bands",
+    "animate": "7. Brain Controlled Animation",
+    "spectro": "8. Spectrogram (spectra over time)",
+    "alpha": "9. Eyes open vs. Eyes closed Experiment",
+    "ssvep": "10. Steady-State Visual Evoked Potential (SSVEP) Experiment"
   }
 }

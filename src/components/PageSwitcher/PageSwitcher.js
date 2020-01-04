@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+ import React, { useState, useCallback } from "react";
 import { MuseClient } from "muse-js";
 import { Select, Card, Stack, Button, ButtonGroup } from "@shopify/polaris";
 
@@ -8,6 +8,8 @@ import * as generalTranslations from "./components/translations/en";
 import { emptyChannelData } from "./components/chartOptions";
 
 import * as funIntro from "./components/EEGEduIntro/EEGEduIntro"
+import * as funHeartRaw from "./components/EEGEduHeartRaw/EEGEduHeartRaw"
+import * as funHeartSpectra from "./components/EEGEduHeartSpectra/EEGEduHeartSpectra"
 import * as funRaw from "./components/EEGEduRaw/EEGEduRaw";
 import * as funSpectra from "./components/EEGEduSpectra/EEGEduSpectra";
 import * as funBands from "./components/EEGEduBands/EEGEduBands";
@@ -17,6 +19,8 @@ import * as funAlpha from "./components/EEGEduAlpha/EEGEduAlpha"
 import * as funSsvep from "./components/EEGEduSsvep/EEGEduSsvep"
 
 const intro = translations.types.intro;
+const heartRaw = translations.types.heartRaw;
+const heartSpectra = translations.types.heartSpectra;
 const raw = translations.types.raw;
 const spectra = translations.types.spectra;
 const bands = translations.types.bands;
@@ -29,6 +33,8 @@ export function PageSwitcher() {
 
   // data pulled out of multicast$
   const [introData, setIntroData] = useState(emptyChannelData)
+  const [heartRawData, setHeartRawData] = useState(emptyChannelData);
+  const [heartSpectraData, setHeartSpectraData] = useState(emptyChannelData);
   const [rawData, setRawData] = useState(emptyChannelData);
   const [spectraData, setSpectraData] = useState(emptyChannelData); 
   const [bandsData, setBandsData] = useState(emptyChannelData);
@@ -39,6 +45,8 @@ export function PageSwitcher() {
 
   // pipe settings
   const [introSettings] = useState(funIntro.getSettings);
+  const [heartRawSettings] = useState(funHeartRaw.getSettings);
+  const [heartSpectraSettings] = useState(funHeartSpectra.getSettings);
   const [rawSettings, setRawSettings] = useState(funRaw.getSettings); 
   const [spectraSettings, setSpectraSettings] = useState(funSpectra.getSettings); 
   const [bandsSettings, setBandsSettings] = useState(funBands.getSettings);
@@ -58,6 +66,8 @@ export function PageSwitcher() {
     console.log("Switching to: " + value);
 
     if (window.subscriptionIntro) window.subscriptionIntro.unsubscribe();
+    if (window.subscriptionHeartRaw) window.subscriptionHeartRaw.unsubscribe();
+    if (window.subscriptionHeartSpectra) window.subscriptionHeartSpectra.unsubscribe();
     if (window.subscriptionRaw) window.subscriptionRaw.unsubscribe();
     if (window.subscriptionSpectra) window.subscriptionSpectra.unsubscribe();
     if (window.subscriptionBands) window.subscriptionBands.unsubscribe();
@@ -80,6 +90,8 @@ export function PageSwitcher() {
 
   const chartTypes = [
     { label: intro, value: intro },
+    { label: heartRaw, value: heartRaw },
+    { label: heartSpectra, value: heartSpectra },
     { label: raw, value: raw },
     { label: spectra, value: spectra }, 
     { label: bands, value: bands },
@@ -91,6 +103,8 @@ export function PageSwitcher() {
 
   function buildPipes(value) {
     funIntro.buildPipe(introSettings);
+    funHeartRaw.buildPipe(heartRawSettings);
+    funHeartSpectra.buildPipe(heartSpectraSettings);
     funRaw.buildPipe(rawSettings);
     funSpectra.buildPipe(spectraSettings);
     funBands.buildPipe(bandsSettings);
@@ -104,6 +118,12 @@ export function PageSwitcher() {
     switch (value) {
       case intro:
         funIntro.setup(setIntroData, introSettings);
+        break;
+      case heartRaw:
+        funHeartRaw.setup(setHeartRawData, heartRawSettings);
+        break;
+      case heartSpectra:
+        funHeartSpectra.setup(setHeartSpectraData, heartSpectraSettings);
         break;
       case raw:
         funRaw.setup(setRawData, rawSettings);
@@ -173,6 +193,10 @@ export function PageSwitcher() {
     switch(selected) {
       case intro:
         return null
+      case heartRaw:
+        return null
+      case heartSpectra:
+        return null
       case raw:
         return (
           funRaw.renderSliders(setRawData, setRawSettings, status, rawSettings)
@@ -209,6 +233,10 @@ export function PageSwitcher() {
     switch (selected) {
       case intro:
         return <funIntro.renderModule data={introData} />;
+      case heartRaw:
+        return <funHeartRaw.renderModule data={heartRawData} />;
+      case heartSpectra:
+        return <funHeartSpectra.renderModule data={heartSpectraData} />;
       case raw:
         return <funRaw.renderModule data={rawData} />;
       case spectra:
@@ -232,8 +260,14 @@ export function PageSwitcher() {
     switch (selected) {
       case intro: 
         return null
+      case heartRaw:
+        return null
+      case heartSpectra:
+        return (
+          funHeartSpectra.renderRecord(recordPopChange, recordPop, status, heartSpectraSettings)
+        )
       case raw: 
-        return(
+        return (
           funRaw.renderRecord(recordPopChange, recordPop, status, rawSettings)
         )    
       case spectra:
