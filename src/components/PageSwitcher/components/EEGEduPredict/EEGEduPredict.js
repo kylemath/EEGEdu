@@ -36,11 +36,11 @@ export function getSettings() {
     cutOffLow: 2,
     cutOffHigh: 20,
     nbChannels: 4,
-    interval: 100,
+    interval: 4096,
     bins: 256,
     sliceFFTLow: 1,
     sliceFFTHigh: 30,
-    duration: 1024,
+    duration: 4096,
     srate: 256,
     name: 'Predict'
   }
