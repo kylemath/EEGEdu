@@ -1,11 +1,9 @@
 # EEGEdu
 
-<center>
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://opensource.org/licenses/MIT)
 <a href="https://github.com/kylemath/EEGEdu/blob/master/CONTRIBUTING.md">
-<img align="center" src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome!" />
+<img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome!" />
 </a>
-</center>
 
 `EEGEdu` is an interactive educational website to learn about working with electroencephalogram (EEG) data. It is a teaching tool that allows for students to interact with their own brain waves. 
 
