@@ -1,7 +1,7 @@
 import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 
-import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup } from "@shopify/polaris";
+import { TextContainer, Card, Stack, Button, ButtonGroup } from "@shopify/polaris";
 import { Subject } from "rxjs";
 
 import { zipSamples } from "muse-js";
@@ -110,11 +110,6 @@ export function renderModule(channels) {
           }
         }   
         return null 
-        // (
-        //   <Card.Section key={"Card_" + index}>
-        //     <Line key={"Line_" + index} data={channel} options={options} />
-        //   </Card.Section>
-        // );
       } else {
         return null
       }
@@ -138,88 +133,7 @@ export function renderModule(channels) {
 }
 
 export function renderSliders(setData, setSettings, status, Settings) {
-
-  function resetPipeSetup(value) {
-    buildPipe(Settings);
-    setup(setData, Settings)
-  }
-
-  function handleIntervalRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, interval: value}));
-    resetPipeSetup();
-  }
-
-  function handleCutoffLowRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, cutOffLow: value}));
-    resetPipeSetup();
-  }
-
-  function handleCutoffHighRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, cutOffHigh: value}));
-    resetPipeSetup();
-  }
-
-  function handleSliceFFTLowRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, sliceFFTLow: value}));
-    resetPipeSetup();
-  }
-
-  function handleSliceFFTHighRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, sliceFFTHigh: value}));
-    resetPipeSetup();
-  }
-
-  function handleDurationRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, duration: value}));
-    resetPipeSetup();
-  }
-
-  return (
-    <Card title={Settings.name + ' Settings'} sectioned>
-      <RangeSlider 
-        disabled={status === generalTranslations.connect} 
-        min={128} step={128} max={4096}
-        label={'Epoch duration (Sampling Points): ' + Settings.duration} 
-        value={Settings.duration} 
-        onChange={handleDurationRangeSliderChange} 
-      />
-      <RangeSlider 
-        disabled={status === generalTranslations.connect} 
-        min={10} step={5} max={Settings.duration}
-        label={'Sampling points between epochs onsets: ' + Settings.interval} 
-        value={Settings.interval} 
-        onChange={handleIntervalRangeSliderChange} 
-      />
-      <RangeSlider 
-        disabled={status === generalTranslations.connect} 
-        min={.01} step={.5} max={Settings.cutOffHigh - .5}
-        label={'Cutoff Frequency Low: ' + Settings.cutOffLow + ' Hz'} 
-        value={Settings.cutOffLow} 
-        onChange={handleCutoffLowRangeSliderChange} 
-      />
-      <RangeSlider 
-        disabled={status === generalTranslations.connect} 
-        min={Settings.cutOffLow + .5} step={.5} max={Settings.srate/2}
-        label={'Cutoff Frequency High: ' + Settings.cutOffHigh + ' Hz'} 
-        value={Settings.cutOffHigh} 
-        onChange={handleCutoffHighRangeSliderChange} 
-      />
-      <RangeSlider 
-        disabled={status === generalTranslations.connect} 
-        min={1} max={Settings.sliceFFTHigh - 1}
-        label={'Slice FFT Lower limit: ' + Settings.sliceFFTLow + ' Hz'} 
-        value={Settings.sliceFFTLow} 
-        onChange={handleSliceFFTLowRangeSliderChange} 
-      />
-      <RangeSlider 
-        disabled={status === generalTranslations.connect} 
-        min={Settings.sliceFFTLow + 1}
-        label={'Slice FFT Upper limit: ' + Settings.sliceFFTHigh + ' Hz'} 
-        value={Settings.sliceFFTHigh} 
-        onChange={handleSliceFFTHighRangeSliderChange} 
-      />
-    </Card>
-  )
+  return null
 }
 
 // Classification algorithm (using renderRecord function)
@@ -227,21 +141,33 @@ window.exampleCounts = {A: 0, B: 0};
 window.thisLabel = 'A';
 window.confidences = {A: 1, B: 0}; 
 
+window.isPredicting = false;
+window.enoughLabels = false;
+
 export function renderRecord(status) {
   const condA = "A";
   const condB = "B";
   
+  // Adds example from current incoming psd 
   function addExample (label) {
     if (window.psd) {
       knnClassifier.addExample(window.psd, label);
       window.exampleCounts[label]++;
+
+      const numLabels = knnClassifier.getNumLabels();
+      if (numLabels === 2) {
+        window.enoughLabels = true;
+      }
     }
   }
 
+  // Classifies current incoming psd and outputs results 
   function classify () {
+    window.isPredicting = true;
     knnClassifier.classify(window.psd, gotResults)
   }
 
+  // callback from classify to assign results to window and recurse
   function gotResults(err, result) {
     if (result.confidencesByLabel) {
       window.confidences = result.confidencesByLabel;
@@ -252,6 +178,7 @@ export function renderRecord(status) {
     classify(); //recursive so it continues to run 
   }
 
+  //buttons for training at prediction
   return(
     <React.Fragment>
       <Card title={'Record Training Data'} sectioned>
@@ -259,22 +186,17 @@ export function renderRecord(status) {
           <ButtonGroup>
             <Button 
               onClick={() => {
-                console.log('Adding example to Condition A: ' + window.exampleCounts['A']);
-
                 addExample('A');
               }}
-              primary={status !== generalTranslations.connect}
-              disabled={status === generalTranslations.connect}
+              disabled={window.isPredicting || status === generalTranslations.connect}
             > 
               {'Record ' + condA +' Data - Count: ' + window.exampleCounts['A']}  
             </Button>
             <Button 
               onClick={() => {
-                console.log('Adding example to Condition B: ' + window.exampleCounts['B']);
                 addExample('B');
               }}
-              primary={status !== generalTranslations.connect}
-              disabled={status === generalTranslations.connect}
+              disabled={window.isPredicting || status === generalTranslations.connect}
             > 
               {'Record ' + condB + ' Data - Count: ' + window.exampleCounts['B']}  
             </Button> 
@@ -290,8 +212,8 @@ export function renderRecord(status) {
                 console.log('Attempting to classify state')
                 classify();
               }}
-              primary={status !== generalTranslations.connect}
-              disabled={status === generalTranslations.connect}
+              disabled={!window.enoughLabels || status === generalTranslations.connect}
+              primary={true}
             > 
               {'Predict State: ' + window.thisLabel + ', Confidence: ' + window.confidences[window.thisLabel].toFixed(2)}  
             </Button>
