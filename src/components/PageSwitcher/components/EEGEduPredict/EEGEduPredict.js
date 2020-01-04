@@ -1,4 +1,4 @@
- import React from "react";
+import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 
 import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal } from "@shopify/polaris";
@@ -25,6 +25,11 @@ import * as specificTranslations from "./translations/en";
 
 import P5Wrapper from 'react-p5-wrapper';
 import sketchPredict from './sketchPredict';
+
+import ml5 from 'ml5'
+
+let knnClassifier = ml5.KNNClassifier();
+
 
 export function getSettings() {
   return {
@@ -100,55 +105,57 @@ export function setup(setData, Settings) {
 export function renderModule(channels) {
   function renderCharts() {
     return Object.values(channels.data).map((channel, index) => {
-      if (channel.datasets[0].data) {
-        window.psd = channel.datasets[0].data;
-        window.freqs = channel.xLabels;
-        if (channel.xLabels) {
-          window.bins = channel.xLabels.length;
-        }
-      }   
-
-      const options = {
-        ...generalOptions,
-        scales: {
-          xAxes: [
-            {
-              scaleLabel: {
-                ...generalOptions.scales.xAxes[0].scaleLabel,
-                labelString: specificTranslations.xlabel
-              }
-            }
-          ],
-          yAxes: [
-            {
-              scaleLabel: {
-                ...generalOptions.scales.yAxes[0].scaleLabel,
-                labelString: specificTranslations.ylabel
-              },
-              ticks: {
-                max: 25,
-                min: 0
-              }
-            }
-          ]
-        },
-        elements: {
-          point: {
-            radius: 3
-          }
-        },
-        title: {
-          ...generalOptions.title,
-          text: generalTranslations.channel + channelNames[index]
-        }
-      };
-
       if (index === 0) {
-        return (
-          <Card.Section key={"Card_" + index}>
-            <Line key={"Line_" + index} data={channel} options={options} />
-          </Card.Section>
-        );
+
+        if (channel.datasets[0].data) {
+          window.psd = channel.datasets[0].data;
+          window.freqs = channel.xLabels;
+          if (channel.xLabels) {
+            window.bins = channel.xLabels.length;
+          }
+        }   
+
+        const options = {
+          ...generalOptions,
+          scales: {
+            xAxes: [
+              {
+                scaleLabel: {
+                  ...generalOptions.scales.xAxes[0].scaleLabel,
+                  labelString: specificTranslations.xlabel
+                }
+              }
+            ],
+            yAxes: [
+              {
+                scaleLabel: {
+                  ...generalOptions.scales.yAxes[0].scaleLabel,
+                  labelString: specificTranslations.ylabel
+                },
+                ticks: {
+                  max: 25,
+                  min: 0
+                }
+              }
+            ]
+          },
+          elements: {
+            point: {
+              radius: 3
+            }
+          },
+          title: {
+            ...generalOptions.title,
+            text: generalTranslations.channel + channelNames[index]
+          }
+        };
+
+        return null 
+        // (
+        //   <Card.Section key={"Card_" + index}>
+        //     <Line key={"Line_" + index} data={channel} options={options} />
+        //   </Card.Section>
+        // );
       } else {
         return null
       }
@@ -256,21 +263,81 @@ export function renderSliders(setData, setSettings, status, Settings) {
   )
 }
 
+
+window.exampleCounts = {A: 0, B: 0}; 
+
 export function renderRecord(recordPopChange, recordPop, status, Settings, recordTwoPopChange, recordTwoPop) {
+  const condA = "A";
+  const condB = "B";
+
   
+  function addExample (label) {
+    knnClassifier.addExample(window.psd, label);
+    window.exampleCounts[label]++;
+  }
+
   return(
-    <Card title={'Record ' + Settings.name +' Data'} sectioned>
-      <Stack>
-        <Card.Section>
-          <P5Wrapper sketch={sketchPredict} 
-            psd={window.psd}
-            freqs={window.freqs}
-            bins={window.bins}
-          />          
-        </Card.Section>
-      </Stack>
-    </Card>
+    <React.Fragment>
+      <Card title={'Record Training Data'} sectioned>
+        <Stack>
+          <ButtonGroup>
+            <Button 
+              onClick={() => {
+                console.log('Adding example to Condition A: ' + window.exampleCounts['A']);
+
+                addExample('A');
+                recordPopChange();
+              }}
+              primary={status !== generalTranslations.connect}
+              disabled={status === generalTranslations.connect}
+            > 
+              {'Record ' + condA +' Data - Count: ' + window.exampleCounts['A']}  
+            </Button>
+            <Button 
+              onClick={() => {
+                console.log('Adding example to Condition B: ' + window.exampleCounts['B']);
+                addExample('B');
+                recordTwoPopChange();
+              }}
+              primary={status !== generalTranslations.connect}
+              disabled={status === generalTranslations.connect}
+            > 
+              {'Record ' + condB + ' Data - Count: ' + window.exampleCounts['B']}  
+            </Button> 
+          </ButtonGroup>
+        </Stack>
+      </Card>
+
+       <Card title={'Predict current brain state after Training'} sectioned>
+        <Stack>
+          <ButtonGroup>
+            <Button 
+              onClick={() => {
+                recordPopChange();
+              }}
+              primary={status !== generalTranslations.connect}
+              disabled={status === generalTranslations.connect}
+            > 
+              {'Predict State'}  
+            </Button>
+          </ButtonGroup>
+        </Stack>
+      </Card>
+    </React.Fragment>
   )
 }
+
+
+  
+  function arraysEqual(a, b) {
+    if (a === b) return true;
+    if (a == null || b == null) return false;
+    if (a.length !== b.length) return false;
+    for (var i = 0; i < a.length; ++i) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
+  }
+
 
 
