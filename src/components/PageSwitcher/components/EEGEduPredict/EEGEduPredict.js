@@ -222,21 +222,20 @@ export function renderSliders(setData, setSettings, status, Settings) {
   )
 }
 
-
+// Classification algorithm (using renderRecord function)
 window.exampleCounts = {A: 0, B: 0}; 
 window.thisLabel = 'A';
 window.confidences = {A: 1, B: 0}; 
+
 export function renderRecord(status) {
   const condA = "A";
   const condB = "B";
-
   
   function addExample (label) {
     if (window.psd) {
       knnClassifier.addExample(window.psd, label);
       window.exampleCounts[label]++;
     }
-
   }
 
   function classify () {
@@ -250,7 +249,7 @@ export function renderRecord(status) {
         window.thisLabel = result.label;
       }
     }
-    classify();
+    classify(); //recursive so it continues to run 
   }
 
   return(
