@@ -25,29 +25,29 @@ import * as specificTranslations from "./translations/en";
 
 export function getSettings() {
   return {
-    cutOffLow: 2,
+    cutOffLow: .01,
     cutOffHigh: 20,
     nbChannels: 4,
     interval: 100,
-    bins: 256,
-    sliceFFTLow: 1,
-    sliceFFTHigh: 30,
-    duration: 1024,
+    bins: 2048,
+    sliceFFTLow: 0.5,
+    sliceFFTHigh: 3,
+    duration: 2048,
     srate: 256,
-    name: 'Spectra'
+    name: 'HeartSpectra'
   }
 };
 
 
 export function buildPipe(Settings) {
-  if (window.subscriptionSpectra) window.subscriptionSpectra.unsubscribe();
+  if (window.subscriptionHeartHeartSpectra) window.subscriptionHeartSpectra.unsubscribe();
 
-  window.pipeSpectra$ = null;
-  window.multicastSpectra$ = null;
-  window.subscriptionSpectra = null;
+  window.pipeHeartSpectra$ = null;
+  window.multicastHeartSpectra$ = null;
+  window.subscriptionHeartSpectra = null;
 
   // Build Pipe 
-  window.pipeSpectra$ = zipSamples(window.source.eegReadings$).pipe(
+  window.pipeHeartSpectra$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
       nbChannels: Settings.nbChannels }),
@@ -63,7 +63,7 @@ export function buildPipe(Settings) {
     })
   );
 
-  window.multicastSpectra$ = window.pipeSpectra$.pipe(
+  window.multicastHeartSpectra$ = window.pipeHeartSpectra$.pipe(
     multicast(() => new Subject())
   );
 }
@@ -71,26 +71,26 @@ export function buildPipe(Settings) {
 export function setup(setData, Settings) {
   console.log("Subscribing to " + Settings.name);
 
-  if (window.multicastSpectra$) {
-    window.subscriptionSpectra = window.multicastSpectra$.subscribe(data => {
-      setData(spectraData => {
-        Object.values(spectraData).forEach((channel, index) => {
+  if (window.multicastHeartSpectra$) {
+    window.subscriptionHeartSpectra = window.multicastHeartSpectra$.subscribe(data => {
+      setData(heartSpectraData => {
+        Object.values(heartSpectraData).forEach((channel, index) => {
           if (index < 4) {
             channel.datasets[0].data = data.psd[index];
-            channel.xLabels = data.freqs;
+            channel.xLabels = data.freqs.map(function(x) {return x * 60});
           }
         });
 
         return {
-          ch0: spectraData.ch0,
-          ch1: spectraData.ch1,
-          ch2: spectraData.ch2,
-          ch3: spectraData.ch3
+          ch0: heartSpectraData.ch0,
+          ch1: heartSpectraData.ch1,
+          ch2: heartSpectraData.ch2,
+          ch3: heartSpectraData.ch3
         };
       });
     });
 
-    window.multicastSpectra$.connect();
+    window.multicastHeartSpectra$.connect();
     console.log("Subscribed to " + Settings.name);
   }
 }
@@ -133,11 +133,15 @@ export function renderModule(channels) {
         }
       };
 
-      return (
-        <Card.Section key={"Card_" + index}>
-          <Line key={"Line_" + index} data={channel} options={options} />
-        </Card.Section>
-      );
+      if (index === 1) {
+        return (
+          <Card.Section key={"Card_" + index}>
+            <Line key={"Line_" + index} data={channel} options={options} />
+          </Card.Section>
+        );
+      } else {
+        return null
+      }
     });
   }
 
@@ -289,7 +293,7 @@ function saveToCSV(Settings) {
   console.log('making ' + Settings.name + ' headers')
 
   // take one sample from selected observable object for headers
-  localObservable$ = window.multicastSpectra$.pipe(
+  localObservable$ = window.multicastHeartSpectra$.pipe(
     take(1)
   );
 
@@ -310,7 +314,7 @@ function saveToCSV(Settings) {
     }
   });
   // put selected observable object into local and start taking samples
-  localObservable$ = window.multicastSpectra$.pipe(
+  localObservable$ = window.multicastHeartSpectra$.pipe(
     take(numSamplesToSave)
   );   
 

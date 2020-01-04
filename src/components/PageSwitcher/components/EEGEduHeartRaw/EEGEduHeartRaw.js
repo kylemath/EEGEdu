@@ -31,19 +31,19 @@ export function getSettings () {
     interval: 50,
     srate: 256,
     duration: 1024,
-    name: 'Raw'
+    name: 'HeartRaw'
   }
 };
 
 export function buildPipe(Settings) {
-  if (window.subscriptionRaw) window.subscriptionRaw.unsubscribe();
+  if (window.subscriptionHeartRaw) window.subscriptionHeartRaw.unsubscribe();
 
-  window.pipeRaw$ = null;
-  window.multicastRaw$ = null;
-  window.subscriptionRaw = null;
+  window.pipeHeartRaw$ = null;
+  window.multicastHeartRaw$ = null;
+  window.subscriptionHeartRaw = null;
 
   // Build Pipe
-  window.pipeRaw$ = zipSamples(window.source.eegReadings$).pipe(
+  window.pipeHeartRaw$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
       nbChannels: Settings.nbChannels }),
@@ -56,7 +56,7 @@ export function buildPipe(Settings) {
       console.log(err);
     })
   );
-  window.multicastRaw$ = window.pipeRaw$.pipe(
+  window.multicastHeartRaw$ = window.pipeHeartRaw$.pipe(
     multicast(() => new Subject())
   );
 }
@@ -64,10 +64,10 @@ export function buildPipe(Settings) {
 export function setup(setData, Settings) {
   console.log("Subscribing to " + Settings.name);
 
-  if (window.multicastRaw$) {
-    window.subscriptionRaw = window.multicastRaw$.subscribe(data => {
-      setData(rawData => {
-        Object.values(rawData).forEach((channel, index) => {
+  if (window.multicastHeartRaw$) {
+    window.subscriptionHeartRaw = window.multicastHeartRaw$.subscribe(data => {
+      setData(heartRawData => {
+        Object.values(heartRawData).forEach((channel, index) => {
           if (index < 4) {
             channel.datasets[0].data = data.data[index];
             channel.xLabels = generateXTics(Settings.srate, Settings.duration);
@@ -76,16 +76,16 @@ export function setup(setData, Settings) {
         });
 
         return {
-          ch0: rawData.ch0,
-          ch1: rawData.ch1,
-          ch2: rawData.ch2,
-          ch3: rawData.ch3
+          ch0: heartRawData.ch0,
+          ch1: heartRawData.ch1,
+          ch2: heartRawData.ch2,
+          ch3: heartRawData.ch3
         };
       });
     });
 
-    window.multicastRaw$.connect();
-    console.log("Subscribed to Raw");
+    window.multicastHeartRaw$.connect();
+    console.log("Subscribed to HeartRaw");
   }
 }
 
@@ -118,7 +118,7 @@ export function renderModule(channels) {
         },
         elements: {
           line: {
-            borderColor: 'rgba(' + channel.datasets[0].qual*10 + ', 128, 128)',
+            borderColor: 'rgba(' + channel.datasets[0].qual + ', 128, 128)',
             fill: false
           },
           point: {
@@ -134,11 +134,15 @@ export function renderModule(channels) {
         }
       };
 
-      return (
-        <Card.Section key={"Card_" + index}>
-          <Line key={"Line_" + index} data={channel} options={options} />
-        </Card.Section>
-      );
+      if (index === 1) {
+        return (
+          <Card.Section key={"Card_" + index}>
+            <Line key={"Line_" + index} data={channel} options={options} />
+          </Card.Section>
+        );
+      } else {
+        return null
+      }
     });
   }
 
@@ -224,7 +228,7 @@ export function renderRecord(recordPopChange, recordPop, status, Settings) {
     <Card title={'Record ' + Settings.name + ' Data'} sectioned>
       <Card.Section>
         <p>
-          {"When you are recording raw data it is recommended you set the "}
+          {"When you are recording HeartRaw data it is recommended you set the "}
           {"number of sampling points between epochs onsets to be equal to the epoch duration. "}
           {"This will ensure that consecutive rows of your output file are not overlapping in time."}
           {"It will make the live plots appear more choppy."}
@@ -277,7 +281,7 @@ function saveToCSV(Settings) {
 
   // for each module subscribe to multicast and make header
   // take one sample from selected observable object for headers
-  localObservable$ = window.multicastRaw$.pipe(
+  localObservable$ = window.multicastHeartRaw$.pipe(
   take(1)
   );
   //take one sample to get header info
@@ -296,7 +300,7 @@ function saveToCSV(Settings) {
   }
   });
   // put selected observable object into local and start taking samples
-  localObservable$ = window.multicastRaw$.pipe(
+  localObservable$ = window.multicastHeartRaw$.pipe(
   take(numSamplesToSave)
   );
 
