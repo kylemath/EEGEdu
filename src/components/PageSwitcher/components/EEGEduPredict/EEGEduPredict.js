@@ -219,14 +219,15 @@ export function renderRecord(status) {
             </Button>
           </ButtonGroup>
         </Stack>
-      </Card>
-      <Card.Section>
-        <P5Wrapper sketch={sketchPredict} 
-          label={window.thisLabel}
-          confidences={window.confidences}
+        <Card.Section>
+          <P5Wrapper sketch={sketchPredict} 
+            label={window.thisLabel}
+            confidences={window.confidences}
 
-        />          
-      </Card.Section>
+          />          
+        </Card.Section>
+      </Card>
+     
     </React.Fragment>
   )
 }
