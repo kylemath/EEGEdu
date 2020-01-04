@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+ import React, { useState, useCallback } from "react";
 import { MuseClient } from "muse-js";
 import { Select, Card, Stack, Button, ButtonGroup } from "@shopify/polaris";
 
@@ -275,7 +275,7 @@ export function PageSwitcher() {
         )
       case predict:
         return (
-          funPredict.renderRecord(recordPopChange, recordPop, status, predictSettings, recordTwoPopChange, recordTwoPop)
+          funPredict.renderRecord(status)
         )
       default:   
         console.log("Error on renderRecord.");

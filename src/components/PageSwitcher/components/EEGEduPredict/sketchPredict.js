@@ -1,85 +1,44 @@
-import ml5 from 'ml5'
-
 export default function sketchPredict (p) {
 
-  let psd;
-  let freqs;
-
-  let x = 0;
-  let last_psd; 
-  let buttonA;
-  let myCanvas;
-  let started; 
-  
-  let knnClassifier = ml5.KNNClassifier();
+  let label;
+  let confidence;
 
   p.setup = function () {
-    myCanvas = p.createCanvas(500, 500);
-    myCanvas.parent("container");
-    p.frameRate(60);
+    p.createCanvas(p.windowWidth*.6, 300);
 
-    p.background(250,250,150);
-
-    buttonA = p.createButton('Label A');
-    buttonA.position(20, 65);
   };
+
+  p.windowResized = function() {
+    p.resizeCanvas(p.windowWidth*.6, 300);
+  }
 
   p.myCustomRedrawAccordingToNewPropsHandler = function (props) {
-    psd = props.psd;
-    freqs = props.freqs;
+    label = props.label;
+    confidence = props.confidences[label];
   };
 
-  
-
   p.draw = function () {
-    // console.log("cycle " + x + ", psd: " + psd)
-    console.log(started);
-    x++;    
-        
-    if (psd && psd.length > 0) {
-
-      if (!arraysEqual(psd, last_psd)) { // to eliminate duplicate psd's from training
-        if (x>250 && x<500)  {  // if they press button A
-
-          // console.log('Trying to add A example')
-          p.addExample('A');
-          last_psd = psd;
-
-        } else if (x > 500 && x < 750) { // if they press button B
-          // console.log('Trying to add B example')
-          p.addExample('B');
-          last_psd = psd;
-        }
+    p.background(250, 250, 150);
+    p.fill(0);
+    p.strokeWeight(5);
+    p.line(p.width/2, 0, p.width/2, p.height);
+    p.textSize(30);
+    p.text('A', p.width/4, 30);
+    p.text('B', p.width-p.width/4, 30)
+    if (label === 'A') {
+      p.fill(120, 120, 250);
+      if (confidence > .8) {
+        p.ellipse(p.width/6, p.height/2, 60);
+      } else {
+        p.ellipse(p.width/3, p.height/2, 20);
+      }
+    } else {
+      p.fill(120, 250, 120);      
+      if (confidence > .8) {
+        p.ellipse(p.width-p.width/6, p.height/2, 60);
+      } else {
+        p.ellipse(p.width-p.width/3, p.height/2, 20);
       }
     }
-
-    // p.fill(255,0,0);
-    // if (freqs) {
-    //   for (let i = 0; i < freqs.length; i++) {
-    //     p.ellipse(freqs[i]*10,p.height - (20+psd[i]*100),10)
-    //   }
-    // } 
   }
-
-  //Start or Stop the animation
-  document.querySelector("button").addEventListener("click", function () {
-    started = !started;
-  })
-
-  p.addExample = function (label) {
-    knnClassifier.addExample(psd, label);
-  }
-
-  function arraysEqual(a, b) {
-    if (a === b) return true;
-    if (a == null || b == null) return false;
-    if (a.length !== b.length) return false;
-    for (var i = 0; i < a.length; ++i) {
-      if (a[i] !== b[i]) return false;
-    }
-    return true;
-  }
-
-
-
 };

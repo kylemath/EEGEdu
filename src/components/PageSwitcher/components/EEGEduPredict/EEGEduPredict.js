@@ -1,13 +1,8 @@
 import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 
-import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal } from "@shopify/polaris";
-import { saveAs } from 'file-saver';
-import { take } from "rxjs/operators";
+import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup } from "@shopify/polaris";
 import { Subject } from "rxjs";
-
-import { channelNames } from "muse-js";
-import { Line } from "react-chartjs-2";
 
 import { zipSamples } from "muse-js";
 
@@ -18,7 +13,7 @@ import {
   sliceFFT
 } from "@neurosity/pipes";
 
-import { chartStyles, generalOptions } from "../chartOptions";
+import { chartStyles } from "../chartOptions";
 
 import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
@@ -36,11 +31,11 @@ export function getSettings() {
     cutOffLow: 2,
     cutOffHigh: 20,
     nbChannels: 4,
-    interval: 4096,
+    interval: 256,
     bins: 256,
     sliceFFTLow: 1,
     sliceFFTHigh: 30,
-    duration: 4096,
+    duration: 512,
     srate: 256,
     name: 'Predict'
   }
@@ -114,42 +109,6 @@ export function renderModule(channels) {
             window.bins = channel.xLabels.length;
           }
         }   
-
-        const options = {
-          ...generalOptions,
-          scales: {
-            xAxes: [
-              {
-                scaleLabel: {
-                  ...generalOptions.scales.xAxes[0].scaleLabel,
-                  labelString: specificTranslations.xlabel
-                }
-              }
-            ],
-            yAxes: [
-              {
-                scaleLabel: {
-                  ...generalOptions.scales.yAxes[0].scaleLabel,
-                  labelString: specificTranslations.ylabel
-                },
-                ticks: {
-                  max: 25,
-                  min: 0
-                }
-              }
-            ]
-          },
-          elements: {
-            point: {
-              radius: 3
-            }
-          },
-          title: {
-            ...generalOptions.title,
-            text: generalTranslations.channel + channelNames[index]
-          }
-        };
-
         return null 
         // (
         //   <Card.Section key={"Card_" + index}>
@@ -265,15 +224,33 @@ export function renderSliders(setData, setSettings, status, Settings) {
 
 
 window.exampleCounts = {A: 0, B: 0}; 
-
-export function renderRecord(recordPopChange, recordPop, status, Settings, recordTwoPopChange, recordTwoPop) {
+window.thisLabel = 'A';
+window.confidences = {A: 1, B: 0}; 
+export function renderRecord(status) {
   const condA = "A";
   const condB = "B";
 
   
   function addExample (label) {
-    knnClassifier.addExample(window.psd, label);
-    window.exampleCounts[label]++;
+    if (window.psd) {
+      knnClassifier.addExample(window.psd, label);
+      window.exampleCounts[label]++;
+    }
+
+  }
+
+  function classify () {
+    knnClassifier.classify(window.psd, gotResults)
+  }
+
+  function gotResults(err, result) {
+    if (result.confidencesByLabel) {
+      window.confidences = result.confidencesByLabel;
+      if (result.label) {
+        window.thisLabel = result.label;
+      }
+    }
+    classify();
   }
 
   return(
@@ -286,7 +263,6 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, recor
                 console.log('Adding example to Condition A: ' + window.exampleCounts['A']);
 
                 addExample('A');
-                recordPopChange();
               }}
               primary={status !== generalTranslations.connect}
               disabled={status === generalTranslations.connect}
@@ -297,7 +273,6 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, recor
               onClick={() => {
                 console.log('Adding example to Condition B: ' + window.exampleCounts['B']);
                 addExample('B');
-                recordTwoPopChange();
               }}
               primary={status !== generalTranslations.connect}
               disabled={status === generalTranslations.connect}
@@ -313,31 +288,24 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, recor
           <ButtonGroup>
             <Button 
               onClick={() => {
-                recordPopChange();
+                console.log('Attempting to classify state')
+                classify();
               }}
               primary={status !== generalTranslations.connect}
               disabled={status === generalTranslations.connect}
             > 
-              {'Predict State'}  
+              {'Predict State: ' + window.thisLabel + ', Confidence: ' + window.confidences[window.thisLabel].toFixed(2)}  
             </Button>
           </ButtonGroup>
         </Stack>
       </Card>
+      <Card.Section>
+        <P5Wrapper sketch={sketchPredict} 
+          label={window.thisLabel}
+          confidences={window.confidences}
+
+        />          
+      </Card.Section>
     </React.Fragment>
   )
 }
-
-
-  
-  function arraysEqual(a, b) {
-    if (a === b) return true;
-    if (a == null || b == null) return false;
-    if (a.length !== b.length) return false;
-    for (var i = 0; i < a.length; ++i) {
-      if (a[i] !== b[i]) return false;
-    }
-    return true;
-  }
-
-
-

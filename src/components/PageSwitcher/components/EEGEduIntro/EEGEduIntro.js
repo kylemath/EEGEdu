@@ -25,9 +25,9 @@ export function getSettings () {
     cutOffLow: 2,
     cutOffHigh: 20,
     nbChannels: 4,
-    interval: 4096,
+    interval: 2,
     srate: 256,
-    duration: 4096
+    duration: 512
   }
 };
 
