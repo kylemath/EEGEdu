@@ -27,6 +27,15 @@ import sketchDraw from './sketchDraw'
 import sketchFlock3D from './sketchFlock3D'
 
 import P5Wrapper from 'react-p5-wrapper';
+import Sketch from 'react-p5'
+
+import styled from 'styled-components';
+import {
+  LiveProvider,
+  LiveEditor,
+  LiveError,
+  LivePreview
+} from 'react-live'
 
 export function getSettings () {
   return {
@@ -127,6 +136,16 @@ export function renderModule(channels) {
       console.log("Switching to: " + value);
     }, []);
 
+    // Default values for the headerProps
+    window.headerProps = { 
+      delta: 0,
+      theta: 0,
+      alpha: 0,
+      beta: 0,
+      gamma: 0,
+      textMsg: 'No data.',
+     };   
+
     return Object.values(channels.data).map((channel, index) => {
       // console.log(channel) 
       if (channel.datasets[0].data) {
@@ -136,6 +155,15 @@ export function renderModule(channels) {
         window.alpha = channel.datasets[0].data[2];
         window.beta  = channel.datasets[0].data[3];
         window.gamma = channel.datasets[0].data[4];
+
+        window.headerProps = { 
+          delta: 10 * window.delta,
+          theta: 10 * window.theta,
+          alpha: 10 * window.alpha,
+          beta: 10 * window.beta,
+          gamma: 10 * window.gamma,
+          textMsg: 'Data Recieved.',
+         };        
       }   
 
       let thisSketch = sketchTone;
@@ -162,10 +190,77 @@ export function renderModule(channels) {
         default: console.log("Error on switch to " + selectedAnimation)
       }
 
+      const headerProps = window.headerProps;
+      const scope = { styled, headerProps, React, Sketch };
+      const code = `const Wrapper = ({ children }) => (
+  <div style={{
+    background: 'papayawhip',
+    width: '100%',
+    padding: '2rem'
+  }}>
+    {children}
+  </div>
+)
+
+class NewNewSketch extends React.Component {
+  
+  constructor() {
+    super()
+    this.state = { x: 20, y: 20 }
+  }
+
+  setup(p5, canvasParentRef) {
+    p5.createCanvas(200, 200).parent(canvasParentRef)
+  }
+
+  draw(p5) {
+    p5.background(255)
+    p5.ellipse(headerProps.alpha, headerProps.beta, 20, 20)
+    
+    // NOTE: Do not use setState in draw function 
+    // or in functions that is executed in draw function... 
+    // pls use normal variables (headerProp) or class properties (this.state)
+  }
+
+  render() {
+    return (
+      <center>
+      <h2>{headerProps.textMsg}</h2>
+      <h2>{this.state.x}, {this.state.y}, {headerProps.alpha}</h2>
+      <h3 style={{ color: 'palevioletred' }}>
+        Delta Value:
+        {headerProps.delta} <br />
+        Theta Value:
+        {headerProps.theta} <br />
+        Alpha Value:
+        {headerProps.alpha} <br />
+        Beta Value:
+        {headerProps.beta} <br />
+        Gamma Value:
+        {headerProps.gamma} <br />
+      </h3>
+      <Sketch setup={this.setup} draw={this.draw} />
+      </center>
+    )
+  }
+}
+
+render(
+<Wrapper>
+  <NewNewSketch />
+</Wrapper>
+)`
+
       //only left frontal channel
       if (index === 1) {
         return (
           <React.Fragment key={'dum'}>
+            <LiveProvider code={code} scope={scope} noInline={true}>
+              <LiveEditor />
+              <LiveError />
+              <LivePreview />
+            </LiveProvider>
+
             <Card.Section 
               title={"Choice of Sketch"}
             >
@@ -177,13 +272,13 @@ export function renderModule(channels) {
               />
             </Card.Section>
             <Card.Section>
-              <P5Wrapper sketch={thisSketch} 
+              {/* <P5Wrapper sketch={thisSketch} 
                 delta={window.delta}
                 theta={window.theta}
                 alpha={window.alpha}
                 beta={window.beta}
                 gamma={window.gamma}
-              />          
+              />           */}
             </Card.Section>
           </React.Fragment>
         );

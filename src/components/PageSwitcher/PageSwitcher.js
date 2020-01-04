@@ -16,6 +16,7 @@ import * as funSpectro from "./components/EEGEduSpectro/EEGEduSpectro";
 import * as funAlpha from "./components/EEGEduAlpha/EEGEduAlpha"
 import * as funSsvep from "./components/EEGEduSsvep/EEGEduSsvep"
 
+
 const intro = translations.types.intro;
 const raw = translations.types.raw;
 const spectra = translations.types.spectra;
@@ -51,7 +52,8 @@ export function PageSwitcher() {
   const [status, setStatus] = useState(generalTranslations.connect);
 
   // for picking a new module
-  const [selected, setSelected] = useState(intro);
+  // this is where the STARTING TAB value is set
+  const [selected, setSelected] = useState(animate);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 
