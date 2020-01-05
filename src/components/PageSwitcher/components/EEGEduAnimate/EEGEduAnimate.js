@@ -36,7 +36,8 @@ export function getSettings () {
     interval: 16,
     bins: 256,
     duration: 128,
-    srate: 256
+    srate: 256,
+    name: 'Animate'
   }
 };
 
