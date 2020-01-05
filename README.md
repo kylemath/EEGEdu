@@ -7,7 +7,7 @@
 <a href="https://github.com/kylemath/EEGEdu/blob/master/CONTRIBUTING.md">
 <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome!" />
 </a>
-<img src="https://img.shields.io/github/issues/kylemath/EEGEdu" alt="issues" />
+<img src="https://img.shields.io/github/issues-raw/kylemath/EEGEdu" alt="issues" />
 <img src="https://img.shields.io/github/issues-closed-raw/kylemath/EEGEdu" />
 </p>
 
