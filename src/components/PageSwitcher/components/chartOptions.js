@@ -23,6 +23,13 @@ export const emptyChannelData = {
   }
 };
 
+export const emptyChannelDataHeartSpectra = {
+  ch1: {
+    datasets: [{}]
+  }
+};
+
+
 export const generalOptions = {
   scales: {
     xAxes: [

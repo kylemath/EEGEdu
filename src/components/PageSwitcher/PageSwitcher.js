@@ -5,7 +5,7 @@ import { Select, Card, Stack, Button, ButtonGroup } from "@shopify/polaris";
 import { mockMuseEEG } from "./utils/mockMuseEEG";
 import * as translations from "./translations/en.json";
 import * as generalTranslations from "./components/translations/en";
-import { emptyChannelData } from "./components/chartOptions";
+import { emptyChannelData, emptyChannelDataHeartSpectra } from "./components/chartOptions";
 
 import * as funIntro from "./components/EEGEduIntro/EEGEduIntro"
 import * as funHeartRaw from "./components/EEGEduHeartRaw/EEGEduHeartRaw"
@@ -34,7 +34,7 @@ export function PageSwitcher() {
   // data pulled out of multicast$
   const [introData, setIntroData] = useState(emptyChannelData)
   const [heartRawData, setHeartRawData] = useState(emptyChannelData);
-  const [heartSpectraData, setHeartSpectraData] = useState(emptyChannelData);
+  const [heartSpectraData, setHeartSpectraData] = useState(emptyChannelDataHeartSpectra);
   const [rawData, setRawData] = useState(emptyChannelData);
   const [spectraData, setSpectraData] = useState(emptyChannelData); 
   const [bandsData, setBandsData] = useState(emptyChannelData);

@@ -29,10 +29,10 @@ export function getSettings() {
     cutOffHigh: 20,
     nbChannels: 4,
     interval: 100,
-    bins: 2048,
-    sliceFFTLow: 0.5,
-    sliceFFTHigh: 3,
-    duration: 2048,
+    bins: 8192,
+    sliceFFTLow: 0.6,
+    sliceFFTHigh: 2,
+    duration: 4096,
     srate: 256,
     name: 'HeartSpectra'
   }
@@ -75,17 +75,13 @@ export function setup(setData, Settings) {
     window.subscriptionHeartSpectra = window.multicastHeartSpectra$.subscribe(data => {
       setData(heartSpectraData => {
         Object.values(heartSpectraData).forEach((channel, index) => {
-          if (index < 4) {
-            channel.datasets[0].data = data.psd[index];
-            channel.xLabels = data.freqs.map(function(x) {return x * 60});
-          }
-        });
+          channel.datasets[0].data = data.psd[1];
+          channel.xLabels = data.freqs.map(function(x) {return x * 60});
+          channel.peakF = channel.xLabels[indexOfMax(data.psd[1])];
+      });
 
         return {
-          ch0: heartSpectraData.ch0,
           ch1: heartSpectraData.ch1,
-          ch2: heartSpectraData.ch2,
-          ch3: heartSpectraData.ch3
         };
       });
     });
@@ -98,50 +94,48 @@ export function setup(setData, Settings) {
 export function renderModule(channels) {
   function renderCharts() {
     return Object.values(channels.data).map((channel, index) => {
-      const options = {
-        ...generalOptions,
-        scales: {
-          xAxes: [
-            {
-              scaleLabel: {
-                ...generalOptions.scales.xAxes[0].scaleLabel,
-                labelString: specificTranslations.xlabel
+        const options = {
+          ...generalOptions,
+          scales: {
+            xAxes: [
+              {
+                scaleLabel: {
+                  ...generalOptions.scales.xAxes[0].scaleLabel,
+                  labelString: specificTranslations.xlabel
+                }
               }
-            }
-          ],
-          yAxes: [
-            {
-              scaleLabel: {
-                ...generalOptions.scales.yAxes[0].scaleLabel,
-                labelString: specificTranslations.ylabel
-              },
-              ticks: {
-                max: 25,
-                min: 0
+            ],
+            yAxes: [
+              {
+                scaleLabel: {
+                  ...generalOptions.scales.yAxes[0].scaleLabel,
+                  labelString: specificTranslations.ylabel
+                },
+                ticks: {
+                  min: 0
+                }
               }
+            ]
+          },
+          elements: {
+            point: {
+              radius: 3
             }
-          ]
-        },
-        elements: {
-          point: {
-            radius: 3
+          },
+          title: {
+            ...generalOptions.title,
+            text: generalTranslations.channel + 
+              channelNames[index] + 
+              " - Estimated HR: " +
+              channel.peakF + " BPM"
           }
-        },
-        title: {
-          ...generalOptions.title,
-          text: generalTranslations.channel + channelNames[index]
-        }
-      };
+        };
 
-      if (index === 1) {
         return (
           <Card.Section key={"Card_" + index}>
             <Line key={"Line_" + index} data={channel} options={options} />
           </Card.Section>
         );
-      } else {
-        return null
-      }
     });
   }
 
@@ -285,46 +279,30 @@ export function renderRecord(recordPopChange, recordPop, status, Settings) {
 
 
 function saveToCSV(Settings) {
-  const numSamplesToSave = 50;
+  const numSamplesToSave = 100;
   console.log('Saving ' + numSamplesToSave + ' samples...');
   var localObservable$ = null;
   const dataToSave = [];
 
   console.log('making ' + Settings.name + ' headers')
 
-  // take one sample from selected observable object for headers
-  localObservable$ = window.multicastHeartSpectra$.pipe(
-    take(1)
-  );
+  dataToSave.push(
+    "Timestamp (ms),",
+    "Estimated BPM", 
+    "\n"
+  );   
 
-  localObservable$.subscribe({ 
-    next(x) { 
-      let freqs = Object.values(x.freqs);
-      dataToSave.push(
-        "Timestamp (ms),",
-        freqs.map(function(f) {return "ch0_" + f + "Hz"}) + ",", 
-        freqs.map(function(f) {return "ch1_" + f + "Hz"}) + ",", 
-        freqs.map(function(f) {return "ch2_" + f + "Hz"}) + ",", 
-        freqs.map(function(f) {return "ch3_" + f + "Hz"}) + ",", 
-        freqs.map(function(f) {return "chAux_" + f + "Hz"}) + ",", 
-        freqs.map(function(f) {return "f_" + f + "Hz"}) + "," , 
-        "info", 
-        "\n"
-      );   
-    }
-  });
   // put selected observable object into local and start taking samples
   localObservable$ = window.multicastHeartSpectra$.pipe(
     take(numSamplesToSave)
   );   
 
-
   // now with header in place subscribe to each epoch and log it
   localObservable$.subscribe({
     next(x) { 
-      dataToSave.push(Date.now() + "," + Object.values(x).join(",") + "\n");
+      dataToSave.push(Date.now() + "," + x.freqs[indexOfMax(x.psd[1])]*60 + "\n");
       // logging is useful for debugging -yup
-      // console.log(x);
+      console.log();
     },
     error(err) { console.log(err); },
     complete() { 
@@ -337,4 +315,20 @@ function saveToCSV(Settings) {
       console.log('Completed');
     }
   });
+}
+
+// Find the index of the max value in an array
+function indexOfMax(arr) {
+  if (arr.length === 0) {
+      return -1;
+  }
+  var max = arr[0];
+  var maxIndex = 0;
+  for (var i = 1; i < arr.length; i++) {
+      if (arr[i] > max) {
+          maxIndex = i;
+          max = arr[i];
+      }
+  }
+  return maxIndex;
 }
