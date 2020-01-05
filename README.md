@@ -29,17 +29,17 @@
 
 EEGEdu provides an step-by-step incremental tutorial for students to interact with EEG-based brain signals. So, we break down the curriculum into 10 lessons as follows:
 
-1. Connect + hardware, Biophysics + signal viewing
-2. Heart rate time domain data
-3. Heart rate frequency domain -beats per minute 
-4. Raw Data + artifacts + blinks + record
-5. Frequency domain explanation + Raw spectra + record
-6. Frequency bands + record
-7. Spectrogram
-8. Neurofeedback p5js demos
-9. Eyes closed eyes open experiment
-10. SSVEP experiment
-11. BCI trainer
+1. [Connect + hardware, Biophysics + signal viewing](https://github.com/kylemath/EEGEdu/blob/master/src/components/PageSwitcher/components/EEGEduIntro/EEGEduIntro.js)
+2. [Heart rate time domain data](https://github.com/kylemath/EEGEdu/blob/master/src/components/PageSwitcher/components/EEGEduHeartRaw/EEGEduHeartRaw.js)
+3. [Heart rate frequency domain -beats per minute](https://github.com/kylemath/EEGEdu/blob/master/src/components/PageSwitcher/components/EEGEduHeartSpectra/EEGEduHeartSpectra.js)
+4. [Raw Data + artifacts + blinks + record](https://github.com/kylemath/EEGEdu/blob/master/src/components/PageSwitcher/components/EEGEduRaw/EEGEduRaw.js)
+5. [Frequency domain explanation + Raw spectra + record](https://github.com/kylemath/EEGEdu/blob/master/src/components/PageSwitcher/components/EEGEduSpectra/EEGEduSpectra.js)
+6. [Frequency bands + record](https://github.com/kylemath/EEGEdu/blob/master/src/components/PageSwitcher/components/EEGEduBands/EEGEduBands.js)
+7. [Spectrogram](https://github.com/kylemath/EEGEdu/blob/master/src/components/PageSwitcher/components/EEGEduSpectro/EEGEduSpectro.js)
+8. [Neurofeedback p5js demos](https://github.com/kylemath/EEGEdu/blob/master/src/components/PageSwitcher/components/EEGEduAnimate/EEGEduAnimate.js)
+9. [Eyes closed eyes open experiment](https://github.com/kylemath/EEGEdu/blob/master/src/components/PageSwitcher/components/EEGEduAlpha/EEGEduAlpha.js)
+10. [SSVEP experiment](https://github.com/kylemath/EEGEdu/blob/master/src/components/PageSwitcher/components/EEGEduSsvep/EEGEduSsvep.js)
+11. [BCI trainer](https://github.com/kylemath/EEGEdu/blob/master/src/components/PageSwitcher/components/EEGEduPredict/EEGEduPredict.js)
 
 # Installation for Development 
 
