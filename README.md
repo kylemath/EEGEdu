@@ -8,7 +8,7 @@
 <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome!" />
 </a>
 <img src="https://img.shields.io/github/issues/kylemath/EEGEdu" alt="issues" />
-
+<img src="https://img.shields.io/github/issues-closed-raw/kylemath/EEGEdu" />
 </p>
 
 <p align="center">
