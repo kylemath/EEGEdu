@@ -16,6 +16,7 @@ export function App() {
           <Link url="http://korymathewson.com">Kor</Link>
           <Link url="http://keyfer.ca">Key </Link>
           Production.
+          <Link url="https://github.com/kylemath/EEGEdu/"> Github source code </Link>
         </p>
         </Card>
       </Page>
