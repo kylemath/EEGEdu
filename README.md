@@ -4,6 +4,7 @@
 <a href="https://github.com/kylemath/EEGEdu/blob/master/LICENSE">
 <img src="https://img.shields.io/badge/License-MIT-brightgreen.svg" alt="MIT license" />
 </a>
+<img src="https://img.shields.io/github/v/release/kylemath/EEGEdu?include_prereleases" />
 <a href="https://github.com/kylemath/EEGEdu/blob/master/CONTRIBUTING.md">
 <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome!" />
 </a>
