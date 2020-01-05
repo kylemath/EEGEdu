@@ -1,18 +1,21 @@
 # EEGEdu
 
 <p align="center"> 
-<a href="https://github.com/kylemath/EEGEdu/blob/master/LICENSE">
+<a href="https://github.com/kylemath/EEGEdu/blob/master/LICENSE" target="_blank">
 <img src="https://img.shields.io/badge/License-MIT-brightgreen.svg" alt="MIT license" />
 </a>
 <img src="https://img.shields.io/github/v/release/kylemath/EEGEdu?include_prereleases" />
-<a href="https://github.com/kylemath/EEGEdu/blob/master/CONTRIBUTING.md">
+<a href="https://github.com/kylemath/EEGEdu/blob/master/CONTRIBUTING.md" target="_blank">
 <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome!" />
 </a>
 <img src="https://img.shields.io/github/issues-raw/kylemath/EEGEdu" alt="issues" />
 <img src="https://img.shields.io/github/issues-closed-raw/kylemath/EEGEdu" />
-<a href="https://neurotechx.herokuapp.com/">
+<a href="https://neurotechx.herokuapp.com/" target="_blank">
 <img src="https://neurotechx.herokuapp.com/badge.svg">
-</a>    
+</a>
+<a href="https://neurotechx.slack.com/messages/eegedu/" target="_blank">
+<img src="https://img.shields.io/badge/NeurotechXChannel-%23eegedu-lightgrey" />
+</a>
 </p>
 
 
