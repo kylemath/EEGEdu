@@ -10,6 +10,7 @@
     "animate": "7. Brain Controlled Animation",
     "spectro": "8. Spectrogram (spectra over time)",
     "alpha": "9. Eyes open vs. Eyes closed Experiment",
-    "ssvep": "10. Steady-State Visual Evoked Potential (SSVEP) Experiment"
+    "ssvep": "10. Steady-State Visual Evoked Potential (SSVEP) Experiment",
+    "predict": "11. Predict brain states with a trained classifier"
   }
 }
