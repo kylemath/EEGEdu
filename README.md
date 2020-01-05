@@ -1,10 +1,9 @@
 # EEGEdu
 
-<p align="center">
-    
-[![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://github.com/kylemath/EEGEdu/blob/master/LICENSE)
-</p>
-<p align="center">
+<p align="center"> 
+<a href="https://github.com/kylemath/EEGEdu/blob/master/LICENSE">
+<img src="https://img.shields.io/badge/License-MIT-brightgreen.svg" alt="MIT license" />
+</a>
 <a href="https://github.com/kylemath/EEGEdu/blob/master/CONTRIBUTING.md">
 <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome!" />
 </a>
