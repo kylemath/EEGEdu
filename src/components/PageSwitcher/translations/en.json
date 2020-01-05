@@ -1,13 +1,14 @@
 {
   "title": "Choose your Module",
   "types": {
-  	"intro": "Introduction",
-    "raw": "Raw and Filtered Data",
-    "spectra": "Frequency Spectra",
-    "bands": "Frequency Bands",
-    "animate": "Brain Controlled Animation",
-    "spectro": "Spectrogram (spectra over time)",
-    "alpha": "Eyes open vs. Eyes closed Experiment",
-    "ssvep": "Steady-State Visual Evoked Potential (SSVEP) Experiment"
+  	"intro": "1. Introduction",
+    "raw": "2. Raw and Filtered Data",
+    "spectra": "3. Frequency Spectra",
+    "bands": "4. Frequency Bands",
+    "animate": "5. Brain Controlled Animation",
+    "spectro": "6. Spectrogram (spectra over time)",
+    "alpha": "7. Eyes open vs. Eyes closed Experiment",
+    "ssvep": "8. Steady-State Visual Evoked Potential (SSVEP) Experiment",
+    "predict": "9. Predict brain states with a trained classifier"
   }
 }

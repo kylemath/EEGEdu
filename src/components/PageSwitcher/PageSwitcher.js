@@ -15,6 +15,7 @@ import * as funAnimate from "./components/EEGEduAnimate/EEGEduAnimate";
 import * as funSpectro from "./components/EEGEduSpectro/EEGEduSpectro";
 import * as funAlpha from "./components/EEGEduAlpha/EEGEduAlpha"
 import * as funSsvep from "./components/EEGEduSsvep/EEGEduSsvep"
+import * as funPredict from "./components/EEGEduPredict/EEGEduPredict"
 
 const intro = translations.types.intro;
 const raw = translations.types.raw;
@@ -24,6 +25,7 @@ const animate = translations.types.animate;
 const spectro = translations.types.spectro;
 const alpha = translations.types.alpha;
 const ssvep = translations.types.ssvep;
+const predict = translations.types.predict;
 
 export function PageSwitcher() {
 
@@ -36,6 +38,7 @@ export function PageSwitcher() {
   const [spectroData, setSpectroData] = useState(emptyChannelData);
   const [alphaData, setAlphaData] = useState(emptyChannelData);
   const [ssvepData, setSsvepData] = useState(emptyChannelData);
+  const [predictData, setPredictData] = useState(emptyChannelData);
 
   // pipe settings
   const [introSettings] = useState(funIntro.getSettings);
@@ -46,6 +49,7 @@ export function PageSwitcher() {
   const [spectroSettings, setSpectroSettings] = useState(funSpectro.getSettings);
   const [alphaSettings, setAlphaSettings] = useState(funAlpha.getSettings);
   const [ssvepSettings, setSsvepSettings] = useState(funSsvep.getSettings);
+  const [predictSettings, setPredictSettings] = useState(funPredict.getSettings);
 
   // connection status
   const [status, setStatus] = useState(generalTranslations.connect);
@@ -65,6 +69,7 @@ export function PageSwitcher() {
     if (window.subscriptionSpectro) window.subscriptionSpectro.unsubscribe();
     if (window.subscriptionAlpha) window.subscriptionAlpha.unsubscribe();
     if (window.subscriptionSsvep) window.subscriptionSsvep.unsubscribe();
+    if (window.subscriptionPredict) window.subscriptionPredict.unsubscribe();
 
     subscriptionSetup(value);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -86,7 +91,9 @@ export function PageSwitcher() {
     { label: animate, value: animate },
     { label: spectro, value: spectro },
     { label: alpha, value: alpha },
-    { label: ssvep, value: ssvep }
+    { label: ssvep, value: ssvep },
+    { label: predict, value: predict }
+
   ];
 
   function buildPipes(value) {
@@ -98,6 +105,7 @@ export function PageSwitcher() {
     funSpectro.buildPipe(spectroSettings);
     funAlpha.buildPipe(alphaSettings);
     funSsvep.buildPipe(ssvepSettings);
+    funPredict.buildPipe(predictSettings);
   }
 
   function subscriptionSetup(value) {
@@ -125,6 +133,9 @@ export function PageSwitcher() {
         break;
       case ssvep:
         funSsvep.setup(setSsvepData, ssvepSettings);
+        break;
+      case predict:
+        funPredict.setup(setPredictData, predictSettings);
         break;
       default:
         console.log(
@@ -201,6 +212,10 @@ export function PageSwitcher() {
         return (
           funSsvep.renderSliders(setSsvepData, setSsvepSettings, status, ssvepSettings)
         );
+      case predict: 
+        return (
+          funPredict.renderSliders(setPredictData, setPredictSettings, status, predictSettings)
+        );
       default: console.log('Error rendering settings display');
     }
   }
@@ -223,6 +238,8 @@ export function PageSwitcher() {
         return <funAlpha.renderModule data={alphaData} />;
       case ssvep:
         return <funSsvep.renderModule data={ssvepData} />;
+      case predict:
+        return <funPredict.renderModule data={predictData} />;
       default:
         console.log("Error on renderCharts switch.");
     }
@@ -255,6 +272,10 @@ export function PageSwitcher() {
       case ssvep:
         return (
           funSsvep.renderRecord(recordPopChange, recordPop, status, ssvepSettings, recordTwoPopChange, recordTwoPop)
+        )
+      case predict:
+        return (
+          funPredict.renderRecord(status)
         )
       default:   
         console.log("Error on renderRecord.");
