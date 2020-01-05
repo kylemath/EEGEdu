@@ -2,10 +2,7 @@ import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 import { Subject } from "rxjs";
 
-import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal } from "@shopify/polaris";
-import { saveAs } from 'file-saver';
-import { take } from "rxjs/operators";
-
+import { TextContainer, Card, Stack } from "@shopify/polaris";
 import { channelNames } from "muse-js";
 import { Line } from "react-chartjs-2";
 
