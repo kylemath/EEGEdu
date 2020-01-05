@@ -170,6 +170,9 @@ export function renderModule(channels) {
             width="100%"
             height="auto"
           ></img>
+          <Link url="https://github.com/NeuroTechX/eeg-101/blob/master/EEG101/src/assets/neuronarrow.png"> Image Source - EEG101 </Link>
+          <br />
+          <br />
           <p>
             {specificTranslations.neurons2}
           </p>         
@@ -179,6 +182,9 @@ export function renderModule(channels) {
             width="100%"
             height="auto"
           ></img> 
+          <Link url="https://github.com/NeuroTechX/eeg-101/blob/master/EEG101/src/assets/neuronmultiarrow.png"> Image Source - EEG101 </Link>
+          <br />
+          <br />
           <p>
             {specificTranslations.neurons3}
           </p> 
@@ -196,6 +202,9 @@ export function renderModule(channels) {
             width="100%"
             height="auto"
           ></img>
+          <Link url="https://github.com/NeuroTechX/eeg-101/blob/master/EEG101/src/assets/awakeasleep.gif"> Image Source - EEG101 </Link>
+          <br />
+          <br />
           <p>
             {specificTranslations.oscillations2}
           </p>         
@@ -219,18 +228,23 @@ export function renderModule(channels) {
           ></img>
           <br />
           <br />
+          <Link url="https://github.com/NeuroTechX/eeg-101/blob/master/EEG101/src/assets/electrodelocations.png"> Image Source - EEG101 </Link>
+          <br />
+          <br />
           <p>
             {specificTranslations.hardware3}
           <br />
           <br />          
             {specificTranslations.hardware4}
           <br />
-           <img 
-            src={ require("./assets/DigitalDAQv2.png")} //https://upload.wikimedia.org/wikipedia/commons/9/97/DigitalDAQv2.pdf
-            alt="DAQ diagram"
-            width="100%"
-            height="auto"
-          ></img>
+            <img 
+              src={ require("./assets/DigitalDAQv2.png")} //https://upload.wikimedia.org/wikipedia/commons/9/97/DigitalDAQv2.pdf
+              alt="DAQ diagram"
+              width="100%"
+              height="auto"
+            ></img>
+              <Link url="https://upload.wikimedia.org/wikipedia/commons/9/97/DigitalDAQv2.pdf"> Image Source - Wikipedia </Link>
+          <br />
           <br />
             {specificTranslations.hardware5}
           </p>      
@@ -251,6 +265,9 @@ export function renderModule(channels) {
           ></img> 
           <br />
           <br />
+          <Link url="https://miro.medium.com/max/2854/1*pK_tLFd8c7_xlOTm1lHdAw.png"> Image Source - @urish </Link>
+          <br />
+          <br />
             {specificTranslations.muse2}
           <br />
           <img 
@@ -268,6 +285,9 @@ export function renderModule(channels) {
           ></img> 
           <br />
           <br />
+          <Link url="https://github.com/NeuroTechX/eeg-101/blob/master/EEG101/src/assets/electrodediagram"> Image Source - EEG101 </Link>
+          <br />
+          <br />      
             {specificTranslations.muse3}
           </p>  
         </Card.Section>
@@ -284,6 +304,10 @@ export function renderModule(channels) {
             width="50%"
             height="auto"
           ></img> 
+          <br />
+          <Link url="https://github.com/NeuroTechX/eeg-101/blob/master/EEG101/src/assets/electrodediagram"> Image Source - EEG101 </Link>
+          <br />
+          <br />            
           </p>       
             <div style={chartStyles.wrapperStyle.style}>
               {renderCharts()}
