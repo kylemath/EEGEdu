@@ -1,0 +1,13 @@
+{
+  "title": "Heart Rate (Beats per minute)",
+  "description": [
+    "Now we look at the same data, but in a different way. Instead of looking at the voltage over time, ",
+    "We now transform the data to show us what frequencies are present in the continuous signal. ",
+    "In this frequency domain, we now ignore time and consider how much power of each frequency there is in a segment of data. ",
+    "If you place your fingers the same way you did when looking at your ECG, you should start to see a peak ",
+    "Along the horizontal axis is the beats per minute, or the frequency of the peaks in your ECG. ", 
+    "The vertical y-axis shows the power of the rhythms in the data at each frequency, or how large the changes are between peak and through of the oscillations. "
+  ],
+  "xlabel": "Frequency (Hz)",
+  "ylabel": "Power (\u03BCV\u00B2)"
+}

@@ -23,6 +23,13 @@ export const emptyChannelData = {
   }
 };
 
+export const emptySingleChannelData = {
+  ch1: {
+    datasets: [{}]
+  }
+};
+
+
 export const generalOptions = {
   scales: {
     xAxes: [

@@ -212,7 +212,7 @@ export function renderRecord(status) {
                 console.log('Attempting to classify state')
                 classify();
               }}
-              disabled={!window.enoughLabels || status === generalTranslations.connect}
+              disabled={window.isPredicting || !window.enoughLabels || status === generalTranslations.connect}
               primary={true}
             > 
               {'Predict State: ' + window.thisLabel + ', Confidence: ' + window.confidences[window.thisLabel].toFixed(2)}  
