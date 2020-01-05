@@ -31,9 +31,9 @@ export function getSettings () {
     cutOffLow: 2,
     cutOffHigh: 20,
     nbChannels: 4,
-    interval: 1024,
+    interval: 1,
     srate: 256,
-    duration: 1024,
+    duration: 1,
     name: 'Evoked'
   }
 };
@@ -93,56 +93,8 @@ export function setup(setData, Settings) {
 }
 
 export function renderModule(channels) {
-  function renderCharts() {
-    return Object.values(channels.data).map((channel, index) => {
-      const options = {
-        ...generalOptions,
-        scales: {
-          xAxes: [
-            {
-              scaleLabel: {
-                ...generalOptions.scales.xAxes[0].scaleLabel,
-                labelString: specificTranslations.xlabel
-              }
-            }
-          ],
-          yAxes: [
-            {
-              scaleLabel: {
-                ...generalOptions.scales.yAxes[0].scaleLabel,
-                labelString: specificTranslations.ylabel
-              },
-              ticks: {
-                max: 300,
-                min: -300
-              }
-            }
-          ]
-        },
-        elements: {
-          line: {
-            borderColor: 'rgba(' + channel.datasets[0].qual*10 + ', 128, 128)',
-            fill: false
-          },
-          point: {
-            radius: 0
-          }
-        },
-        animation: {
-          duration: 0
-        },
-        title: {
-          ...generalOptions.title,
-          text: generalTranslations.channel + channelNames[index] + ' --- SD: ' + channel.datasets[0].qual 
-        }
-      };
-
-      return (
-        <Card.Section key={"Card_" + index}>
-          <Line key={"Line_" + index} data={channel} options={options} />
-        </Card.Section>
-      );
-    });
+  function renderCharts() { 
+      return null
   }
 
   return (
@@ -272,13 +224,12 @@ export function renderRecord(recordPopChange, recordPop, status, Settings) {
   )
 }
 
-
-
 function saveToCSV(Settings) {
-  const numSamplesToSave = 50;
+  const numSamplesToSave = 2000;
   console.log('Saving ' + numSamplesToSave + ' samples...');
   var localObservable$ = null;
   const dataToSave = [];
+  window.marker = 0;
 
   console.log('making ' + Settings.name + ' headers')
 
@@ -292,6 +243,7 @@ function saveToCSV(Settings) {
   next(x) { 
     dataToSave.push(
       "Timestamp (ms),",
+      "Marker,",
       generateXTics(x.info.samplingRate,x.data[0].length,false).map(function(f) {return "ch0_" + f + "ms"}) + ",", 
       generateXTics(x.info.samplingRate,x.data[0].length,false).map(function(f) {return "ch1_" + f + "ms"}) + ",", 
       generateXTics(x.info.samplingRate,x.data[0].length,false).map(function(f) {return "ch2_" + f + "ms"}) + ",", 
@@ -310,7 +262,7 @@ function saveToCSV(Settings) {
   // now with header in place subscribe to each epoch and log it
   localObservable$.subscribe({
     next(x) { 
-      dataToSave.push(Date.now() + "," + Object.values(x).join(",") + "\n");
+      dataToSave.push(Date.now() + "," + window.marker + "," + Object.values(x).join(",") + "\n");
       // logging is useful for debugging -yup
       // console.log(x);
     },
