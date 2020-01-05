@@ -16,17 +16,17 @@
 
 EEGEdu provides an step-by-step incremental tutorial for students to interact with EEG-based brain signals. So, we break down the curriculum into 10 lessons as follows:
 
-1. Connect + hardware
-Biophysics + signal viewing
-2. Raw Data + artifacts + blinks + record
-3. Frequency domain explanation + Raw spectra + record
-4. Frequency bands + record
-5. Spectrogram
-6. Eyes closed eyes open experiment
-7. SSVEP experiment
-8. evoked experiment
-9. Neurofeedback p5js demos
-10. BCI trainer
+1. Connect + hardware, Biophysics + signal viewing
+2. Heart rate time domain data
+3. Heart rate frequency domain -beats per minute 
+4. Raw Data + artifacts + blinks + record
+5. Frequency domain explanation + Raw spectra + record
+6. Frequency bands + record
+7. Spectrogram
+8. Neurofeedback p5js demos
+9. Eyes closed eyes open experiment
+10. SSVEP experiment
+11. BCI trainer
 
 # Installation for Development 
 
