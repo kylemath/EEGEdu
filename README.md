@@ -1,13 +1,25 @@
 # EEGEdu
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://github.com/kylemath/EEGEdu/blob/master/LICENSE)
+<p align="center"> 
+<a href="https://github.com/kylemath/EEGEdu/blob/master/LICENSE">
+<img src="https://img.shields.io/badge/License-MIT-brightgreen.svg" alt="MIT license" />
+</a>
 <a href="https://github.com/kylemath/EEGEdu/blob/master/CONTRIBUTING.md">
 <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome!" />
 </a>
+<img src="https://img.shields.io/github/issues/kylemath/EEGEdu" alt="issues" />
+<img src="https://img.shields.io/github/issues-closed-raw/kylemath/EEGEdu" />
+</p>
 
-`EEGEdu` is an interactive educational website to learn about working with electroencephalogram (EEG) data. It is a teaching tool that allows for students to interact with their own brain waves. 
+<p align="center">
+<img src="logo.png" alt="Interactive Brain Playground Logo" width=500 />
+</p>
+
+`EEGEdu` is an Interactive Brain Playground. 
 
 `EEGEdu` is served live at [https://eegedu.com/](https://eegedu.com). This website is served from the software in this repository. So, all you need to do to try the system out is head to [EEGEdu](https://eegedu.com/).
+
+`EEGEdu` is designed as an interactive educational website to learn/teach about working with electroencephalogram (EEG) data. It is a teaching tool that allows for students to interact with their own brain waves. 
 
 `EEGEdu` has been inspired by multiple works that came before. It is inspired by [EEG101](https://github.com/NeuroTechX/eeg-101), but `EEGEdu` is web-based. Being web-based allows students to interact with EEG brain data without having to install any software. Others have used [Neurotech EEG-notebooks in python](https://github.com/NeuroTechX/eeg-notebooks) for data collection and analysis with [muse-lsl](https://github.com/alexandrebarachant/muse-lsl).  These software support the Interaxon MUSE headset but require a bluetooth low-energey (BLE) dongle to work with common operating systems (e.g. Windows or Mac OSX). These tools also required the editing `pyglatt` code to connect to Muse headsets. Thus, previous software are cumbersome and serve as a barrier to entry for many students learning about EEG. `EEGEdu` aims to provide students with an accesible introduction to working with their own brain waves.
 
