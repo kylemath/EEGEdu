@@ -23,7 +23,7 @@ export const emptyChannelData = {
   }
 };
 
-export const emptyChannelDataHeartSpectra = {
+export const emptySingleChannelData = {
   ch1: {
     datasets: [{}]
   }
