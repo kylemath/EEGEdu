@@ -1,12 +1,13 @@
 # EEGEdu
 
+<p align="center">
 [![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://github.com/kylemath/EEGEdu/blob/master/LICENSE)
 <a href="https://github.com/kylemath/EEGEdu/blob/master/CONTRIBUTING.md">
 <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome!" />
 </a>
 
 <img src="logo.png" alt="Interactive Brain Playground Logo" width=500 />
-
+</p>
 
 `EEGEdu` is an Interactive Brain Playground. 
 
