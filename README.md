@@ -175,7 +175,7 @@ The guide for contributors can be found [here](https://github.com/kylemath/EEGEd
 
 # Credits
 
-`EEGEdu` - An Interactive Electrophysiology Tutorial with the Interaxon Muse brought to you by Mathewson Sons.
+`EEGEdu` - An Interactive Electrophysiology Tutorial with the Interaxon Muse brought to you by Mathewson Sons. A [Ky](http://kylemathewson.com)[Kor](http://korymathewson.com)[Key](http://keyfer.ca) Production.
 
 # License
 
