@@ -6,8 +6,6 @@ import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal } f
 import { saveAs } from 'file-saver';
 import { take } from "rxjs/operators";
 
-import { channelNames } from "muse-js";
-import { Line } from "react-chartjs-2";
 
 import { zipSamples } from "muse-js";
 
@@ -16,7 +14,7 @@ import {
   epoch
 } from "@neurosity/pipes";
 
-import { chartStyles, generalOptions } from "../chartOptions";
+import { chartStyles } from "../chartOptions";
 
 import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
