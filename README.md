@@ -10,7 +10,13 @@
 </a>
 <img src="https://img.shields.io/github/issues-raw/kylemath/EEGEdu" alt="issues" />
 <img src="https://img.shields.io/github/issues-closed-raw/kylemath/EEGEdu" />
+<a href="https://neurotechx.herokuapp.com/">
+<img src="https://neurotechx.herokuapp.com/badge.svg">
+</a>    
 </p>
+
+
+
 
 <p align="center">
 <img src="logo.png" alt="Interactive Brain Playground Logo" width=500 />
