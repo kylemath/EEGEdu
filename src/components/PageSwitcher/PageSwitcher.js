@@ -1,4 +1,4 @@
- import React, { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { MuseClient } from "muse-js";
 import { Select, Card, Stack, Button, ButtonGroup } from "@shopify/polaris";
 
@@ -15,9 +15,10 @@ import * as funSpectra from "./components/EEGEduSpectra/EEGEduSpectra";
 import * as funBands from "./components/EEGEduBands/EEGEduBands";
 import * as funAnimate from "./components/EEGEduAnimate/EEGEduAnimate";
 import * as funSpectro from "./components/EEGEduSpectro/EEGEduSpectro";
-import * as funAlpha from "./components/EEGEduAlpha/EEGEduAlpha"
-import * as funSsvep from "./components/EEGEduSsvep/EEGEduSsvep"
-import * as funPredict from "./components/EEGEduPredict/EEGEduPredict"
+import * as funAlpha from "./components/EEGEduAlpha/EEGEduAlpha";
+import * as funSsvep from "./components/EEGEduSsvep/EEGEduSsvep";
+import * as funEvoked from "./components/EEGEduEvoked/EEGEduEvoked";
+import * as funPredict from "./components/EEGEduPredict/EEGEduPredict";
 
 const intro = translations.types.intro;
 const heartRaw = translations.types.heartRaw;
@@ -29,6 +30,7 @@ const animate = translations.types.animate;
 const spectro = translations.types.spectro;
 const alpha = translations.types.alpha;
 const ssvep = translations.types.ssvep;
+const evoked = translations.types.evoked;
 const predict = translations.types.predict;
 
 export function PageSwitcher() {
@@ -44,6 +46,7 @@ export function PageSwitcher() {
   const [spectroData, setSpectroData] = useState(emptyChannelData);
   const [alphaData, setAlphaData] = useState(emptyChannelData);
   const [ssvepData, setSsvepData] = useState(emptyChannelData);
+  const [evokedData, setEvokedData] = useState(emptyChannelData);
   const [predictData, setPredictData] = useState(emptyChannelData);
 
   // pipe settings
@@ -57,6 +60,7 @@ export function PageSwitcher() {
   const [spectroSettings, setSpectroSettings] = useState(funSpectro.getSettings);
   const [alphaSettings, setAlphaSettings] = useState(funAlpha.getSettings);
   const [ssvepSettings, setSsvepSettings] = useState(funSsvep.getSettings);
+  const [evokedSettings, setEvokedSettings] = useState(funEvoked.getSettings);
   const [predictSettings, setPredictSettings] = useState(funPredict.getSettings);
 
   // connection status
@@ -79,6 +83,7 @@ export function PageSwitcher() {
     if (window.subscriptionSpectro) window.subscriptionSpectro.unsubscribe();
     if (window.subscriptionAlpha) window.subscriptionAlpha.unsubscribe();
     if (window.subscriptionSsvep) window.subscriptionSsvep.unsubscribe();
+    if (window.subscriptionEvoked) window.subscriptionEvoked.unsubscribe();
     if (window.subscriptionPredict) window.subscriptionPredict.unsubscribe();
 
     subscriptionSetup(value);
@@ -104,6 +109,7 @@ export function PageSwitcher() {
     { label: spectro, value: spectro },
     { label: alpha, value: alpha },
     { label: ssvep, value: ssvep },
+    { label: evoked, value: evoked },
     { label: predict, value: predict }
 
   ];
@@ -119,6 +125,7 @@ export function PageSwitcher() {
     funSpectro.buildPipe(spectroSettings);
     funAlpha.buildPipe(alphaSettings);
     funSsvep.buildPipe(ssvepSettings);
+    funEvoked.buildPipe(evokedSettings);
     funPredict.buildPipe(predictSettings);
   }
 
@@ -153,6 +160,9 @@ export function PageSwitcher() {
         break;
       case ssvep:
         funSsvep.setup(setSsvepData, ssvepSettings);
+        break;
+      case evoked:
+        funEvoked.setup(setEvokedData, evokedSettings);
         break;
       case predict:
         funPredict.setup(setPredictData, predictSettings);
@@ -236,6 +246,10 @@ export function PageSwitcher() {
         return (
           funSsvep.renderSliders(setSsvepData, setSsvepSettings, status, ssvepSettings)
         );
+      case evoked:
+        return (
+          funEvoked.renderSliders(setEvokedData, setEvokedSettings, status, evokedSettings)
+        );
       case predict: 
         return (
           funPredict.renderSliders(setPredictData, setPredictSettings, status, predictSettings)
@@ -266,6 +280,8 @@ export function PageSwitcher() {
         return <funAlpha.renderModule data={alphaData} />;
       case ssvep:
         return <funSsvep.renderModule data={ssvepData} />;
+      case evoked:
+        return <funEvoked.renderModule data={evokedData} />;
       case predict:
         return <funPredict.renderModule data={predictData} />;
       default:
@@ -306,6 +322,10 @@ export function PageSwitcher() {
       case ssvep:
         return (
           funSsvep.renderRecord(recordPopChange, recordPop, status, ssvepSettings, recordTwoPopChange, recordTwoPop)
+        )
+      case evoked:
+        return (
+          funEvoked.renderRecord(recordPopChange, recordPop, status, evokedSettings)
         )
       case predict:
         return (

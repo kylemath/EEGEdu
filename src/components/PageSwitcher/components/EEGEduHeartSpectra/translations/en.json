@@ -8,6 +8,6 @@
     "Along the horizontal axis is the beats per minute, or the frequency of the peaks in your ECG. ", 
     "The vertical y-axis shows the power of the rhythms in the data at each frequency, or how large the changes are between peak and through of the oscillations. "
   ],
-  "xlabel": "Frequency (Hz)",
+  "xlabel": "Heart Frequency (BPM)",
   "ylabel": "Power (\u03BCV\u00B2)"
 }
