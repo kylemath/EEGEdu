@@ -45,7 +45,7 @@ export function PageSwitcher() {
   const [introData, setIntroData] = useState(emptyChannelData)
   const [heartRawData, setHeartRawData] = useState(emptyChannelData);
   const [heartSpectraData, setHeartSpectraData] = useState(emptySingleChannelData);
-  const [rawData, setRawData] = useState(emptyAuxChannelData);
+  const [rawData, setRawData] = useState(emptyAuxChannelData);;
   const [spectraData, setSpectraData] = useState(emptyChannelData); 
   const [bandsData, setBandsData] = useState(emptyChannelData);
   const [animateData, setAnimateData] = useState(emptyChannelData);
