@@ -30,7 +30,6 @@ export function getSettings() {
   return {
     cutOffLow: 2,
     cutOffHigh: 20,
-    nbChannels: 4,
     interval: 100,
     bins: 256,
     sliceFFTLow: 1,
@@ -53,7 +52,7 @@ export function buildPipe(Settings) {
   window.pipeAlpha$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
-      nbChannels: Settings.nbChannels }),
+      nbChannels: window.nchans }),
     epoch({
       duration: Settings.duration,
       interval: Settings.interval,
@@ -78,17 +77,16 @@ export function setup(setData, Settings) {
     window.subscriptionAlpha = window.multicastAlpha$.subscribe(data => {
       setData(alphaData => {
         Object.values(alphaData).forEach((channel, index) => {
-          if (index < 4) {
-            channel.datasets[0].data = data.psd[index];
-            channel.xLabels = data.freqs;
-          }
+          channel.datasets[0].data = data.psd[index];
+          channel.xLabels = data.freqs;
         });
 
         return {
           ch0: alphaData.ch0,
           ch1: alphaData.ch1,
           ch2: alphaData.ch2,
-          ch3: alphaData.ch3
+          ch3: alphaData.ch3,
+          ch4: alphaData.ch4
         };
       });
     });
@@ -101,6 +99,7 @@ export function setup(setData, Settings) {
 export function renderModule(channels) {
   function renderCharts() {
     return Object.values(channels.data).map((channel, index) => {
+      if (index === 0) {
       const options = {
         ...generalOptions,
         scales: {
@@ -136,7 +135,6 @@ export function renderModule(channels) {
         }
       };
 
-      if (index === 0) {
         return (
           <Card.Section key={"Card_" + index}>
             <Line key={"Line_" + index} data={channel} options={options} />
