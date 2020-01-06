@@ -92,14 +92,8 @@ export function setup(setData, Settings) {
 
 export function renderModule(channels, enableAux) {
   function renderCharts() {
-    let upto;
-    if (enableAux) {
-      upto = 5;
-    } else {
-      upto = 4;
-    }
     return Object.values(channels.data).map((channel, index) => {
-      if (index < upto) {
+      if (index < 4) {
       const options = {
         ...generalOptions,
         scales: {

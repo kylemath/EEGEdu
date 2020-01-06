@@ -31,11 +31,15 @@ const alpha = translations.types.alpha;
 const ssvep = translations.types.ssvep;
 const predict = translations.types.predict;
 
+const nChans = 4;
+
 export function PageSwitcher() {
 
   // for using Aux channel
   const [enableAux, setEnableAux] = useState(false);
-  const handleToggleEnableAux = useCallback((newChecked) => setEnableAux(newChecked), []);
+  const handleToggleEnableAux = useCallback((newChecked) => {
+    setEnableAux(newChecked);
+  }, []);
 
   // data pulled out of multicast$
   const [introData, setIntroData] = useState(emptyChannelData)
