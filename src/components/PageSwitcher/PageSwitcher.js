@@ -1,11 +1,11 @@
- import React, { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { MuseClient } from "muse-js";
-import { Select, Card, Stack, Button, ButtonGroup } from "@shopify/polaris";
+import { Select, Card, Stack, Button, ButtonGroup, Checkbox } from "@shopify/polaris";
 
 import { mockMuseEEG } from "./utils/mockMuseEEG";
 import * as translations from "./translations/en.json";
 import * as generalTranslations from "./components/translations/en";
-import { emptyChannelData, emptySingleChannelData } from "./components/chartOptions";
+import { emptyChannelData, emptyAuxChannelData, emptySingleChannelData } from "./components/chartOptions";
 
 import * as funIntro from "./components/EEGEduIntro/EEGEduIntro"
 import * as funHeartRaw from "./components/EEGEduHeartRaw/EEGEduHeartRaw"
@@ -37,7 +37,7 @@ export function PageSwitcher() {
   const [introData, setIntroData] = useState(emptyChannelData)
   const [heartRawData, setHeartRawData] = useState(emptyChannelData);
   const [heartSpectraData, setHeartSpectraData] = useState(emptySingleChannelData);
-  const [rawData, setRawData] = useState(emptyChannelData);
+  const [rawData, setRawData] = useState(emptyAuxChannelData);
   const [spectraData, setSpectraData] = useState(emptyChannelData); 
   const [bandsData, setBandsData] = useState(emptyChannelData);
   const [animateData, setAnimateData] = useState(emptyChannelData);
@@ -62,8 +62,12 @@ export function PageSwitcher() {
   // connection status
   const [status, setStatus] = useState(generalTranslations.connect);
 
+  // for using Aux channel
+  const [enableAux, setEnableAux] = useState(false);
+  const handleToggleEnableAux = useCallback((newChecked) => setEnableAux(newChecked), []);
+
   // for picking a new module
-  const [selected, setSelected] = useState(intro);
+  const [selected, setSelected] = useState(raw);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 
@@ -134,7 +138,7 @@ export function PageSwitcher() {
         funHeartSpectra.setup(setHeartSpectraData, heartSpectraSettings);
         break;
       case raw:
-        funRaw.setup(setRawData, rawSettings);
+        funRaw.setup(setRawData, rawSettings, enableAux);
         break;
       case spectra:
         funSpectra.setup(setSpectraData, spectraSettings);
@@ -172,12 +176,15 @@ export function PageSwitcher() {
         window.source = {};
         window.source.connectionStatus = {};
         window.source.connectionStatus.value = true;
-        window.source.eegReadings$ = mockMuseEEG(256);
+        window.source.eegReadings$ = mockMuseEEG(enableAux);
         setStatus(generalTranslations.connectedMock);
       } else {
         // Connect with the Muse EEG Client
         setStatus(generalTranslations.connecting);
         window.source = new MuseClient();
+        if (enableAux) {
+          window.source.enableAux = true;
+        }
         await window.source.connect();
         await window.source.start();
         window.source.eegReadings$ = window.source.eegReadings;
@@ -348,8 +355,13 @@ export function PageSwitcher() {
               disabled={status === generalTranslations.connect}
             >
               {generalTranslations.disconnect}
-            </Button>     
+            </Button>
           </ButtonGroup>
+        <Checkbox
+          label="Enable Muse Auxillary Channel"
+          checked={enableAux}
+          onChange={handleToggleEnableAux}
+        />
         </Stack>
       </Card>
       <Card title={translations.title} sectioned>

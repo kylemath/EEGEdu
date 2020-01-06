@@ -23,16 +23,29 @@ import * as specificTranslations from "./translations/en";
 
 import { generateXTics, standardDeviation } from "../../utils/chartUtils";
 
-export function getSettings () {
-  return {
-    cutOffLow: 2,
-    cutOffHigh: 20,
-    nbChannels: 4,
-    interval: 50,
-    srate: 256,
-    duration: 1024,
-    name: 'Raw'
+export function getSettings (enableAux) {
+  if (enableAux) {
+    return {
+      cutOffLow: 2,
+      cutOffHigh: 20,
+      nbChannels: 5,
+      interval: 50,
+      srate: 256,
+      duration: 1024,
+      name: 'Raw'
+    }    
+  } else {
+    return {
+      cutOffLow: 2,
+      cutOffHigh: 20,
+      nbChannels: 4,
+      interval: 50,
+      srate: 256,
+      duration: 1024,
+      name: 'Raw'
+    }     
   }
+
 };
 
 export function buildPipe(Settings) {
@@ -61,26 +74,43 @@ export function buildPipe(Settings) {
   );
 }
 
-export function setup(setData, Settings) {
+export function setup(setData, Settings, enableAux) {
   console.log("Subscribing to " + Settings.name);
-
+  let upto = 4;
   if (window.multicastRaw$) {
     window.subscriptionRaw = window.multicastRaw$.subscribe(data => {
       setData(rawData => {
+        console.log(rawData);
         Object.values(rawData).forEach((channel, index) => {
-          if (index < 4) {
+          if (enableAux) {
+            let upto = 5;
+          } else {
+            let upto = 4;
+          }
+          console.log(upto)
+          if (index < upto) {
             channel.datasets[0].data = data.data[index];
             channel.xLabels = generateXTics(Settings.srate, Settings.duration);
             channel.datasets[0].qual = standardDeviation(data.data[index])          
           }
         });
 
-        return {
-          ch0: rawData.ch0,
-          ch1: rawData.ch1,
-          ch2: rawData.ch2,
-          ch3: rawData.ch3
-        };
+        if (enableAux) {
+          return {
+            ch0: rawData.ch0,
+            ch1: rawData.ch1,
+            ch2: rawData.ch2,
+            ch3: rawData.ch3,
+            ch4: rawData.ch4
+          };
+        } else {
+          return {
+            ch0: rawData.ch0,
+            ch1: rawData.ch1,
+            ch2: rawData.ch2,
+            ch3: rawData.ch3
+          };  
+        }
       });
     });
 
@@ -118,7 +148,6 @@ export function renderModule(channels) {
         },
         elements: {
           line: {
-            borderColor: 'rgba(' + channel.datasets[0].qual*10 + ', 128, 128)',
             fill: false
           },
           point: {
@@ -130,7 +159,7 @@ export function renderModule(channels) {
         },
         title: {
           ...generalOptions.title,
-          text: generalTranslations.channel + channelNames[index] + ' --- SD: ' + channel.datasets[0].qual 
+          text: generalTranslations.channel + channelNames[index] + ' --- SD: '
         }
       };
 
