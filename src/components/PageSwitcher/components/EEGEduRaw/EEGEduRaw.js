@@ -90,10 +90,11 @@ export function setup(setData, Settings) {
   }
 }
 
-export function renderModule(channels, enableAux) {
+export function renderModule(channels) {
+  console.log(window.nchans)
   function renderCharts() {
     return Object.values(channels.data).map((channel, index) => {
-      if (index < 4) {
+      if (index < window.nchans) {
       const options = {
         ...generalOptions,
         scales: {

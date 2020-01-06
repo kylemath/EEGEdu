@@ -31,16 +31,16 @@ const alpha = translations.types.alpha;
 const ssvep = translations.types.ssvep;
 const predict = translations.types.predict;
 
-const nChans = 4;
-
 export function PageSwitcher() {
-
-  // for using Aux channel
-  const [enableAux, setEnableAux] = useState(false);
-  const handleToggleEnableAux = useCallback((newChecked) => {
-    setEnableAux(newChecked);
-  }, []);
-
+  
+  const [checked, setChecked] = useState(false);
+  const handleChange = useCallback((newChecked) => setChecked(newChecked), []);
+  window.enableAux = checked;
+  if (window.enableAux) {
+    window.nchans = 5;
+  } else {
+    window.nchans = 4;
+  }
   // data pulled out of multicast$
   const [introData, setIntroData] = useState(emptyChannelData)
   const [heartRawData, setHeartRawData] = useState(emptyChannelData);
@@ -58,7 +58,7 @@ export function PageSwitcher() {
   const [introSettings] = useState(funIntro.getSettings);
   const [heartRawSettings] = useState(funHeartRaw.getSettings);
   const [heartSpectraSettings] = useState(funHeartSpectra.getSettings);
-  const [rawSettings, setRawSettings] = useState(funRaw.getSettings(enableAux)); 
+  const [rawSettings, setRawSettings] = useState(funRaw.getSettings); 
   const [spectraSettings, setSpectraSettings] = useState(funSpectra.getSettings); 
   const [bandsSettings, setBandsSettings] = useState(funBands.getSettings);
   const [animateSettings, setAnimateSettings] = useState(funAnimate.getSettings);
@@ -143,7 +143,7 @@ export function PageSwitcher() {
         funHeartSpectra.setup(setHeartSpectraData, heartSpectraSettings);
         break;
       case raw:
-        funRaw.setup(setRawData, rawSettings, enableAux);
+        funRaw.setup(setRawData, rawSettings);
         break;
       case spectra:
         funSpectra.setup(setSpectraData, spectraSettings);
@@ -181,15 +181,13 @@ export function PageSwitcher() {
         window.source = {};
         window.source.connectionStatus = {};
         window.source.connectionStatus.value = true;
-        window.source.eegReadings$ = mockMuseEEG(enableAux);
+        window.source.eegReadings$ = mockMuseEEG(256);
         setStatus(generalTranslations.connectedMock);
       } else {
         // Connect with the Muse EEG Client
         setStatus(generalTranslations.connecting);
         window.source = new MuseClient();
-        if (enableAux) {
-          window.source.enableAux = true;
-        }
+        window.source.enableAux = window.enableAux;
         await window.source.connect();
         await window.source.start();
         window.source.eegReadings$ = window.source.eegReadings;
@@ -265,7 +263,7 @@ export function PageSwitcher() {
       case heartSpectra:
         return <funHeartSpectra.renderModule data={heartSpectraData} />;
       case raw:
-        return <funRaw.renderModule data={rawData} enableAux={enableAux} />;
+        return <funRaw.renderModule data={rawData} />;
       case spectra:
         return <funSpectra.renderModule data={spectraData} />;
       case bands:
@@ -364,8 +362,9 @@ export function PageSwitcher() {
           </ButtonGroup>
         <Checkbox
           label="Enable Muse Auxillary Channel"
-          checked={enableAux}
-          onChange={handleToggleEnableAux}
+          checked={checked}
+          onChange={handleChange}
+          disabled={status !== generalTranslations.connect}
         />
         </Stack>
       </Card>
