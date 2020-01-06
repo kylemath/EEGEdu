@@ -5,7 +5,7 @@ import { Subject } from "rxjs";
 import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal } from "@shopify/polaris";
 import { saveAs } from 'file-saver';
 import { take } from "rxjs/operators";
-
+ 
 
 import { zipSamples } from "muse-js";
 
@@ -174,14 +174,27 @@ export function renderSliders(setData, setSettings, status, Settings) {
 
 export function renderRecord(recordPopChange, recordPop, status, Settings) {
   return (
-    <Card title={'Record ' + Settings.name + ' Data'} sectioned>
+    <Card title={'Run ERP experiment'} sectioned>
       <Card.Section>
         <p>
-          {"When you are recording Evoked data it is recommended you set the "}
-          {"number of sampling points between epochs onsets to be equal to the epoch duration. "}
-          {"This will ensure that consecutive rows of your output file are not overlapping in time."}
-          {"It will make the live plots appear more choppy."}
-        </p>        
+          {"Clicking this button will begin the experiment so check your data quality on the raw module first. "}
+          {"A window will pop up when you click the button and a series of circles will appear. Stare at the cross in the center. "}
+          {"There will be red and blue circles, ignore the blue ones."}
+          {"Whenever you see a red circle, as fast as you can either press spacebar on a keyboard, or tap the touchscreen on a tablet or phone. "}
+          {"This entire time the eeg data will be saved along with a column indicating which target was on the screen, and another for the responses. "}
+          {"The task will continue for a few minutes and once it is finished a .csv file will automatically download. "}
+          {"This .csv file has a row for each time point, a column for each electrode, and the columns indicating when targets appeared, and when responses were made. "}
+          {"It saves a marker of 20 when the target is on, a marker of 10 when the blue standards are on, and a peak when the spacebar or touchscreen are pressed, here you can see those synced with an eeg channel: "}
+
+        </p>
+        <p>
+         <img 
+            src={ require("./dataExample.png")} 
+            alt="dataExample"
+            width="100%"
+            height="auto"
+          ></img>    
+        </p>     
       </Card.Section>
       <Stack>
         <ButtonGroup>
@@ -193,14 +206,14 @@ export function renderRecord(recordPopChange, recordPop, status, Settings) {
             primary={status !== generalTranslations.connect}
             disabled={status === generalTranslations.connect}
           > 
-            {'Save to CSV'}  
+            {'Run oddball experiment'}  
           </Button>
         </ButtonGroup>
         
         <Modal
           open={recordPop}
           onClose={recordPopChange}
-          title={"Recording Data"}
+          title={"Press Spacebar or tap screen when you see RED circle"}
         >
           <Modal.Section>
            <Card.Section>
@@ -223,11 +236,13 @@ export function renderRecord(recordPopChange, recordPop, status, Settings) {
 }
 
 function saveToCSV(Settings) {
-  const numSamplesToSave = 2000;
+  const numSamplesToSave = 10000;
   console.log('Saving ' + numSamplesToSave + ' samples...');
   var localObservable$ = null;
   const dataToSave = [];
   window.marker = 0;
+  window.responseMarker = 0;
+  window.touchMarker = 0;
 
   console.log('making ' + Settings.name + ' headers')
 
@@ -242,6 +257,8 @@ function saveToCSV(Settings) {
     dataToSave.push(
       "Timestamp (ms),",
       "Marker,",
+      "SpaceBar,",
+      "TouchMarker,",
       generateXTics(x.info.samplingRate,x.data[0].length,false).map(function(f) {return "ch0_" + f + "ms"}) + ",", 
       generateXTics(x.info.samplingRate,x.data[0].length,false).map(function(f) {return "ch1_" + f + "ms"}) + ",", 
       generateXTics(x.info.samplingRate,x.data[0].length,false).map(function(f) {return "ch2_" + f + "ms"}) + ",", 
@@ -260,7 +277,12 @@ function saveToCSV(Settings) {
   // now with header in place subscribe to each epoch and log it
   localObservable$.subscribe({
     next(x) { 
-      dataToSave.push(Date.now() + "," + window.marker + "," + Object.values(x).join(",") + "\n");
+      dataToSave.push(
+        Date.now() + "," + 
+        window.marker + "," + 
+        window.responseMarker + "," +
+        window.touchMarker + "," +
+        Object.values(x).join(",") + "\n");
       // logging is useful for debugging -yup
       // console.log(x);
     },
