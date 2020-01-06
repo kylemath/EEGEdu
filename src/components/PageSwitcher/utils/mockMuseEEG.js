@@ -1,3 +1,5 @@
+import {customCount} from './chartUtils'
+
 const { interval, from } = require('rxjs');
 const { map, flatMap } = require('rxjs/operators');
 
@@ -9,7 +11,9 @@ const samples = () => {
 
 const transform = (index) => {
  const timestamp = Date.now();
- return from([0,1,2,3,4]).pipe(
+ let chanNums = customCount(0, window.nchans);
+ console.log(chanNums);
+ return from(chanNums).pipe(
   map(electrode => ({
    timestamp,
    electrode,

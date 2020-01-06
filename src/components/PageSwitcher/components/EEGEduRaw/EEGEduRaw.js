@@ -68,20 +68,29 @@ export function setup(setData, Settings) {
     window.subscriptionRaw = window.multicastRaw$.subscribe(data => {
       setData(rawData => {
         Object.values(rawData).forEach((channel, index) => {
-          if (index < 5) {
+          if (index < window.nchans) {
             channel.datasets[0].data = data.data[index];
             channel.xLabels = generateXTics(Settings.srate, Settings.duration);
             channel.datasets[0].qual = standardDeviation(data.data[index])          
           }
         });
 
-        return {
-          ch0: rawData.ch0,
-          ch1: rawData.ch1,
-          ch2: rawData.ch2,
-          ch3: rawData.ch3,
-          ch4: rawData.ch4
-        };
+        if (window.enableAux) {
+          return {
+            ch0: rawData.ch0,
+            ch1: rawData.ch1,
+            ch2: rawData.ch2,
+            ch3: rawData.ch3,
+            ch4: rawData.ch4
+          };
+        } else {
+          return {
+            ch0: rawData.ch0,
+            ch1: rawData.ch1,
+            ch2: rawData.ch2,
+            ch3: rawData.ch3
+          }
+        }
       });
     });
 
