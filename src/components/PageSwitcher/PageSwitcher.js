@@ -60,7 +60,7 @@ export function PageSwitcher() {
   const [spectroSettings, setSpectroSettings] = useState(funSpectro.getSettings);
   const [alphaSettings, setAlphaSettings] = useState(funAlpha.getSettings);
   const [ssvepSettings, setSsvepSettings] = useState(funSsvep.getSettings);
-  const [evokedSettings, setEvokedSettings] = useState(funEvoked.getSettings);
+  const [evokedSettings] = useState(funEvoked.getSettings);
   const [predictSettings, setPredictSettings] = useState(funPredict.getSettings);
 
   // connection status
@@ -247,9 +247,7 @@ export function PageSwitcher() {
           funSsvep.renderSliders(setSsvepData, setSsvepSettings, status, ssvepSettings)
         );
       case evoked:
-        return (
-          funEvoked.renderSliders(setEvokedData, setEvokedSettings, status, evokedSettings)
-        );
+        return null
       case predict: 
         return (
           funPredict.renderSliders(setPredictData, setPredictSettings, status, predictSettings)
