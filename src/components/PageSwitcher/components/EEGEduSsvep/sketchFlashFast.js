@@ -4,6 +4,7 @@ export default function sketchFlash (p) {
 
   p.setup = function () {
     p.createCanvas(300, 300);
+    p.frameRate(30);
   };
 
   p.windowResized = function() {
