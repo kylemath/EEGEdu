@@ -11,8 +11,7 @@ const samples = () => {
 
 const transform = (index) => {
  const timestamp = Date.now();
- let chanNums = customCount(0, window.nchans);
- console.log(chanNums);
+ let chanNums = customCount(0, window.nchans-1);
  return from(chanNums).pipe(
   map(electrode => ({
    timestamp,

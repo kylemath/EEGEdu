@@ -27,7 +27,6 @@ export function getSettings () {
   return {
     cutOffLow: 2,
     cutOffHigh: 20,
-    nbChannels: 5,
     interval: 50,
     srate: 256,
     duration: 1024,
@@ -45,8 +44,9 @@ export function buildPipe(Settings) {
   // Build Pipe
   window.pipeRaw$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
-      cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
-      nbChannels: Settings.nbChannels }),
+      cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh],
+      nbChannels: window.nchans
+    }),
     epoch({
       duration: Settings.duration,
       interval: Settings.interval,
@@ -67,6 +67,7 @@ export function setup(setData, Settings) {
   if (window.multicastRaw$) {
     window.subscriptionRaw = window.multicastRaw$.subscribe(data => {
       setData(rawData => {
+
         Object.values(rawData).forEach((channel, index) => {
           if (index < window.nchans) {
             channel.datasets[0].data = data.data[index];
@@ -100,7 +101,6 @@ export function setup(setData, Settings) {
 }
 
 export function renderModule(channels) {
-  console.log(window.nchans)
   function renderCharts() {
     return Object.values(channels.data).map((channel, index) => {
       if (index < window.nchans) {
