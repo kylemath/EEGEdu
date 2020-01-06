@@ -33,6 +33,10 @@ const predict = translations.types.predict;
 
 export function PageSwitcher() {
 
+  // for using Aux channel
+  const [enableAux, setEnableAux] = useState(false);
+  const handleToggleEnableAux = useCallback((newChecked) => setEnableAux(newChecked), []);
+
   // data pulled out of multicast$
   const [introData, setIntroData] = useState(emptyChannelData)
   const [heartRawData, setHeartRawData] = useState(emptyChannelData);
@@ -50,7 +54,7 @@ export function PageSwitcher() {
   const [introSettings] = useState(funIntro.getSettings);
   const [heartRawSettings] = useState(funHeartRaw.getSettings);
   const [heartSpectraSettings] = useState(funHeartSpectra.getSettings);
-  const [rawSettings, setRawSettings] = useState(funRaw.getSettings); 
+  const [rawSettings, setRawSettings] = useState(funRaw.getSettings(enableAux)); 
   const [spectraSettings, setSpectraSettings] = useState(funSpectra.getSettings); 
   const [bandsSettings, setBandsSettings] = useState(funBands.getSettings);
   const [animateSettings, setAnimateSettings] = useState(funAnimate.getSettings);
@@ -62,9 +66,6 @@ export function PageSwitcher() {
   // connection status
   const [status, setStatus] = useState(generalTranslations.connect);
 
-  // for using Aux channel
-  const [enableAux, setEnableAux] = useState(false);
-  const handleToggleEnableAux = useCallback((newChecked) => setEnableAux(newChecked), []);
 
   // for picking a new module
   const [selected, setSelected] = useState(raw);
@@ -251,7 +252,7 @@ export function PageSwitcher() {
     }
   }
 
-  function renderCharts() {
+  function renderModules() {
     switch (selected) {
       case intro:
         return <funIntro.renderModule data={introData} />;
@@ -260,7 +261,7 @@ export function PageSwitcher() {
       case heartSpectra:
         return <funHeartSpectra.renderModule data={heartSpectraData} />;
       case raw:
-        return <funRaw.renderModule data={rawData} />;
+        return <funRaw.renderModule data={rawData} enableAux={enableAux} />;
       case spectra:
         return <funSpectra.renderModule data={spectraData} />;
       case bands:
@@ -373,7 +374,7 @@ export function PageSwitcher() {
         />
       </Card>
       {pipeSettingsDisplay()}
-      {renderCharts()}
+      {renderModules()}
       {renderRecord()}
     </React.Fragment>
   );

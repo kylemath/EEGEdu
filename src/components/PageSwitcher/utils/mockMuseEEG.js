@@ -1,6 +1,3 @@
-import { customCount } from "./chartUtils";
-
-
 const { interval, from } = require('rxjs');
 const { map, flatMap } = require('rxjs/operators');
 
@@ -10,15 +7,9 @@ const samples = () => {
   .map(_ => Math.random()).map(function(x) {return x * 100});
 };
 
-const transform = (index, enableAux) => {
+const transform = (index) => {
  const timestamp = Date.now();
- let chans;
- if (enableAux) {
-  chans = customCount(0, 4);
- } else {
-  chans = customCount(0, 3);
- }
- return from(chans).pipe(
+ return from([0,1,2,3,4]).pipe(
   map(electrode => ({
    timestamp,
    electrode,
@@ -28,9 +19,8 @@ const transform = (index, enableAux) => {
  )
 };
 
-export const mockMuseEEG = (enableAux) => {
+export const mockMuseEEG = (sampleRate) => {
  let index = 0;
- let sampleRate = 256;
  return interval(1000 / sampleRate).pipe(
   map(() => index += 1),
   flatMap(transform),

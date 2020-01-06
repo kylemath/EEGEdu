@@ -23,29 +23,16 @@ import * as specificTranslations from "./translations/en";
 
 import { generateXTics, standardDeviation } from "../../utils/chartUtils";
 
-export function getSettings (enableAux) {
-  if (enableAux) {
-    return {
-      cutOffLow: 2,
-      cutOffHigh: 20,
-      nbChannels: 5,
-      interval: 50,
-      srate: 256,
-      duration: 1024,
-      name: 'Raw'
-    }    
-  } else {
-    return {
-      cutOffLow: 2,
-      cutOffHigh: 20,
-      nbChannels: 4,
-      interval: 50,
-      srate: 256,
-      duration: 1024,
-      name: 'Raw'
-    }     
+export function getSettings () {
+  return {
+    cutOffLow: 2,
+    cutOffHigh: 20,
+    nbChannels: 5,
+    interval: 50,
+    srate: 256,
+    duration: 1024,
+    name: 'Raw'
   }
-
 };
 
 export function buildPipe(Settings) {
@@ -74,43 +61,27 @@ export function buildPipe(Settings) {
   );
 }
 
-export function setup(setData, Settings, enableAux) {
+export function setup(setData, Settings) {
   console.log("Subscribing to " + Settings.name);
-  let upto = 4;
+
   if (window.multicastRaw$) {
     window.subscriptionRaw = window.multicastRaw$.subscribe(data => {
       setData(rawData => {
-        console.log(rawData);
         Object.values(rawData).forEach((channel, index) => {
-          if (enableAux) {
-            let upto = 5;
-          } else {
-            let upto = 4;
-          }
-          console.log(upto)
-          if (index < upto) {
+          if (index < 5) {
             channel.datasets[0].data = data.data[index];
             channel.xLabels = generateXTics(Settings.srate, Settings.duration);
             channel.datasets[0].qual = standardDeviation(data.data[index])          
           }
         });
 
-        if (enableAux) {
-          return {
-            ch0: rawData.ch0,
-            ch1: rawData.ch1,
-            ch2: rawData.ch2,
-            ch3: rawData.ch3,
-            ch4: rawData.ch4
-          };
-        } else {
-          return {
-            ch0: rawData.ch0,
-            ch1: rawData.ch1,
-            ch2: rawData.ch2,
-            ch3: rawData.ch3
-          };  
-        }
+        return {
+          ch0: rawData.ch0,
+          ch1: rawData.ch1,
+          ch2: rawData.ch2,
+          ch3: rawData.ch3,
+          ch4: rawData.ch4
+        };
       });
     });
 
@@ -119,9 +90,16 @@ export function setup(setData, Settings, enableAux) {
   }
 }
 
-export function renderModule(channels) {
+export function renderModule(channels, enableAux) {
   function renderCharts() {
+    let upto;
+    if (enableAux) {
+      upto = 5;
+    } else {
+      upto = 4;
+    }
     return Object.values(channels.data).map((channel, index) => {
+      if (index < upto) {
       const options = {
         ...generalOptions,
         scales: {
@@ -148,6 +126,7 @@ export function renderModule(channels) {
         },
         elements: {
           line: {
+            borderColor: 'rgba(' + channel.datasets[0].qual*10 + ', 128, 128)',
             fill: false
           },
           point: {
@@ -159,7 +138,7 @@ export function renderModule(channels) {
         },
         title: {
           ...generalOptions.title,
-          text: generalTranslations.channel + channelNames[index] + ' --- SD: '
+          text: generalTranslations.channel + channelNames[index] + ' --- SD: ' + channel.datasets[0].qual 
         }
       };
 
@@ -168,6 +147,9 @@ export function renderModule(channels) {
           <Line key={"Line_" + index} data={channel} options={options} />
         </Card.Section>
       );
+    } else {
+      return null
+    }
     });
   }
 
