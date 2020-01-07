@@ -27,7 +27,6 @@ export function getSettings() {
   return {
     cutOffLow: .01,
     cutOffHigh: 20,
-    nbChannels: 4,
     interval: 100,
     bins: 8192,
     sliceFFTLow: 0.6,
@@ -50,7 +49,7 @@ export function buildPipe(Settings) {
   window.pipeHeartSpectra$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
-      nbChannels: Settings.nbChannels }),
+      nbChannels: window.nchans }),
     epoch({
       duration: Settings.duration,
       interval: Settings.interval,
@@ -125,7 +124,7 @@ export function renderModule(channels) {
           title: {
             ...generalOptions.title,
             text: generalTranslations.channel + 
-              channelNames[index] + 
+              channelNames[1] + 
               " - Estimated HR: " +
               channel.peakF + " BPM"
           }

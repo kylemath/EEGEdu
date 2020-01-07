@@ -26,7 +26,6 @@ export function getSettings () {
   return {
     cutOffLow: 1,
     cutOffHigh: 100,
-    nbChannels: 4,
     interval: 16,
     bins: 128,
     duration: 128,
@@ -48,7 +47,7 @@ export function buildPipe(Settings) {
   window.pipeSpectro$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
-      nbChannels: Settings.nbChannels }),
+      nbChannels: window.nchans }),
     epoch({
       duration: Settings.duration,
       interval: Settings.interval,
@@ -72,17 +71,16 @@ export function setup(setData, Settings) {
     window.subscriptionSpectro = window.multicastSpectro$.subscribe(data => {
       setData(spectroData => {
         Object.values(spectroData).forEach((channel, index) => {
-          if (index < 4) {
-            channel.datasets[0].data = data.psd[index];
-            channel.xLabels = data.freqs
-          }
+          channel.datasets[0].data = data.psd[index];
+          channel.xLabels = data.freqs
         });
 
         return {
           ch0: spectroData.ch0,
           ch1: spectroData.ch1,
           ch2: spectroData.ch2,
-          ch3: spectroData.ch3
+          ch3: spectroData.ch3,
+          ch4: spectroData.ch4
         };
       });
     });

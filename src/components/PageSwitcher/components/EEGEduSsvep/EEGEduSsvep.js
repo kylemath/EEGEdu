@@ -31,7 +31,6 @@ export function getSettings() {
   return {
     cutOffLow: 2,
     cutOffHigh: 20,
-    nbChannels: 4,
     interval: 100,
     bins: 256,
     sliceFFTLow: 1,
@@ -53,7 +52,7 @@ export function buildPipe(Settings) {
   window.pipeSsvep$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
-      nbChannels: Settings.nbChannels }),
+      nbChannels: window.nchans }),
     epoch({
       duration: Settings.duration,
       interval: Settings.interval,
@@ -78,17 +77,17 @@ export function setup(setData, Settings) {
     window.subscriptionSsvep = window.multicastSsvep$.subscribe(data => {
       setData(ssvepData => {
         Object.values(ssvepData).forEach((channel, index) => {
-          if (index < 4) {
-            channel.datasets[0].data = data.psd[index];
-            channel.xLabels = data.freqs;
-          }
+          channel.datasets[0].data = data.psd[index];
+          channel.xLabels = data.freqs;
+  
         });
 
         return {
           ch0: ssvepData.ch0,
           ch1: ssvepData.ch1,
           ch2: ssvepData.ch2,
-          ch3: ssvepData.ch3
+          ch3: ssvepData.ch3,
+          ch4: ssvepData.ch4
         };
       });
     });

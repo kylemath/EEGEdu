@@ -28,7 +28,6 @@ export function getSettings () {
   return {
     cutOffLow: 2,
     cutOffHigh: 20,
-    nbChannels: 4,
     interval: 100,
     bins: 256,
     duration: 1024,
@@ -48,7 +47,7 @@ export function buildPipe(Settings) {
   window.pipeBands$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
-      nbChannels: Settings.nbChannels }),
+      nbChannels: window.nchans }),
     epoch({
       duration: Settings.duration,
       interval: Settings.interval,
@@ -72,23 +71,22 @@ export function setup(setData, Settings) {
     window.subscriptionBands = window.multicastBands$.subscribe(data => {
       setData(bandsData => {
         Object.values(bandsData).forEach((channel, index) => {
-          if (index < 4) {
-            channel.datasets[0].data = [
-              data.delta[index],
-              data.theta[index],
-              data.alpha[index],
-              data.beta[index],
-              data.gamma[index]
-            ];
-            channel.xLabels = bandLabels;
-          }
+          channel.datasets[0].data = [
+            data.delta[index],
+            data.theta[index],
+            data.alpha[index],
+            data.beta[index],
+            data.gamma[index]
+          ];
+          channel.xLabels = bandLabels;
         });
 
         return {
           ch0: bandsData.ch0,
           ch1: bandsData.ch1,
           ch2: bandsData.ch2,
-          ch3: bandsData.ch3
+          ch3: bandsData.ch3,
+          ch4: bandsData.ch4
         };
       });
     });
@@ -101,41 +99,45 @@ export function setup(setData, Settings) {
 export function renderModule(channels) {
   function renderCharts() {
     return Object.values(channels.data).map((channel, index) => {
-      const options = {
-        ...generalOptions,
-        scales: {
-          xAxes: [
-            {
-              scaleLabel: {
-                ...generalOptions.scales.xAxes[0].scaleLabel,
-                labelString: specificTranslations.xlabel
+      if (index < window.nchans) {
+        const options = {
+          ...generalOptions,
+          scales: {
+            xAxes: [
+              {
+                scaleLabel: {
+                  ...generalOptions.scales.xAxes[0].scaleLabel,
+                  labelString: specificTranslations.xlabel
+                }
               }
-            }
-          ],
-          yAxes: [
-            {
-              scaleLabel: {
-                ...generalOptions.scales.yAxes[0].scaleLabel,
-                labelString: specificTranslations.ylabel
-              },
-              ticks: {
-                max: 25,
-                min: 0
+            ],
+            yAxes: [
+              {
+                scaleLabel: {
+                  ...generalOptions.scales.yAxes[0].scaleLabel,
+                  labelString: specificTranslations.ylabel
+                },
+                ticks: {
+                  max: 25,
+                  min: 0
+                }
               }
-            }
-          ]
-        },
-        title: {
-          ...generalOptions.title,
-          text: generalTranslations.channel + channelNames[index]
-        }
-      };
+            ]
+          },
+          title: {
+            ...generalOptions.title,
+            text: generalTranslations.channel + channelNames[index]
+          }
+        };
 
-      return (
-          <Card.Section key={"Card_" + index}>
-            <Bar key={"Line_" + index} data={channel} options={options} />
-          </Card.Section>
-      );
+        return (
+            <Card.Section key={"Card_" + index}>
+              <Bar key={"Line_" + index} data={channel} options={options} />
+            </Card.Section>
+        );
+      } else {
+        return null
+      }
     });
   }
 

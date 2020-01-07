@@ -32,7 +32,6 @@ export function getSettings () {
   return {
     cutOffLow: 2,
     cutOffHigh: 20,
-    nbChannels: 4,
     interval: 16,
     bins: 256,
     duration: 128,
@@ -52,7 +51,7 @@ export function buildPipe(Settings) {
   window.pipeAnimate$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
-      nbChannels: Settings.nbChannels }),
+      nbChannels: window.nchans }),
     epoch({
       duration: Settings.duration,
       interval: Settings.interval,
@@ -76,7 +75,6 @@ export function setup(setData, Settings) {
     window.subscriptionAnimate = window.multicastAnimate$.subscribe(data => {
       setData(animateData => {
         Object.values(animateData).forEach((channel, index) => {
-          if (index < 4) {
             channel.datasets[0].data = [
               data.delta[index],
               data.theta[index],
@@ -85,14 +83,14 @@ export function setup(setData, Settings) {
               data.gamma[index]
             ];
             channel.xLabels = bandLabels;
-          }
         });
 
         return {
           ch0: animateData.ch0,
           ch1: animateData.ch1,
           ch2: animateData.ch2,
-          ch3: animateData.ch3
+          ch3: animateData.ch3,
+          ch4: animateData.ch4
         };
       });
     });
@@ -129,14 +127,15 @@ export function renderModule(channels) {
     }, []);
 
     return Object.values(channels.data).map((channel, index) => {
-      // console.log(channel) 
       if (channel.datasets[0].data) {
-        // console.log( channel.datasets[0].data[2])
-        window.delta = channel.datasets[0].data[0];
-        window.theta = channel.datasets[0].data[1];
-        window.alpha = channel.datasets[0].data[2];
-        window.beta  = channel.datasets[0].data[3];
-        window.gamma = channel.datasets[0].data[4];
+        if (index === 1) {
+          // console.log( channel.datasets[0].data[2])
+          window.delta = channel.datasets[0].data[0];
+          window.theta = channel.datasets[0].data[1];
+          window.alpha = channel.datasets[0].data[2];
+          window.beta  = channel.datasets[0].data[3];
+          window.gamma = channel.datasets[0].data[4];
+        }
       }   
 
       let thisSketch = sketchTone;

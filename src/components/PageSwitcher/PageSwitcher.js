@@ -1,11 +1,11 @@
 import React, { useState, useCallback } from "react";
 import { MuseClient } from "muse-js";
-import { Select, Card, Stack, Button, ButtonGroup } from "@shopify/polaris";
+import { Select, Card, Stack, Button, ButtonGroup, Checkbox } from "@shopify/polaris";
 
 import { mockMuseEEG } from "./utils/mockMuseEEG";
 import * as translations from "./translations/en.json";
 import * as generalTranslations from "./components/translations/en";
-import { emptyChannelData, emptySingleChannelData } from "./components/chartOptions";
+import { emptyAuxChannelData } from "./components/chartOptions";
 
 import * as funIntro from "./components/EEGEduIntro/EEGEduIntro"
 import * as funHeartRaw from "./components/EEGEduHeartRaw/EEGEduHeartRaw"
@@ -35,19 +35,30 @@ const predict = translations.types.predict;
 
 export function PageSwitcher() {
 
+  // For auxEnable settings
+  const [checked, setChecked] = useState(false);
+  const handleChange = useCallback((newChecked) => setChecked(newChecked), []);
+  window.enableAux = checked;
+  if (window.enableAux) {
+    window.nchans = 5;
+  } else {
+    window.nchans = 4;
+  }
+  let showAux = true; // if it is even available to press (to prevent in some modules)
+
   // data pulled out of multicast$
-  const [introData, setIntroData] = useState(emptyChannelData)
-  const [heartRawData, setHeartRawData] = useState(emptyChannelData);
-  const [heartSpectraData, setHeartSpectraData] = useState(emptySingleChannelData);
-  const [rawData, setRawData] = useState(emptyChannelData);
-  const [spectraData, setSpectraData] = useState(emptyChannelData); 
-  const [bandsData, setBandsData] = useState(emptyChannelData);
-  const [animateData, setAnimateData] = useState(emptyChannelData);
-  const [spectroData, setSpectroData] = useState(emptyChannelData);
-  const [alphaData, setAlphaData] = useState(emptyChannelData);
-  const [ssvepData, setSsvepData] = useState(emptyChannelData);
-  const [evokedData, setEvokedData] = useState(emptyChannelData);
-  const [predictData, setPredictData] = useState(emptyChannelData);
+  const [introData, setIntroData] = useState(emptyAuxChannelData)
+  const [heartRawData, setHeartRawData] = useState(emptyAuxChannelData);
+  const [heartSpectraData, setHeartSpectraData] = useState(emptyAuxChannelData);
+  const [rawData, setRawData] = useState(emptyAuxChannelData);
+  const [spectraData, setSpectraData] = useState(emptyAuxChannelData); 
+  const [bandsData, setBandsData] = useState(emptyAuxChannelData);
+  const [animateData, setAnimateData] = useState(emptyAuxChannelData);
+  const [spectroData, setSpectroData] = useState(emptyAuxChannelData);
+  const [alphaData, setAlphaData] = useState(emptyAuxChannelData);
+  const [ssvepData, setSsvepData] = useState(emptyAuxChannelData);
+  const [evokedData, setEvokedData] = useState(emptyAuxChannelData);
+  const [predictData, setPredictData] = useState(emptyAuxChannelData);
 
   // pipe settings
   const [introSettings] = useState(funIntro.getSettings);
@@ -97,6 +108,48 @@ export function PageSwitcher() {
   // for popup flag when recording 2nd condition
   const [recordTwoPop, setRecordTwoPop] = useState(false);
   const recordTwoPopChange = useCallback(() => setRecordTwoPop(!recordTwoPop), [recordTwoPop]);
+
+  switch (selected) {
+    case intro:
+      showAux = false;
+      break
+    case heartRaw:
+      showAux = false;
+      break
+    case heartSpectra:
+      showAux = false;
+      break
+    case raw:
+      showAux = true;
+      break
+    case spectra:
+      showAux = true;
+      break
+    case bands: 
+      showAux = true;
+      break
+    case animate: 
+      showAux = false;
+      break
+    case spectro:
+      showAux = false;
+      break
+    case alpha:
+      showAux = true;
+      break
+    case ssvep:
+      showAux = true;
+      break
+    case evoked:
+      showAux = true;
+      break
+    case predict:
+      showAux = false;
+      break
+    default:
+      console.log("Error on showAux");
+  }
+
 
   const chartTypes = [
     { label: intro, value: intro },
@@ -188,6 +241,7 @@ export function PageSwitcher() {
         // Connect with the Muse EEG Client
         setStatus(generalTranslations.connecting);
         window.source = new MuseClient();
+        window.source.enableAux = window.enableAux;
         await window.source.connect();
         await window.source.start();
         window.source.eegReadings$ = window.source.eegReadings;
@@ -256,7 +310,7 @@ export function PageSwitcher() {
     }
   }
 
-  function renderCharts() {
+  function renderModules() {
     switch (selected) {
       case intro:
         return <funIntro.renderModule data={introData} />;
@@ -368,6 +422,12 @@ export function PageSwitcher() {
               {generalTranslations.disconnect}
             </Button>     
           </ButtonGroup>
+          <Checkbox
+            label="Enable Muse Auxillary Channel"
+            checked={checked}
+            onChange={handleChange}
+            disabled={!showAux || status !== generalTranslations.connect}
+          />
         </Stack>
       </Card>
       <Card title={translations.title} sectioned>
@@ -379,7 +439,7 @@ export function PageSwitcher() {
         />
       </Card>
       {pipeSettingsDisplay()}
-      {renderCharts()}
+      {renderModules()}
       {renderRecord()}
     </React.Fragment>
   );

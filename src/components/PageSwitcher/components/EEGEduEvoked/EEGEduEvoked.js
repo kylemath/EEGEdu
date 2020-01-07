@@ -28,7 +28,6 @@ export function getSettings () {
   return {
     cutOffLow: 2,
     cutOffHigh: 20,
-    nbChannels: 4,
     interval: 1,
     srate: 256,
     duration: 1,
@@ -47,7 +46,7 @@ export function buildPipe(Settings) {
   window.pipeEvoked$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
-      nbChannels: Settings.nbChannels }),
+      nbChannels: window.nchans }),
     epoch({
       duration: Settings.duration,
       interval: Settings.interval,
@@ -69,18 +68,18 @@ export function setup(setData, Settings) {
     window.subscriptionEvoked = window.multicastEvoked$.subscribe(data => {
       setData(evokedData => {
         Object.values(evokedData).forEach((channel, index) => {
-          if (index < 4) {
-            channel.datasets[0].data = data.data[index];
-            channel.xLabels = generateXTics(Settings.srate, Settings.duration);
-            channel.datasets[0].qual = standardDeviation(data.data[index])          
-          }
+          channel.datasets[0].data = data.data[index];
+          channel.xLabels = generateXTics(Settings.srate, Settings.duration);
+          channel.datasets[0].qual = standardDeviation(data.data[index])          
         });
 
         return {
           ch0: evokedData.ch0,
           ch1: evokedData.ch1,
           ch2: evokedData.ch2,
-          ch3: evokedData.ch3
+          ch3: evokedData.ch3,
+          ch4: evokedData.ch4
+
         };
       });
     });
