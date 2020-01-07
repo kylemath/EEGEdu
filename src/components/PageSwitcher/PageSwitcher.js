@@ -5,7 +5,7 @@ import { Select, Card, Stack, Button, ButtonGroup, Checkbox } from "@shopify/pol
 import { mockMuseEEG } from "./utils/mockMuseEEG";
 import * as translations from "./translations/en.json";
 import * as generalTranslations from "./components/translations/en";
-import { emptyChannelData, emptyAuxChannelData, emptySingleChannelData } from "./components/chartOptions";
+import { emptyAuxChannelData } from "./components/chartOptions";
 
 import * as funIntro from "./components/EEGEduIntro/EEGEduIntro"
 import * as funHeartRaw from "./components/EEGEduHeartRaw/EEGEduHeartRaw"
@@ -47,18 +47,18 @@ export function PageSwitcher() {
   let showAux = true; // if it is even available to press (to prevent in some modules)
 
   // data pulled out of multicast$
-  const [introData, setIntroData] = useState(emptyChannelData)
-  const [heartRawData, setHeartRawData] = useState(emptyChannelData);
-  const [heartSpectraData, setHeartSpectraData] = useState(emptySingleChannelData);
+  const [introData, setIntroData] = useState(emptyAuxChannelData)
+  const [heartRawData, setHeartRawData] = useState(emptyAuxChannelData);
+  const [heartSpectraData, setHeartSpectraData] = useState(emptyAuxChannelData);
   const [rawData, setRawData] = useState(emptyAuxChannelData);
   const [spectraData, setSpectraData] = useState(emptyAuxChannelData); 
   const [bandsData, setBandsData] = useState(emptyAuxChannelData);
-  const [animateData, setAnimateData] = useState(emptyChannelData);
-  const [spectroData, setSpectroData] = useState(emptyChannelData);
+  const [animateData, setAnimateData] = useState(emptyAuxChannelData);
+  const [spectroData, setSpectroData] = useState(emptyAuxChannelData);
   const [alphaData, setAlphaData] = useState(emptyAuxChannelData);
   const [ssvepData, setSsvepData] = useState(emptyAuxChannelData);
   const [evokedData, setEvokedData] = useState(emptyAuxChannelData);
-  const [predictData, setPredictData] = useState(emptyChannelData);
+  const [predictData, setPredictData] = useState(emptyAuxChannelData);
 
   // pipe settings
   const [introSettings] = useState(funIntro.getSettings);

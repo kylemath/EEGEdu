@@ -24,7 +24,6 @@ export function getSettings () {
     name: "Intro",
     cutOffLow: 2,
     cutOffHigh: 20,
-    nbChannels: 4,
     interval: 2,
     srate: 256,
     duration: 512
@@ -42,7 +41,7 @@ export function buildPipe(Settings) {
  window.pipeIntro$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
-      nbChannels: Settings.nbChannels }),
+      nbChannels: window.nchans }),
     epoch({
       duration: Settings.duration,
       interval: Settings.interval,
@@ -72,10 +71,7 @@ export function setup(setData, Settings) {
         });
 
         return {
-          ch0: introData.ch0,
-          ch1: introData.ch1,
-          ch2: introData.ch2,
-          ch3: introData.ch3
+          ch0: introData.ch0
         };
       });
     });
