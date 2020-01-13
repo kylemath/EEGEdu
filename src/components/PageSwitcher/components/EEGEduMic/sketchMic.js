@@ -3,25 +3,25 @@ import "p5/lib/addons/p5.sound";
 
 export default function sketchMic (p) {
   
-  let spectrum;
-  let binCount;
-  let speed = 4;
+  let raw;
+  let binCount
   let mic;
   let micLevel;
+  let x; 
+  let i;
 
-  // canvas is global so we can copy it
-  let cnv;
-  
   p.setup = function () {
-    cnv = p.createCanvas(p.windowWidth*.6, 400);
+    p.createCanvas(p.windowWidth*.6, 400);
     p.noStroke();
     p.colorMode(p.RGB);
     mic = new p5.AudioIn();
     mic.start();
+    i = p.width;
+
   };
 
   p.myCustomRedrawAccordingToNewPropsHandler = function (props) {
-    spectrum = props.psd;
+    raw = props.raw;
     binCount = props.bins;
   };
 
@@ -30,25 +30,20 @@ export default function sketchMic (p) {
   }
 
   p.draw = function () {
-    if (spectrum) {
-      // copy the sketch and move it over based on the speed
-      p.copy(cnv, 0, 0, p.width.toFixed(0), p.height.toFixed(0), -speed, 0, p.width.toFixed(0), p.height.toFixed(0));
-
-      // iterate thru current freq spectrum
-      for (let i = 0; i < binCount; i++) {
-        let value;
-        value = spectrum[i];
-
-        let c = (value/5)*255;
-        p.fill(255-c, 255-c, 255-c);
-        let percent = i / binCount;
-        let y = percent * p.height;
-        p.rect(p.width - speed, p.height - y, speed, p.height / binCount);
+    if (raw) {
+        i = i-1;
+        if (i < 0) {
+          i = p.width;
+          p.background(255)
+        }
         micLevel = mic.getLevel();
-        p.fill(255,0,0);
-        p.ellipse(p.width, p.constrain(p.height-micLevel*p.height*10, 0, p.height), 20, 20)
+        p.fill(250,150,250);
+        p.ellipse(p.width-i, p.constrain(p.height-(raw+500)*p.height/1000, 0, p.height), 10)
+        p.fill(150,250,250);
+        p.ellipse(p.width-i, p.constrain(p.height-micLevel*p.height*10, 0, p.height), 10)
+        console.log(raw)
 
-      }
     }
+    
   }
 };

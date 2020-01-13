@@ -8,9 +8,7 @@ import { zipSamples } from "muse-js";
 
 import {
   bandpassFilter,
-  epoch,
-  fft,
-  sliceFFT
+  epoch
 } from "@neurosity/pipes";
 
 import { chartStyles } from "../chartOptions";
@@ -26,8 +24,8 @@ export function getSettings () {
   return {
     cutOffLow: 1,
     cutOffHigh: 100,
-    interval: 10,
-    duration: 64,
+    interval: 1,
+    duration: 1,
     srate: 256,
     name: 'Mic',
   }
@@ -88,7 +86,7 @@ export function renderModule(channels) {
   function RenderCharts() {
     return Object.values(channels.data).map((channel, index) => {
       if (channel.datasets[0].data) {
-        window.psd = channel.datasets[0].data;
+        window.raw = channel.datasets[0].data;
         window.bins = channel.datasets[0].data.length;
       }   
 
@@ -98,7 +96,7 @@ export function renderModule(channels) {
           <React.Fragment key={'dum'}>
             <Card.Section>
               <P5Wrapper sketch={sketchMic} 
-                psd={window.psd}
+                raw={window.raw}
                 bins={window.bins}
                  />          
             </Card.Section>
