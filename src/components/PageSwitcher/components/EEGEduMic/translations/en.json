@@ -1,0 +1,9 @@
+{
+  "title": "Microphone",
+  "description": [
+    "Can we track the correlation between the EEG and the amplitude envelope of the mic input. ",
+    "Record the ongoing correlation, mark the audio stream, and present feedback about current levels. "
+  ],
+  "xlabel": "Time (ms)",
+  "ylabel": "Voltage (\u03BCV)"
+}

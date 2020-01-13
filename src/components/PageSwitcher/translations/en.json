@@ -12,6 +12,7 @@
     "alpha": "9. Eyes open vs. Eyes closed Experiment",
     "ssvep": "10. Steady-State Visual Evoked Potential (SSVEP) Experiment",
     "evoked": "11. Stimulus Evoked Event-related potential (ERP)",
-    "predict": "12. Predict brain states with a trained classifier"
+    "predict": "12. Predict brain states with a trained classifier",
+    "mic": "13. Mic following"
   }
 }
