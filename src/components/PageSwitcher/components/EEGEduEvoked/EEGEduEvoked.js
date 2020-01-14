@@ -1,10 +1,10 @@
 import React from "react";
 import { catchError, multicast } from "rxjs/operators";
-import { Subject } from "rxjs";
+import { Subject, timer } from "rxjs";
 
 import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal } from "@shopify/polaris";
 import { saveAs } from 'file-saver';
-import { take } from "rxjs/operators";
+import { take, takeUntil } from "rxjs/operators";
  
 
 import { zipSamples } from "muse-js";
@@ -31,7 +31,8 @@ export function getSettings () {
     interval: 1,
     srate: 256,
     duration: 1,
-    name: 'Evoked'
+    name: 'Evoked',
+    secondsToSave: 10
   }
 };
 
@@ -171,7 +172,12 @@ export function renderSliders(setData, setSettings, status, Settings) {
   )
 }
 
-export function renderRecord(recordPopChange, recordPop, status, Settings) {
+export function renderRecord(recordPopChange, recordPop, status, Settings, setSettings) {
+
+  function handleSecondsToSaveRangeSliderChange(value) {
+    setSettings(prevState => ({...prevState, secondsToSave: value}));
+  }
+
   return (
     <Card title={'Run ERP experiment'} sectioned>
       <Card.Section>
@@ -196,6 +202,14 @@ export function renderRecord(recordPopChange, recordPop, status, Settings) {
         </p>     
       </Card.Section>
       <Stack>
+         <RangeSlider 
+          disabled={status === generalTranslations.connect} 
+          min={2}
+          max={180}
+          label={'Recording Length: ' + Settings.secondsToSave + ' Seconds'} 
+          value={Settings.secondsToSave} 
+          onChange={handleSecondsToSaveRangeSliderChange} 
+        />   
         <ButtonGroup>
           <Button 
             onClick={() => {
@@ -235,8 +249,7 @@ export function renderRecord(recordPopChange, recordPop, status, Settings) {
 }
 
 function saveToCSV(Settings) {
-  const numSamplesToSave = 10000;
-  console.log('Saving ' + numSamplesToSave + ' samples...');
+  console.log('Saving ' + Settings.secondsToSave + ' seconds...');
   var localObservable$ = null;
   const dataToSave = [];
   window.marker = 0;
@@ -268,9 +281,13 @@ function saveToCSV(Settings) {
     );   
   }
   });
+
+  //create timer
+  const timer$ = timer(Settings.secondsToSave * 1000)
+
   // put selected observable object into local and start taking samples
   localObservable$ = window.multicastEvoked$.pipe(
-  take(numSamplesToSave)
+    takeUntil(timer$)
   );
 
   // now with header in place subscribe to each epoch and log it

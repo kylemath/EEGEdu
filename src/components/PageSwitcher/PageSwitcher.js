@@ -63,7 +63,7 @@ export function PageSwitcher() {
   // pipe settings
   const [introSettings] = useState(funIntro.getSettings);
   const [heartRawSettings] = useState(funHeartRaw.getSettings);
-  const [heartSpectraSettings] = useState(funHeartSpectra.getSettings);
+  const [heartSpectraSettings, setHeartSpectraSettings] = useState(funHeartSpectra.getSettings);
   const [rawSettings, setRawSettings] = useState(funRaw.getSettings); 
   const [spectraSettings, setSpectraSettings] = useState(funSpectra.getSettings); 
   const [bandsSettings, setBandsSettings] = useState(funBands.getSettings);
@@ -71,14 +71,14 @@ export function PageSwitcher() {
   const [spectroSettings, setSpectroSettings] = useState(funSpectro.getSettings);
   const [alphaSettings, setAlphaSettings] = useState(funAlpha.getSettings);
   const [ssvepSettings, setSsvepSettings] = useState(funSsvep.getSettings);
-  const [evokedSettings] = useState(funEvoked.getSettings);
+  const [evokedSettings, setEvokedSettings] = useState(funEvoked.getSettings);
   const [predictSettings, setPredictSettings] = useState(funPredict.getSettings);
 
   // connection status
   const [status, setStatus] = useState(generalTranslations.connect);
 
   // for picking a new module
-  const [selected, setSelected] = useState(heartSpectra);
+  const [selected, setSelected] = useState(ssvep);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 
@@ -349,19 +349,19 @@ export function PageSwitcher() {
         return null
       case heartSpectra:
         return (
-          funHeartSpectra.renderRecord(recordPopChange, recordPop, status, heartSpectraSettings)
+          funHeartSpectra.renderRecord(recordPopChange, recordPop, status, heartSpectraSettings, setHeartSpectraSettings)
         )
       case raw: 
         return (
-          funRaw.renderRecord(recordPopChange, recordPop, status, rawSettings)
+          funRaw.renderRecord(recordPopChange, recordPop, status, rawSettings, setRawSettings)
         )    
       case spectra:
         return (
-          funSpectra.renderRecord(recordPopChange, recordPop, status, spectraSettings)
+          funSpectra.renderRecord(recordPopChange, recordPop, status, spectraSettings, setSpectraSettings)
         )      
       case bands:
         return (
-          funBands.renderRecord(recordPopChange, recordPop, status, bandsSettings)
+          funBands.renderRecord(recordPopChange, recordPop, status, bandsSettings, setBandsSettings)
         ) 
       case animate:
         return null
@@ -369,15 +369,15 @@ export function PageSwitcher() {
         return null
       case alpha:
         return (
-          funAlpha.renderRecord(recordPopChange, recordPop, status, alphaSettings, recordTwoPopChange, recordTwoPop)
+          funAlpha.renderRecord(recordPopChange, recordPop, status, alphaSettings, recordTwoPopChange, recordTwoPop, setAlphaSettings)
         )
       case ssvep:
         return (
-          funSsvep.renderRecord(recordPopChange, recordPop, status, ssvepSettings, recordTwoPopChange, recordTwoPop)
+          funSsvep.renderRecord(recordPopChange, recordPop, status, ssvepSettings, recordTwoPopChange, recordTwoPop, setSsvepSettings)
         )
       case evoked:
         return (
-          funEvoked.renderRecord(recordPopChange, recordPop, status, evokedSettings)
+          funEvoked.renderRecord(recordPopChange, recordPop, status, evokedSettings, setEvokedSettings)
         )
       case predict:
         return (

@@ -1,10 +1,10 @@
 import React from "react";
 import { catchError, multicast } from "rxjs/operators";
-import { Subject } from "rxjs";
+import { Subject, timer } from "rxjs";
 
 import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal } from "@shopify/polaris";
 import { saveAs } from 'file-saver';
-import { take } from "rxjs/operators";
+import { take, takeUntil } from "rxjs/operators";
 
 import { channelNames } from "muse-js";
 import { Line } from "react-chartjs-2";
@@ -30,7 +30,8 @@ export function getSettings () {
     interval: 50,
     srate: 256,
     duration: 1024,
-    name: 'Raw'
+    name: 'Raw',
+    secondsToSave: 10
   }
 };
 
@@ -191,14 +192,14 @@ export function renderSliders(setData, setSettings, status, Settings) {
     <Card title={Settings.name + ' Settings'} sectioned>
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        min={128} step={128} max={4096}
+        min={1} step={1} max={4096}
         label={'Epoch duration (Sampling Points): ' + Settings.duration} 
         value={Settings.duration} 
         onChange={handleDurationRangeSliderChange} 
       />          
       <RangeSlider 
         disabled={status === generalTranslations.connect} 
-        min={10} step={1} max={Settings.duration}
+        min={1} step={1} max={Settings.duration}
         label={'Sampling points between epochs onsets: ' + Settings.interval} 
         value={Settings.interval} 
         onChange={handleIntervalRangeSliderChange} 
@@ -221,7 +222,12 @@ export function renderSliders(setData, setSettings, status, Settings) {
   )
 }
 
-export function renderRecord(recordPopChange, recordPop, status, Settings) {
+export function renderRecord(recordPopChange, recordPop, status, Settings, setSettings) {
+  
+  function handleSecondsToSaveRangeSliderChange(value) {
+    setSettings(prevState => ({...prevState, secondsToSave: value}));
+  }
+
   return (
     <Card title={'Record ' + Settings.name + ' Data'} sectioned>
       <Card.Section>
@@ -233,6 +239,14 @@ export function renderRecord(recordPopChange, recordPop, status, Settings) {
         </p>        
       </Card.Section>
       <Stack>
+        <RangeSlider 
+          disabled={status === generalTranslations.connect} 
+          min={2}
+          max={180}
+          label={'Recording Length: ' + Settings.secondsToSave + ' Seconds'} 
+          value={Settings.secondsToSave} 
+          onChange={handleSecondsToSaveRangeSliderChange} 
+        />
         <ButtonGroup>
           <Button 
             onClick={() => {
@@ -270,17 +284,17 @@ export function renderRecord(recordPopChange, recordPop, status, Settings) {
 
 
 function saveToCSV(Settings) {
-  const numSamplesToSave = 50;
-  console.log('Saving ' + numSamplesToSave + ' samples...');
+  console.log('Saving ' + Settings.secondsToSave + ' seconds...');
   var localObservable$ = null;
   const dataToSave = [];
 
   console.log('making ' + Settings.name + ' headers')
 
+ 
   // for each module subscribe to multicast and make header
   // take one sample from selected observable object for headers
   localObservable$ = window.multicastRaw$.pipe(
-  take(1)
+    take(1)
   );
   //take one sample to get header info
   localObservable$.subscribe({ 
@@ -297,9 +311,13 @@ function saveToCSV(Settings) {
     );   
   }
   });
+
+   // Create timer 
+  const timer$ = timer(Settings.secondsToSave * 1000);
+
   // put selected observable object into local and start taking samples
   localObservable$ = window.multicastRaw$.pipe(
-  take(numSamplesToSave)
+    takeUntil(timer$)
   );
 
   // now with header in place subscribe to each epoch and log it

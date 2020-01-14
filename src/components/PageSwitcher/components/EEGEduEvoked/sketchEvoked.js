@@ -1,8 +1,8 @@
 export default function sketchEvoked (p) {
 
+ const targProp = 0.2;
  let x = 0;
  let thisRand = 0.5; //for random choice of target type
- let targProp = 0.25;
  let isTarget = false;
  
 
