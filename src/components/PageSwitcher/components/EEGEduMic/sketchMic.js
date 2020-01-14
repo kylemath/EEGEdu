@@ -9,10 +9,19 @@ export default function sketchMic (p) {
   let micLevel;
   let x; 
   let i;
+  let thisx;
+  let thisyMic;
+  let thisyMic2;
+  let thisyRaw;
+  let lastx;
+  let lastyMic;
+  let lastyMic2;
+  let lastyRaw;
+
 
   p.setup = function () {
     p.createCanvas(p.windowWidth*.6, 400);
-    p.noStroke();
+    // p.noStroke();
     p.colorMode(p.RGB);
     mic = new p5.AudioIn();
     mic.start();
@@ -35,13 +44,25 @@ export default function sketchMic (p) {
         if (i < 0) {
           i = p.width;
           p.background(255)
+          lastx = 0;
         }
+        thisx = p.width-i
+        thisyRaw = p.constrain((p.height/2)+(raw/1.1), 0, p.height);
+
+        p.stroke(255,0,0);
+        p.line(lastx, lastyRaw, thisx, thisyRaw)
+
         micLevel = mic.getLevel();
-        p.fill(250,150,250);
-        p.ellipse(p.width-i, p.constrain(p.height-(raw+500)*p.height/1000, 0, p.height), 10)
-        p.fill(150,250,250);
-        p.ellipse(p.width-i, p.constrain(p.height-micLevel*p.height*10, 0, p.height), 10)
-        console.log(raw)
+        thisyMic = p.constrain((p.height/2)+(micLevel*p.height*20), 0, p.height);
+        thisyMic2 = p.constrain((p.height/2)-(micLevel*p.height*20), 0, p.height);
+
+        p.stroke(0,0,0);
+        p.line(lastx, lastyMic, thisx, thisyMic);
+        p.line(lastx, lastyMic2, thisx, thisyMic2);
+        lastx = thisx;
+        lastyMic = thisyMic;
+        lastyMic2 = thisyMic2;
+        lastyRaw = thisyRaw;
 
     }
     
