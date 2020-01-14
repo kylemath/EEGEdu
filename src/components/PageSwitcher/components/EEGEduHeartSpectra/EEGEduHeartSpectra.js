@@ -3,8 +3,8 @@ import { catchError, multicast } from "rxjs/operators";
 
 import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal } from "@shopify/polaris";
 import { saveAs } from 'file-saver';
-import { take } from "rxjs/operators";
-import { Subject } from "rxjs";
+import { takeUntil } from "rxjs/operators";
+import { Subject, timer  } from "rxjs";
 
 import { channelNames } from "muse-js";
 import { Line } from "react-chartjs-2";
@@ -33,7 +33,8 @@ export function getSettings() {
     sliceFFTHigh: 2,
     duration: 4096,
     srate: 256,
-    name: 'HeartSpectra'
+    name: 'HeartSpectra',
+    secondsToSave: 10
   }
 };
 
@@ -239,10 +240,24 @@ export function renderSliders(setData, setSettings, status, Settings) {
   )
 }
 
-export function renderRecord(recordPopChange, recordPop, status, Settings) {
+export function renderRecord(recordPopChange, recordPop, status, Settings, setSettings) {
+
+  function handleSecondsToSaveRangeSliderChange(value) {
+    setSettings(prevState => ({...prevState, secondsToSave: value}));
+  }
+
+
   return(
     <Card title={'Record ' + Settings.name +' Data'} sectioned>
       <Stack>
+        <RangeSlider 
+          disabled={status === generalTranslations.connect} 
+          min={2}
+          max={180}
+          label={'Recording Length: ' + Settings.secondsToSave + ' Seconds'} 
+          value={Settings.secondsToSave} 
+          onChange={handleSecondsToSaveRangeSliderChange} 
+        />
         <ButtonGroup>
           <Button 
             onClick={() => {
@@ -278,8 +293,7 @@ export function renderRecord(recordPopChange, recordPop, status, Settings) {
 
 
 function saveToCSV(Settings) {
-  const numSamplesToSave = 100;
-  console.log('Saving ' + numSamplesToSave + ' samples...');
+  console.log('Saving ' + Settings.secondsToSave + ' seconds...');
   var localObservable$ = null;
   const dataToSave = [];
 
@@ -291,9 +305,12 @@ function saveToCSV(Settings) {
     "\n"
   );   
 
+  // Create timer 
+  const timer$ = timer(Settings.secondsToSave * 1000);
+
   // put selected observable object into local and start taking samples
   localObservable$ = window.multicastHeartSpectra$.pipe(
-    take(numSamplesToSave)
+    takeUntil(timer$)
   );   
 
   // now with header in place subscribe to each epoch and log it
