@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+ import React, { useState, useCallback } from "react";
 import { MuseClient } from "muse-js";
 import { Select, Card, Stack, Button, ButtonGroup, Checkbox } from "@shopify/polaris";
 
@@ -78,7 +78,7 @@ export function PageSwitcher() {
   const [status, setStatus] = useState(generalTranslations.connect);
 
   // for picking a new module
-  const [selected, setSelected] = useState(intro);
+  const [selected, setSelected] = useState(heartSpectra);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 

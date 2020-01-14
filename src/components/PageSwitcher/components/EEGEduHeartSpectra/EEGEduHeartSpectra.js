@@ -3,8 +3,8 @@ import { catchError, multicast } from "rxjs/operators";
 
 import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal } from "@shopify/polaris";
 import { saveAs } from 'file-saver';
-import { take } from "rxjs/operators";
-import { Subject } from "rxjs";
+import { takeUntil } from "rxjs/operators";
+import { Subject, timer  } from "rxjs";
 
 import { channelNames } from "muse-js";
 import { Line } from "react-chartjs-2";
@@ -278,8 +278,8 @@ export function renderRecord(recordPopChange, recordPop, status, Settings) {
 
 
 function saveToCSV(Settings) {
-  const numSamplesToSave = 100;
-  console.log('Saving ' + numSamplesToSave + ' samples...');
+  const secondsToSave = 10;
+  console.log('Saving ' + secondsToSave + ' seconds...');
   var localObservable$ = null;
   const dataToSave = [];
 
@@ -291,9 +291,12 @@ function saveToCSV(Settings) {
     "\n"
   );   
 
+  // Create timer 
+  const timer$ = timer(secondsToSave * 1000);
+
   // put selected observable object into local and start taking samples
   localObservable$ = window.multicastHeartSpectra$.pipe(
-    take(numSamplesToSave)
+    takeUntil(timer$)
   );   
 
   // now with header in place subscribe to each epoch and log it
