@@ -1,16 +1,19 @@
 export default function sketchEvoked (p) {
 
- const targProp = 0.2;
  let x = 0;
  let thisRand = 0.5; //for random choice of target type
+ let targProp = 0.25;
  let isTarget = false;
- 
+ let ellapsedTime = 0;
+ let nextDelay = 1000;
+ let newOnset = true;
+ let startTime = 0;
+ let targCount = 0;
 
  p.setup = function () {
     p.createCanvas(300, 300);
-    p.frameRate(30);
+    p.frameRate(60);
     p.noStroke();
-
   };
 
   p.windowResized = function() {
@@ -24,8 +27,9 @@ export default function sketchEvoked (p) {
     window.touchMarker = 0;
   }
 }
-
+ 
   p.draw = function () {
+
 
     if (p.keyIsPressed === true) {
       window.responseMarker = p.keyCode;
@@ -34,8 +38,19 @@ export default function sketchEvoked (p) {
     }
     p.background(255);
     x = x+1;
-    // var num = int(random(0, 11));
-    if (x % 20 === 0) { // When a target shown (every ith frame for now)
+    ellapsedTime = p.millis()-startTime;
+
+    if (ellapsedTime > nextDelay) {
+      newOnset = true;
+    } else {
+      newOnset = false;
+    }
+
+    if (newOnset) {
+      targCount++;
+      nextDelay = 500 + p.int(p.random() * 1000);
+      console.log(targCount, nextDelay)
+      startTime = p.millis();
 
       thisRand = p.random();
       if (thisRand < targProp) { // targets 20% of the time
