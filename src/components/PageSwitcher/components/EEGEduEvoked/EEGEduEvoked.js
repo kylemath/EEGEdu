@@ -32,7 +32,7 @@ export function getSettings () {
     srate: 256,
     duration: 1,
     name: 'Evoked',
-    secondsToSave: 10
+    secondsToSave: 60
   }
 };
 
