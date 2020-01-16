@@ -97,52 +97,77 @@ export function setup(setData, Settings) {
 
 export function renderModule(channels) {
   function renderCharts() {
-    return Object.values(channels.data).map((channel, index) => {
-      if (index < window.nchans) {
-        const options = {
-          ...generalOptions,
-          scales: {
-            xAxes: [
-              {
-                scaleLabel: {
-                  ...generalOptions.scales.xAxes[0].scaleLabel,
-                  labelString: specificTranslations.xlabel
-                }
-              }
-            ],
-            yAxes: [
-              {
-                scaleLabel: {
-                  ...generalOptions.scales.yAxes[0].scaleLabel,
-                  labelString: specificTranslations.ylabel
-                },
-                ticks: {
-                  max: 25,
-                  min: 0
-                }
-              }
-            ]
-          },
-          elements: {
-            point: {
-              radius: 3
+    const options = {
+      ...generalOptions,
+      scales: {
+        xAxes: [
+          {
+            scaleLabel: {
+              ...generalOptions.scales.xAxes[0].scaleLabel,
+              labelString: specificTranslations.xlabel
             }
-          },
-          title: {
-            ...generalOptions.title,
-            text: generalTranslations.channel + channelNames[index]
           }
-        };
-
-        return (
-          <Card.Section key={"Card_" + index}>
-            <Line key={"Line_" + index} data={channel} options={options} />
-          </Card.Section>
-        );
-      } else {
-        return null
+        ],
+        yAxes: [
+          {
+            scaleLabel: {
+              ...generalOptions.scales.yAxes[0].scaleLabel,
+              labelString: specificTranslations.ylabel
+            },
+            ticks: {
+              min: 0
+            }
+          }
+        ]
+      },
+      elements: {
+        point: {
+          radius: 3
+        }
+      },
+      title: {
+        ...generalOptions.title,
+        text: generalTranslations.channel + channelNames[1]
       }
-    });
+    };
+
+
+    if (channels.data.ch0.datasets[0].data) {
+      const newData = {
+        datasets: [{
+          label: 'Left Ear',
+          borderColor: 'rgba(255,0,0)',
+          data: channels.data.ch0.datasets[0].data.map(function(x) {return x + 0}),
+          fill: false
+        }, {
+          label: 'Left Forehead',
+          borderColor: 'rgba(0,0,255)',
+          data: channels.data.ch1.datasets[0].data.map(function(x) {return x + 10}),
+          fill: false
+        }, {
+          label: 'Right Forehead',
+          borderColor: 'rgba(0,255,0)',
+          data: channels.data.ch2.datasets[0].data.map(function(x) {return x + 20}),
+          fill: false
+        }, {
+          label: 'Right Ear',
+          borderColor: 'rgba(150,150,150)',
+          data: channels.data.ch3.datasets[0].data.map(function(x) {return x + 30}),
+          fill: false  
+        }],
+        xLabels: channels.data.ch0.xLabels
+      }
+
+      return (
+        <Card.Section key={"Card_" + 1}>
+          <Line key={"Line_" + 1} data={newData} options={options} />
+        </Card.Section>
+      );
+    } else {
+      return null
+    }
+
+
   }
 
   return (

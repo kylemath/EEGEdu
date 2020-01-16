@@ -27,7 +27,7 @@ export function getSettings () {
   return {
     cutOffLow: 2,
     cutOffHigh: 20,
-    interval: 50,
+    interval: 1,
     srate: 256,
     duration: 1024,
     name: 'Raw',
@@ -90,59 +90,68 @@ export function setup(setData, Settings) {
 
 export function renderModule(channels) {
   function renderCharts() {
-    return Object.values(channels.data).map((channel, index) => {
-      if (index < window.nchans) {
-        const options = {
-          ...generalOptions,
-          scales: {
-            xAxes: [
-              {
-                scaleLabel: {
-                  ...generalOptions.scales.xAxes[0].scaleLabel,
-                  labelString: specificTranslations.xlabel
-                }
-              }
-            ],
-            yAxes: [
-              {
-                scaleLabel: {
-                  ...generalOptions.scales.yAxes[0].scaleLabel,
-                  labelString: specificTranslations.ylabel
-                },
-                ticks: {
-                  max: 300,
-                  min: -300
-                }
-              }
-            ]
-          },
-          elements: {
-            line: {
-              borderColor: 'rgba(' + channel.datasets[0].qual*10 + ', 128, 128)',
-              fill: false
-            },
-            point: {
-              radius: 0
+    const options = {
+      ...generalOptions,
+      scales: {
+        xAxes: [
+          {
+            scaleLabel: {
+              ...generalOptions.scales.xAxes[0].scaleLabel,
+              labelString: specificTranslations.xlabel
             }
-          },
-          animation: {
-            duration: 0
-          },
-          title: {
-            ...generalOptions.title,
-            text: generalTranslations.channel + channelNames[index] + ' --- SD: ' + channel.datasets[0].qual 
           }
-        };
-
-        return (
-          <Card.Section key={"Card_" + index}>
-            <Line key={"Line_" + index} data={channel} options={options} />
-          </Card.Section>
-        );
-      } else {
-        return null
+        ],
+        yAxes: [
+          {
+            scaleLabel: {
+              ...generalOptions.scales.yAxes[0].scaleLabel,
+              labelString: specificTranslations.ylabel
+            },
+          }
+        ]
+      },
+      title: {
+        ...generalOptions.title,
+        text: generalTranslations.channel + channelNames[1]
       }
-    });
+    };
+
+
+    if (channels.data.ch0.datasets[0].data) {
+      const newData = {
+        datasets: [{
+          label: 'Left Ear',
+          borderColor: 'rgba(' + channels.data.ch0.datasets[0].qual*10 + ',128,128)',
+          data: channels.data.ch0.datasets[0].data.map(function(x) {return x + 0}),
+          fill: false
+        }, {
+          label: 'Left Forehead',
+          borderColor: 'rgba(' + channels.data.ch1.datasets[0].qual*10 + ',128,128)',
+          data: channels.data.ch1.datasets[0].data.map(function(x) {return x + 100}),
+          fill: false
+        }, {
+          label: 'Right Forehead',
+          borderColor: 'rgba(' + channels.data.ch2.datasets[0].qual*10 + ',128,128)',
+          data: channels.data.ch2.datasets[0].data.map(function(x) {return x + 200}),
+          fill: false
+        }, {
+          label: 'Right Ear',
+          borderColor: 'rgba(' + channels.data.ch3.datasets[0].qual*10 + ',128,128)',
+          data: channels.data.ch3.datasets[0].data.map(function(x) {return x + 300}),
+          fill: false  
+        }],
+        xLabels: channels.data.ch0.xLabels
+      }
+
+      return (
+        <Card.Section key={"Card_" + 1}>
+          <Line key={"Line_" + 1} data={newData} options={options} />
+        </Card.Section>
+      );
+    } else {
+      return null
+    }
+           
   }
 
   return (
