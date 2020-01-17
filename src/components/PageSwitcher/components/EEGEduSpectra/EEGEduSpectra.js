@@ -97,52 +97,92 @@ export function setup(setData, Settings) {
 
 export function renderModule(channels) {
   function renderCharts() {
-    return Object.values(channels.data).map((channel, index) => {
-      if (index < window.nchans) {
-        const options = {
-          ...generalOptions,
-          scales: {
-            xAxes: [
-              {
-                scaleLabel: {
-                  ...generalOptions.scales.xAxes[0].scaleLabel,
-                  labelString: specificTranslations.xlabel
-                }
-              }
-            ],
-            yAxes: [
-              {
-                scaleLabel: {
-                  ...generalOptions.scales.yAxes[0].scaleLabel,
-                  labelString: specificTranslations.ylabel
-                },
-                ticks: {
-                  max: 25,
-                  min: 0
-                }
-              }
-            ]
-          },
-          elements: {
-            point: {
-              radius: 3
+    let vertLim = Math.floor(Math.max(...[].concat.apply([], [channels.data.ch0.datasets[0].data,
+                channels.data.ch1.datasets[0].data,
+                channels.data.ch2.datasets[0].data,
+                channels.data.ch3.datasets[0].data,
+                channels.data.ch4.datasets[0].data])
+    ));    
+    const options = {
+      ...generalOptions,
+      scales: {
+        xAxes: [
+          {
+            scaleLabel: {
+              ...generalOptions.scales.xAxes[0].scaleLabel,
+              labelString: specificTranslations.xlabel
             }
-          },
-          title: {
-            ...generalOptions.title,
-            text: generalTranslations.channel + channelNames[index]
           }
-        };
-
-        return (
-          <Card.Section key={"Card_" + index}>
-            <Line key={"Line_" + index} data={channel} options={options} />
-          </Card.Section>
-        );
-      } else {
-        return null
+        ],
+        yAxes: [
+          {
+            scaleLabel: {
+              ...generalOptions.scales.yAxes[0].scaleLabel,
+              labelString: specificTranslations.ylabel
+            },
+            ticks: {
+              max: vertLim,
+              min: vertLim * -1
+            }
+          }
+        ]
+      },
+      elements: {
+        point: {
+          radius: 3
+        }
+      },
+      title: {
+        ...generalOptions.title,
+        text: 'Spectra data from each electrode'
+      },
+      legend: {
+        display: true
       }
-    });
+    };
+
+
+    if (channels.data.ch3.datasets[0].data) {
+      const newData = {
+        datasets: [{
+          label: channelNames[0],
+          borderColor: 'rgba(217,95,2)',
+          data: channels.data.ch0.datasets[0].data.map(function(x) {return x * -1}),
+          fill: false
+        }, {
+          label: channelNames[1],
+          borderColor: 'rgba(27,158,119)',
+          data: channels.data.ch1.datasets[0].data.map(function(x) {return x * -1}),
+          fill: false
+        }, {
+          label: channelNames[2],
+          borderColor: 'rgba(117,112,179)',
+          data: channels.data.ch2.datasets[0].data.map(function(x) {return x + 0}),
+          fill: false
+        }, {
+          label: channelNames[3],
+          borderColor: 'rgba(231,41,138)',
+          data: channels.data.ch3.datasets[0].data.map(function(x) {return x + 0}),
+          fill: false  
+        }, {
+          label: channelNames[4],
+          borderColor: 'rgba(20,20,20)',
+          data: channels.data.ch4.datasets[0].data.map(function(x) {return x + 0}),
+          fill: false  
+        }],
+        xLabels: channels.data.ch0.xLabels
+      }
+
+      return (
+        <Card.Section key={"Card_" + 1}>
+          <Line key={"Line_" + 1} data={newData} options={options} />
+        </Card.Section>
+      );
+    } else {
+      return null
+    }
+
+
   }
 
   return (

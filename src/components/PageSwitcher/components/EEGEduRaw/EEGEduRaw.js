@@ -27,7 +27,7 @@ export function getSettings () {
   return {
     cutOffLow: 2,
     cutOffHigh: 20,
-    interval: 50,
+    interval: 10,
     srate: 256,
     duration: 1024,
     name: 'Raw',
@@ -90,59 +90,78 @@ export function setup(setData, Settings) {
 
 export function renderModule(channels) {
   function renderCharts() {
-    return Object.values(channels.data).map((channel, index) => {
-      if (index < window.nchans) {
-        const options = {
-          ...generalOptions,
-          scales: {
-            xAxes: [
-              {
-                scaleLabel: {
-                  ...generalOptions.scales.xAxes[0].scaleLabel,
-                  labelString: specificTranslations.xlabel
-                }
-              }
-            ],
-            yAxes: [
-              {
-                scaleLabel: {
-                  ...generalOptions.scales.yAxes[0].scaleLabel,
-                  labelString: specificTranslations.ylabel
-                },
-                ticks: {
-                  max: 300,
-                  min: -300
-                }
-              }
-            ]
-          },
-          elements: {
-            line: {
-              borderColor: 'rgba(' + channel.datasets[0].qual*10 + ', 128, 128)',
-              fill: false
-            },
-            point: {
-              radius: 0
+    const options = {
+      ...generalOptions,
+      scales: {
+        xAxes: [
+          {
+            scaleLabel: {
+              ...generalOptions.scales.xAxes[0].scaleLabel,
+              labelString: specificTranslations.xlabel
             }
-          },
-          animation: {
-            duration: 0
-          },
-          title: {
-            ...generalOptions.title,
-            text: generalTranslations.channel + channelNames[index] + ' --- SD: ' + channel.datasets[0].qual 
           }
-        };
-
-        return (
-          <Card.Section key={"Card_" + index}>
-            <Line key={"Line_" + index} data={channel} options={options} />
-          </Card.Section>
-        );
-      } else {
-        return null
+        ],
+        yAxes: [
+          {
+            scaleLabel: {
+              ...generalOptions.scales.yAxes[0].scaleLabel,
+              labelString: specificTranslations.ylabel
+            },
+          }
+        ]
+      },
+      animation: {
+        duration: 0
+      },
+      title: {
+        ...generalOptions.title,
+        text: 'Raw data from EEG electrdoes'
+      },
+      legend: {
+        display: true
       }
-    });
+    };
+
+    if (channels.data.ch3.datasets[0].data) {
+      const newData = {
+        datasets: [{
+          label: channelNames[0],
+          borderColor: 'rgba(217,95,2, '  + (1-channels.data.ch0.datasets[0].qual/100) +   ')',
+          data: channels.data.ch0.datasets[0].data.map(function(x) {return x + 300}),
+          fill: false
+        }, {
+          label: channelNames[1],
+          borderColor: 'rgba(27,158,119, '  + (1-channels.data.ch1.datasets[0].qual/100) +   ')',
+          data: channels.data.ch1.datasets[0].data.map(function(x) {return x + 200}),
+          fill: false
+        }, {
+          label: channelNames[2],
+          borderColor: 'rgba(117,112,179, '  + (1-channels.data.ch2.datasets[0].qual/100) +   ')',
+          data: channels.data.ch2.datasets[0].data.map(function(x) {return x + 100}),
+          fill: false
+        }, {
+          label: channelNames[3],
+          borderColor: 'rgba(231,41,138, '  + (1-channels.data.ch3.datasets[0].qual/100) +   ')',
+          data: channels.data.ch3.datasets[0].data.map(function(x) {return x + 0}),
+          fill: false  
+        }, {
+          label: channelNames[4],
+          borderColor: 'rgba(20,20,20, '  + (1-channels.data.ch4.datasets[0].qual/100) +   ')',
+          data: channels.data.ch4.datasets[0].data.map(function(x) {return x + -100}),
+          fill: false  
+        }],
+        xLabels: channels.data.ch0.xLabels
+      }
+
+      return (
+        <Card.Section key={"Card_" + 1}>
+          <Line key={"Line_" + 1} data={newData} options={options} />
+        </Card.Section>
+      );
+    } else {
+      return null
+    }
+           
   }
 
   return (
