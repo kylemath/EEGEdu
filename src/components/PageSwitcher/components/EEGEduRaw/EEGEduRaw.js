@@ -27,7 +27,7 @@ export function getSettings () {
   return {
     cutOffLow: 2,
     cutOffHigh: 20,
-    interval: 1,
+    interval: 10,
     srate: 256,
     duration: 1024,
     name: 'Raw',
@@ -109,6 +109,9 @@ export function renderModule(channels) {
             },
           }
         ]
+      },
+      animation: {
+        duration: 0
       },
       title: {
         ...generalOptions.title,
