@@ -97,6 +97,12 @@ export function setup(setData, Settings) {
 
 export function renderModule(channels) {
   function renderCharts() {
+    let vertLim = Math.floor(Math.max(...[].concat.apply([], [channels.data.ch0.datasets[0].data,
+                channels.data.ch1.datasets[0].data,
+                channels.data.ch2.datasets[0].data,
+                channels.data.ch3.datasets[0].data,
+                channels.data.ch4.datasets[0].data])
+    ));    
     const options = {
       ...generalOptions,
       scales: {
@@ -115,7 +121,8 @@ export function renderModule(channels) {
               labelString: specificTranslations.ylabel
             },
             ticks: {
-              min: 0
+              max: vertLim,
+              min: vertLim * -1
             }
           }
         ]
@@ -127,7 +134,10 @@ export function renderModule(channels) {
       },
       title: {
         ...generalOptions.title,
-        text: generalTranslations.channel + channelNames[1]
+        text: 'Spectra data from each electrode'
+      },
+      legend: {
+        display: true
       }
     };
 
@@ -135,24 +145,29 @@ export function renderModule(channels) {
     if (channels.data.ch0.datasets[0].data) {
       const newData = {
         datasets: [{
-          label: 'Left Ear',
-          borderColor: 'rgba(255,0,0)',
-          data: channels.data.ch0.datasets[0].data.map(function(x) {return x + 0}),
+          label: channelNames[0],
+          borderColor: 'rgba(217,95,2)',
+          data: channels.data.ch0.datasets[0].data.map(function(x) {return x * -1}),
           fill: false
         }, {
-          label: 'Left Forehead',
-          borderColor: 'rgba(0,0,255)',
-          data: channels.data.ch1.datasets[0].data.map(function(x) {return x + 10}),
+          label: channelNames[1],
+          borderColor: 'rgba(27,158,119)',
+          data: channels.data.ch1.datasets[0].data.map(function(x) {return x * -1}),
           fill: false
         }, {
-          label: 'Right Forehead',
-          borderColor: 'rgba(0,255,0)',
-          data: channels.data.ch2.datasets[0].data.map(function(x) {return x + 20}),
+          label: channelNames[2],
+          borderColor: 'rgba(117,112,179)',
+          data: channels.data.ch2.datasets[0].data.map(function(x) {return x + 0}),
           fill: false
         }, {
-          label: 'Right Ear',
-          borderColor: 'rgba(150,150,150)',
-          data: channels.data.ch3.datasets[0].data.map(function(x) {return x + 30}),
+          label: channelNames[3],
+          borderColor: 'rgba(231,41,138)',
+          data: channels.data.ch3.datasets[0].data.map(function(x) {return x + 0}),
+          fill: false  
+        }, {
+          label: channelNames[4],
+          borderColor: 'rgba(20,20,20)',
+          data: channels.data.ch4.datasets[0].data.map(function(x) {return x + 0}),
           fill: false  
         }],
         xLabels: channels.data.ch0.xLabels

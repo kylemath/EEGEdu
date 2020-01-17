@@ -115,32 +115,39 @@ export function renderModule(channels) {
       },
       title: {
         ...generalOptions.title,
-        text: generalTranslations.channel + channelNames[1]
+        text: 'Raw data from EEG electrdoes'
+      },
+      legend: {
+        display: true
       }
     };
-
 
     if (channels.data.ch0.datasets[0].data) {
       const newData = {
         datasets: [{
-          label: 'Left Ear',
-          borderColor: 'rgba(' + channels.data.ch0.datasets[0].qual*10 + ',128,128)',
-          data: channels.data.ch0.datasets[0].data.map(function(x) {return x + 0}),
+          label: channelNames[0],
+          borderColor: 'rgba(217,95,2, '  + (1-channels.data.ch0.datasets[0].qual/100) +   ')',
+          data: channels.data.ch0.datasets[0].data.map(function(x) {return x + 300}),
           fill: false
         }, {
-          label: 'Left Forehead',
-          borderColor: 'rgba(' + channels.data.ch1.datasets[0].qual*10 + ',128,128)',
-          data: channels.data.ch1.datasets[0].data.map(function(x) {return x + 100}),
+          label: channelNames[1],
+          borderColor: 'rgba(27,158,119, '  + (1-channels.data.ch1.datasets[0].qual/100) +   ')',
+          data: channels.data.ch1.datasets[0].data.map(function(x) {return x + 200}),
           fill: false
         }, {
-          label: 'Right Forehead',
-          borderColor: 'rgba(' + channels.data.ch2.datasets[0].qual*10 + ',128,128)',
-          data: channels.data.ch2.datasets[0].data.map(function(x) {return x + 200}),
+          label: channelNames[2],
+          borderColor: 'rgba(117,112,179, '  + (1-channels.data.ch2.datasets[0].qual/100) +   ')',
+          data: channels.data.ch2.datasets[0].data.map(function(x) {return x + 100}),
           fill: false
         }, {
-          label: 'Right Ear',
-          borderColor: 'rgba(' + channels.data.ch3.datasets[0].qual*10 + ',128,128)',
-          data: channels.data.ch3.datasets[0].data.map(function(x) {return x + 300}),
+          label: channelNames[3],
+          borderColor: 'rgba(231,41,138, '  + (1-channels.data.ch3.datasets[0].qual/100) +   ')',
+          data: channels.data.ch3.datasets[0].data.map(function(x) {return x + 0}),
+          fill: false  
+        }, {
+          label: channelNames[4],
+          borderColor: 'rgba(20,20,20, '  + (1-channels.data.ch4.datasets[0].qual/100) +   ')',
+          data: channels.data.ch4.datasets[0].data.map(function(x) {return x + -100}),
           fill: false  
         }],
         xLabels: channels.data.ch0.xLabels
@@ -176,6 +183,7 @@ export function renderModule(channels) {
 export function renderSliders(setData, setSettings, status, Settings) {
 
   function resetPipeSetup(value) {
+    console.log(Settings)
     buildPipe(Settings);
     setup(setData, Settings)
   }
