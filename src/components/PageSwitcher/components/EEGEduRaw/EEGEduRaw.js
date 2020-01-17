@@ -122,7 +122,7 @@ export function renderModule(channels) {
       }
     };
 
-    if (channels.data.ch0.datasets[0].data) {
+    if (channels.data.ch3.datasets[0].data) {
       const newData = {
         datasets: [{
           label: channelNames[0],
@@ -183,7 +183,6 @@ export function renderModule(channels) {
 export function renderSliders(setData, setSettings, status, Settings) {
 
   function resetPipeSetup(value) {
-    console.log(Settings)
     buildPipe(Settings);
     setup(setData, Settings)
   }

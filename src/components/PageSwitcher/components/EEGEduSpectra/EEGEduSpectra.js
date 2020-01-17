@@ -142,7 +142,7 @@ export function renderModule(channels) {
     };
 
 
-    if (channels.data.ch0.datasets[0].data) {
+    if (channels.data.ch3.datasets[0].data) {
       const newData = {
         datasets: [{
           label: channelNames[0],
