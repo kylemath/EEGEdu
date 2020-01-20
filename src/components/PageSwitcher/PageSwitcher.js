@@ -62,7 +62,7 @@ export function PageSwitcher() {
 
   // pipe settings
   const [introSettings] = useState(funIntro.getSettings);
-  const [heartRawSettings, setHeartRawSettings] = useState(funHeartRaw.getSettings);
+  const [heartRawSettings] = useState(funHeartRaw.getSettings);
   const [heartSpectraSettings, setHeartSpectraSettings] = useState(funHeartSpectra.getSettings);
   const [rawSettings, setRawSettings] = useState(funRaw.getSettings); 
   const [spectraSettings, setSpectraSettings] = useState(funSpectra.getSettings); 
@@ -78,7 +78,7 @@ export function PageSwitcher() {
   const [status, setStatus] = useState(generalTranslations.connect);
 
   // for picking a new module
-  const [selected, setSelected] = useState(heartRaw);
+  const [selected, setSelected] = useState(intro);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 
