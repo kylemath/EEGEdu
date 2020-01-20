@@ -31,7 +31,7 @@ export function getSettings() {
     bins: 8192,
     sliceFFTLow: 0.6,
     sliceFFTHigh: 2,
-    duration: 4096,
+    duration: 2048,
     srate: 256,
     name: 'HeartSpectra',
     secondsToSave: 10
@@ -77,7 +77,6 @@ export function setup(setData, Settings) {
         Object.values(heartSpectraData).forEach((channel, index) => {
           channel.datasets[0].data = data.psd[1];
           channel.xLabels = data.freqs.map(function(x) {return x * 60});
-          channel.peakF = channel.xLabels[indexOfMax(data.psd[1])];
       });
 
         return {
@@ -94,48 +93,81 @@ export function setup(setData, Settings) {
 export function renderModule(channels) {
   function renderCharts() {
     return Object.values(channels.data).map((channel, index) => {
-        const options = {
-          ...generalOptions,
-          scales: {
-            xAxes: [
-              {
-                scaleLabel: {
-                  ...generalOptions.scales.xAxes[0].scaleLabel,
-                  labelString: specificTranslations.xlabel
-                }
+      const options = {
+        ...generalOptions,
+        scales: {
+          xAxes: [
+            {
+              scaleLabel: {
+                ...generalOptions.scales.xAxes[0].scaleLabel,
+                labelString: specificTranslations.xlabel
               }
-            ],
-            yAxes: [
-              {
-                scaleLabel: {
-                  ...generalOptions.scales.yAxes[0].scaleLabel,
-                  labelString: specificTranslations.ylabel
-                },
-                ticks: {
-                  min: 0
-                }
-              }
-            ]
-          },
-          elements: {
-            point: {
-              radius: 3
             }
-          },
-          title: {
-            ...generalOptions.title,
-            text: generalTranslations.channel + 
-              channelNames[1] + 
-              " - Estimated HR: " +
-              channel.peakF + " BPM"
+          ],
+          yAxes: [
+            {
+              scaleLabel: {
+                ...generalOptions.scales.yAxes[0].scaleLabel,
+                labelString: specificTranslations.ylabel
+              },
+              ticks: {
+                min: 0
+              }
+            }
+          ]
+        },
+        elements: {
+          point: {
+            radius: 8
           }
-        };
+        },
+        animation: {
+          duration: 500
+        },
+        title: {
+          ...generalOptions.title,
+          text: generalTranslations.channel + 
+            channelNames[1] + 
+            " - Estimated HR: " +
+            channel.peakF + " BPM"
+        }
+      };
 
-        return (
-          <Card.Section key={"Card_" + index}>
-            <Line key={"Line_" + index} data={channel} options={options} />
-          </Card.Section>
-        );
+      if (index === 0) {
+        if (channel.xLabels) {
+          channel.peakInd = indexOfMax(channel.datasets[0].data);
+          channel.peakF = channel.xLabels[channel.peakInd];
+          channel.peakVal = channel.datasets[0].data[channel.peakInd]
+          const newData = {
+            datasets: [{
+              label: 'Peak',
+              borderColor: 'rgba(0,0,0)',
+              backgroundColor: 'rgba(231,41,138)',
+              data: [{
+                x: channel.peakF,
+                y: channel.peakVal
+              }],
+              fill: false
+            }, {
+              label: channelNames[0],
+              borderColor: 'rgba(180,180,180)',
+              data: channel.datasets[0].data,
+              fill: true
+            } ],
+            xLabels: channel.xLabels
+          }
+          return (
+            <Card.Section key={"Card_" + index}>
+              <Line key={"Line_" + index} data={newData} options={options} />
+            </Card.Section>
+          );
+        } else {
+          return null
+        }
+
+      } else {
+        return null
+      }
     });
   }
 
