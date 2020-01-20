@@ -1,11 +1,12 @@
 import React from "react";
-import { catchError, multicast } from "rxjs/operators";
+import { catchError, multicast, take  } from "rxjs/operators";
 import { Subject } from "rxjs";
 
-import { TextContainer, Card, Stack } from "@shopify/polaris";
+import { TextContainer, Card, Stack, ButtonGroup, Button, Modal } from "@shopify/polaris";
 import { channelNames } from "muse-js";
 import { Line } from "react-chartjs-2";
-
+import { saveAs } from 'file-saver';
+ 
 import { zipSamples } from "muse-js";
 
 import {
@@ -24,9 +25,9 @@ export function getSettings () {
   return {
     cutOffLow: 2,
     cutOffHigh: 20,
-    interval: 50,
+    interval: 10,
     srate: 256,
-    duration: 2048,
+    duration: 2560,
     name: 'HeartRaw'
   }
 };
@@ -64,17 +65,13 @@ export function setup(setData, Settings) {
     window.subscriptionHeartRaw = window.multicastHeartRaw$.subscribe(data => {
       setData(heartRawData => {
         Object.values(heartRawData).forEach((channel, index) => {
-            channel.datasets[0].data = data.data[index];
-            channel.xLabels = generateXTics(Settings.srate, Settings.duration);
-            channel.datasets[0].qual = standardDeviation(data.data[index])          
+          channel.datasets[0].data = data.data[index];
+          channel.xLabels = generateXTics(Settings.srate, Settings.duration).map(function(x) {return x / 1000});;
+          channel.datasets[0].qual = standardDeviation(data.data[index])       
         });
-
         return {
           ch0: heartRawData.ch0,
-          ch1: heartRawData.ch1,
-          ch2: heartRawData.ch2,
-          ch3: heartRawData.ch3,
-          ch4: heartRawData.ch4
+          ch1: heartRawData.ch1
         };
       });
     });
@@ -91,14 +88,19 @@ export function renderModule(channels) {
         const options = {
           ...generalOptions,
           scales: {
-            xAxes: [
-              {
-                scaleLabel: {
-                  ...generalOptions.scales.xAxes[0].scaleLabel,
-                  labelString: specificTranslations.xlabel
-                }
+            xAxes: [{
+              scaleLabel: {
+                ...generalOptions.scales.xAxes[0].scaleLabel,
+                labelString: specificTranslations.xlabel
+              },
+              gridLines: {
+                color: "rgba(50,50,50)"
+              },
+              ticks: {
+                maxTicksLimit: 10
               }
-            ],
+
+            }],
             yAxes: [
               {
                 scaleLabel: {
@@ -123,7 +125,8 @@ export function renderModule(channels) {
           title: {
             ...generalOptions.title,
             text: generalTranslations.channel + channelNames[index] + ' --- SD: ' + channel.datasets[0].qual 
-          }
+          },
+
         };
 
         return (
@@ -153,3 +156,97 @@ export function renderModule(channels) {
   );
 }
   
+export function renderRecord(recordPopChange, recordPop, status, Settings, setSettings) {
+
+  return (
+    <Card title={'Collect Raw Heart Rate Data'} sectioned>
+      <Card.Section>
+        <p>
+          {"Clicking this button will begin the experiment so check your data quality on the raw module first. "}
+
+        </p>   
+      </Card.Section>
+      <Stack>
+        <ButtonGroup>
+          <Button 
+            onClick={() => {
+              recordPopChange()
+              saveToCSV(Settings);
+            }}
+            primary={status !== generalTranslations.connect}
+            disabled={status === generalTranslations.connect}
+          > 
+            {'Record Raw Data'}  
+          </Button>
+        </ButtonGroup>
+        
+        <Modal
+          open={recordPop}
+          onClose={recordPopChange}
+          title={"Data is recording"}
+        >
+          <Modal.Section>
+            <TextContainer>
+              <p>
+                Your data is currently recording, 
+                once complete it will be downloaded as a .csv file 
+                and can be opened with your favorite spreadsheet program. 
+                Close this window once the download completes.
+              </p>
+            </TextContainer>
+          </Modal.Section>
+        </Modal>
+
+      </Stack>
+    </Card>
+  )
+}
+
+function saveToCSV(Settings) {
+  console.log('Saving ' + Settings.secondsToSave + ' seconds...');
+  var localObservable$ = null;
+  const dataToSave = [];
+
+  console.log('making ' + Settings.name + ' headers')
+
+ 
+  // for each module subscribe to multicast and make header
+  // take one sample from selected observable object for headers
+  localObservable$ = window.multicastHeartRaw$.pipe(
+    take(1)
+  );
+  //take one sample to get header info
+  localObservable$.subscribe({ 
+  next(x) { 
+    dataToSave.push(
+      generateXTics(x.info.samplingRate,x.data[0].length,false).map(function(t) {return t }) + ",", 
+      "\n"
+    );   
+  }
+  });
+
+  // put selected observable object into local and start taking samples
+  localObservable$ = window.multicastHeartRaw$.pipe(
+    take(1)
+  );
+
+  // now with header in place subscribe to each epoch and log it
+  localObservable$.subscribe({
+    next(x) { 
+      console.log(x)
+      dataToSave.push(Object.values(x.data[1]).join(",") + "\n");
+      // logging is useful for debugging -yup
+      // console.log(x);
+    },
+    error(err) { console.log(err); },
+    complete() { 
+      console.log('Trying to save')
+      var blob = new Blob(
+        dataToSave, 
+        {type: "text/plain;charset=utf-8"}
+      );
+      saveAs(blob, Settings.name + "_Recording_" + Date.now() + ".csv");
+      console.log('Completed');
+    }
+  });
+}
