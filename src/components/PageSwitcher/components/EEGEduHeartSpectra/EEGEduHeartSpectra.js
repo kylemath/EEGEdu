@@ -134,7 +134,7 @@ export function renderModule(channels) {
       };
 
       if (index === 0) {
-        if (channel.datasets[0].data) {
+        if (channel.xLabels) {
           channel.peakInd = indexOfMax(channel.datasets[0].data);
           channel.peakF = channel.xLabels[channel.peakInd];
           channel.peakVal = channel.datasets[0].data[channel.peakInd]
