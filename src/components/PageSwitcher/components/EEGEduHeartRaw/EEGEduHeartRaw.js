@@ -26,7 +26,7 @@ export function getSettings () {
     cutOffHigh: 20,
     interval: 50,
     srate: 256,
-    duration: 1024,
+    duration: 2048,
     name: 'HeartRaw'
   }
 };
@@ -104,10 +104,6 @@ export function renderModule(channels) {
                 scaleLabel: {
                   ...generalOptions.scales.yAxes[0].scaleLabel,
                   labelString: specificTranslations.ylabel
-                },
-                ticks: {
-                  max: 300,
-                  min: -300
                 }
               }
             ]
