@@ -155,7 +155,15 @@ export function renderModule(channels) {
     <Card title={'Title'}>
       <Card.Section>
         <p>
-          {'Something...'}
+          {[
+    "As a first introduction to measurement of electrical potentials from the body we will look at something accessible. ",
+    "As the heart beats and pumps blood throuhgouts our body, a series of electrical potentials are created, which can be measured using electrodes placed around the heart. ",
+    "This is referred to as the Electrocardiogram (ECG), and is best measured comparing the potential accross the left vs. right side of the body. ",
+    "Therefore, we can take off the muse and place a finger on one hand on the muse's reference electrode (in the center of the forehead). ",
+    "We can then place a finger of our opposite hand on one of the eeg electrodes. For this example pick the left forehead electrode. ",
+    "So place your left fingers pinching the left forehead electrode, and your right fingers pinching the center electrode. ",
+    "Rest the muse on the table as you do this, and relax your body. Soon you should see spikes in voltage measured between thsoe two electrodes each time your heart beats. " 
+  ]}
         <br />
         <br />
          <img 
@@ -168,7 +176,15 @@ export function renderModule(channels) {
         <Link url="https://commons.wikimedia.org/wiki/File:ECG_Principle_fast.gif"> Image Source - Wikipedia </Link>
         <br />
         <br />
-          {'Something else'}
+          {[
+    "As a first introduction to measurement of electrical potentials from the body we will look at something accessible. ",
+    "As the heart beats and pumps blood throuhgouts our body, a series of electrical potentials are created, which can be measured using electrodes placed around the heart. ",
+    "This is referred to as the Electrocardiogram (ECG), and is best measured comparing the potential accross the left vs. right side of the body. ",
+    "Therefore, we can take off the muse and place a finger on one hand on the muse's reference electrode (in the center of the forehead). ",
+    "We can then place a finger of our opposite hand on one of the eeg electrodes. For this example pick the left forehead electrode. ",
+    "So place your left fingers pinching the left forehead electrode, and your right fingers pinching the center electrode. ",
+    "Rest the muse on the table as you do this, and relax your body. Soon you should see spikes in voltage measured between thsoe two electrodes each time your heart beats. " 
+  ]}
         <br />
        <br />
         <br />
@@ -183,7 +199,15 @@ export function renderModule(channels) {
         <Link url="https://en.wikipedia.org/wiki/Electrocardiography#/media/File:Limb_leads_of_EKG.png"> Image Source - Wikipedia </Link>
         <br />      
         <br />      
-          {'One more thing'}
+          {[
+    "As a first introduction to measurement of electrical potentials from the body we will look at something accessible. ",
+    "As the heart beats and pumps blood throuhgouts our body, a series of electrical potentials are created, which can be measured using electrodes placed around the heart. ",
+    "This is referred to as the Electrocardiogram (ECG), and is best measured comparing the potential accross the left vs. right side of the body. ",
+    "Therefore, we can take off the muse and place a finger on one hand on the muse's reference electrode (in the center of the forehead). ",
+    "We can then place a finger of our opposite hand on one of the eeg electrodes. For this example pick the left forehead electrode. ",
+    "So place your left fingers pinching the left forehead electrode, and your right fingers pinching the center electrode. ",
+    "Rest the muse on the table as you do this, and relax your body. Soon you should see spikes in voltage measured between thsoe two electrodes each time your heart beats. " 
+  ]}
         <br />
         <br />    
         <img 
@@ -200,7 +224,15 @@ export function renderModule(channels) {
         ></img> 
         <br />
         <br />      
-          {'One more thing'}
+          {[
+    "As a first introduction to measurement of electrical potentials from the body we will look at something accessible. ",
+    "As the heart beats and pumps blood throuhgouts our body, a series of electrical potentials are created, which can be measured using electrodes placed around the heart. ",
+    "This is referred to as the Electrocardiogram (ECG), and is best measured comparing the potential accross the left vs. right side of the body. ",
+    "Therefore, we can take off the muse and place a finger on one hand on the muse's reference electrode (in the center of the forehead). ",
+    "We can then place a finger of our opposite hand on one of the eeg electrodes. For this example pick the left forehead electrode. ",
+    "So place your left fingers pinching the left forehead electrode, and your right fingers pinching the center electrode. ",
+    "Rest the muse on the table as you do this, and relax your body. Soon you should see spikes in voltage measured between thsoe two electrodes each time your heart beats. " 
+  ]}
         <br />        
         <img 
           src={ require("./electrodediagram2.png")} 
@@ -209,13 +241,22 @@ export function renderModule(channels) {
           height="auto"
         ></img>
         <br />      
-          {'One more thing'}
+          {[
+    "As a first introduction to measurement of electrical potentials from the body we will look at something accessible. ",
+    "As the heart beats and pumps blood throuhgouts our body, a series of electrical potentials are created, which can be measured using electrodes placed around the heart. ",
+    "This is referred to as the Electrocardiogram (ECG), and is best measured comparing the potential accross the left vs. right side of the body. ",
+    "Therefore, we can take off the muse and place a finger on one hand on the muse's reference electrode (in the center of the forehead). ",
+    "We can then place a finger of our opposite hand on one of the eeg electrodes. For this example pick the left forehead electrode. ",
+    "So place your left fingers pinching the left forehead electrode, and your right fingers pinching the center electrode. ",
+    "Rest the muse on the table as you do this, and relax your body. Soon you should see spikes in voltage measured between thsoe two electrodes each time your heart beats. " 
+  ]}
         <br />
 
 
         </p>  
       </Card.Section>
-
+    </Card>
+    <Card title={"Live Data"}>
       <Card.Section>
         <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
       </Card.Section>
@@ -258,7 +299,15 @@ export function renderRecord(recordPopChange, recordPop, status, Settings) {
         <p>
 
         <br />      
-          {'One more thing'}
+          {[
+    "As a first introduction to measurement of electrical potentials from the body we will look at something accessible. ",
+    "As the heart beats and pumps blood throuhgouts our body, a series of electrical potentials are created, which can be measured using electrodes placed around the heart. ",
+    "This is referred to as the Electrocardiogram (ECG), and is best measured comparing the potential accross the left vs. right side of the body. ",
+    "Therefore, we can take off the muse and place a finger on one hand on the muse's reference electrode (in the center of the forehead). ",
+    "We can then place a finger of our opposite hand on one of the eeg electrodes. For this example pick the left forehead electrode. ",
+    "So place your left fingers pinching the left forehead electrode, and your right fingers pinching the center electrode. ",
+    "Rest the muse on the table as you do this, and relax your body. Soon you should see spikes in voltage measured between thsoe two electrodes each time your heart beats. " 
+  ]}
         <br />
         <br />
 
@@ -269,20 +318,27 @@ export function renderRecord(recordPopChange, recordPop, status, Settings) {
           height="auto"
         ></img>
         <br />      
-          {'One more thing'}
+          {[
+    "As a first introduction to measurement of electrical potentials from the body we will look at something accessible. ",
+    "As the heart beats and pumps blood throuhgouts our body, a series of electrical potentials are created, which can be measured using electrodes placed around the heart. ",
+    "This is referred to as the Electrocardiogram (ECG), and is best measured comparing the potential accross the left vs. right side of the body. ",
+    "Therefore, we can take off the muse and place a finger on one hand on the muse's reference electrode (in the center of the forehead). ",
+    "We can then place a finger of our opposite hand on one of the eeg electrodes. For this example pick the left forehead electrode. ",
+    "So place your left fingers pinching the left forehead electrode, and your right fingers pinching the center electrode. ",
+    "Rest the muse on the table as you do this, and relax your body. Soon you should see spikes in voltage measured between thsoe two electrodes each time your heart beats. " 
+  ]}
         <br />
-        <br />      
+        <br />
+        <Link url="https://docs.google.com/spreadsheets/d/1v2JfPkkiSiXizY9SZOhsliSpCyWDv6oW0ESu-wAL-DY/edit?usp=sharing">
+         Link to example google sheet from video 
+        </Link>      
         </p>
         <YouTube 
           videoId="GyIofXQUOvE"
           opts={opts}
         />
-        <p>
-        <Link url="https://docs.google.com/spreadsheets/d/1v2JfPkkiSiXizY9SZOhsliSpCyWDv6oW0ESu-wAL-DY/edit?usp=sharing">
-         Link to example google sheet from video 
-        </Link>
         <br />
-        </p>
+        <br />
 
         <Modal
           open={recordPop}
