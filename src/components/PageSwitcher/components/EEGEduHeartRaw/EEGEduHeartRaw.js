@@ -212,6 +212,9 @@ export function renderModule(channels) {
             width="25%"
             height="auto"
           ></img>
+          <Link url="https://github.com/NeuroTechX/eeg-101/blob/master/EEG101/src/assets/electrodediagram2.png"> Image Source - EEG101 </Link>
+
+
           <TextContainer>
             <p> {[
               "If you haven't already, connect your muse and try to plot your heart rate before moving on to the data recording and analysis below. ",
