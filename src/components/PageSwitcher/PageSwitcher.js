@@ -346,7 +346,9 @@ export function PageSwitcher() {
       case intro: 
         return null
       case heartRaw:
-        return null
+        return (
+          funHeartRaw.renderRecord(recordPopChange, recordPop, status, heartRawSettings)
+        )
       case heartSpectra:
         return (
           funHeartSpectra.renderRecord(recordPopChange, recordPop, status, heartSpectraSettings, setHeartSpectraSettings)

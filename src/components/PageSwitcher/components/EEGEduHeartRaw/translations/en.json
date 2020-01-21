@@ -9,6 +9,6 @@
     "So place your left fingers pinching the left forehead electrode, and your right fingers pinching the center electrode. ",
     "Rest the muse on the table as you do this, and relax your body. Soon you should see spikes in voltage measured between thsoe two electrodes each time your heart beats. " 
   ],
-  "xlabel": "Time (msec)",
+  "xlabel": "Time (Seconds)",
   "ylabel": "Voltage (\u03BCV)"
 }
