@@ -2,10 +2,11 @@ import React from "react";
 import { catchError, multicast, take  } from "rxjs/operators";
 import { Subject } from "rxjs";
 
-import { TextContainer, Card, Stack, ButtonGroup, Button, Modal } from "@shopify/polaris";
+import { TextContainer, Card, Stack, ButtonGroup, Button, Modal, Link } from "@shopify/polaris";
 import { channelNames } from "muse-js";
 import { Line } from "react-chartjs-2";
 import { saveAs } from 'file-saver';
+import YouTube from 'react-youtube'
  
 import { zipSamples } from "muse-js";
 
@@ -141,6 +142,7 @@ export function renderModule(channels) {
   }
 
   return (
+    <React.Fragment>
     <Card title={specificTranslations.title}>
       <Card.Section>
         <Stack>
@@ -149,14 +151,88 @@ export function renderModule(channels) {
           </TextContainer>
         </Stack>
       </Card.Section>
+    </Card>
+    <Card title={'Title'}>
+      <Card.Section>
+        <p>
+          {'Something...'}
+        <br />
+        <br />
+         <img 
+          src={ require("./ECG_Principle_fast.gif")} 
+          alt="ECGPrinciples"
+          width="25%"
+          height="auto"
+        ></img> 
+        <br />
+        <Link url="https://commons.wikimedia.org/wiki/File:ECG_Principle_fast.gif"> Image Source - Wikipedia </Link>
+        <br />
+        <br />
+          {'Something else'}
+        <br />
+       <br />
+        <br />
+
+        <img 
+          src={ require("./LimbLead.png")} 
+          alt="LeftHand"
+          width="25%"
+          height="auto"
+        ></img>  
+        <br />
+        <Link url="https://en.wikipedia.org/wiki/Electrocardiography#/media/File:Limb_leads_of_EKG.png"> Image Source - Wikipedia </Link>
+        <br />      
+        <br />      
+          {'One more thing'}
+        <br />
+        <br />    
+        <img 
+          src={ require("./LeftHand.png")} 
+          alt="LeftHand"
+          width="25%"
+          height="auto"
+        ></img>  
+        <img 
+          src={ require("./RightHand.png")} 
+          alt="RightHand"
+          width="25%"
+          height="auto"
+        ></img> 
+        <br />
+        <br />      
+          {'One more thing'}
+        <br />        
+        <img 
+          src={ require("./electrodediagram2.png")} 
+          alt="F7Electrode"
+          width="25%"
+          height="auto"
+        ></img>
+        <br />      
+          {'One more thing'}
+        <br />
+
+
+        </p>  
+      </Card.Section>
+
       <Card.Section>
         <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
       </Card.Section>
     </Card>
+    </React.Fragment>
   );
 }
   
-export function renderRecord(recordPopChange, recordPop, status, Settings, setSettings) {
+export function renderRecord(recordPopChange, recordPop, status, Settings) {
+
+  const opts = {
+    height: '195',
+    width: '320',
+    playerVars: { // https://developers.google.com/youtube/player_parameters
+      autoplay: false
+    }
+  };
 
   return (
     <Card title={'Collect Raw Heart Rate Data'} sectioned>
@@ -179,12 +255,42 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
             {'Record Raw Data'}  
           </Button>
         </ButtonGroup>
-        
+        <p>
+
+        <br />      
+          {'One more thing'}
+        <br />
+        <br />
+
+        <img 
+          src={ require("./PlotEKG_Sheets.png")} 
+          alt="F7Electrode"
+          width="75%"
+          height="auto"
+        ></img>
+        <br />      
+          {'One more thing'}
+        <br />
+        <br />      
+        </p>
+        <YouTube 
+          videoId="GyIofXQUOvE"
+          opts={opts}
+        />
+        <p>
+        <Link url="https://docs.google.com/spreadsheets/d/1v2JfPkkiSiXizY9SZOhsliSpCyWDv6oW0ESu-wAL-DY/edit?usp=sharing">
+         Link to example google sheet from video 
+        </Link>
+        <br />
+        </p>
+
         <Modal
           open={recordPop}
           onClose={recordPopChange}
           title={"Data is recording"}
         >
+   
+
           <Modal.Section>
             <TextContainer>
               <p>
@@ -199,7 +305,12 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
 
       </Stack>
     </Card>
-  )
+  );
+
+  // _onReady(event) {
+  //   // access to player in all event handlers via event.target
+  //   event.target.pauseVideo();
+  // }
 }
 
 function saveToCSV(Settings) {

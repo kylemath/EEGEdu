@@ -78,7 +78,7 @@ export function PageSwitcher() {
   const [status, setStatus] = useState(generalTranslations.connect);
 
   // for picking a new module
-  const [selected, setSelected] = useState(intro);
+  const [selected, setSelected] = useState(heartRaw);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 
@@ -347,7 +347,7 @@ export function PageSwitcher() {
         return null
       case heartRaw:
         return (
-          funHeartRaw.renderRecord(recordPopChange, recordPop, status, heartRawSettings, setHeartRawSettings)
+          funHeartRaw.renderRecord(recordPopChange, recordPop, status, heartRawSettings)
         )
       case heartSpectra:
         return (
