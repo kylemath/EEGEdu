@@ -227,6 +227,15 @@ export function renderModule(channels) {
     </Card>
     <Card title={"Live Data"}>
       <Card.Section>
+        <TextContainer>
+          <p> {[
+            "Here time is on the horizontal axis, and the voltage is on the vertical axis. ",
+            "There are 10 Seconds of data shown, with the current time shown on the right. ",
+            "There is a vertical line every second so you can estimate your heart rate roughly. ",
+            "Below we will save data and use it to estimate your heart more accurately in a spreadsheet. ",
+            "the signal will be red if it is noisy, and when you relax and hold still it will turn green/black"
+            ]} </p>
+        </TextContainer>
         <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
       </Card.Section>
     </Card>
@@ -247,12 +256,16 @@ export function renderRecord(recordPopChange, recordPop, status, Settings) {
   return (
     <Card title={'Collect Raw Heart Rate Data'} sectioned>
       <Card.Section>
-        <p>
-          {"Clicking this button will begin the experiment so check your data quality on the raw module first. "}
-
-        </p>   
-      </Card.Section>
-      <Stack>
+        <Stack>
+        <TextContainer>
+        <p> {[
+          "Clicking this button will immediately record a 10 second long segment of data just like it is shown in the plot above. ",
+          "Therefore, make sure the chart above looks clean and you can see you heart beat clearly before pressing record. ",
+           "We are going to compare two conditions that show a clear difference in heart rate due to blood pressure changes: ",
+           "Standing and Sitting. ",
+           "You will record two sessions, one standing and one sitting, pick the order randomly but keep track of which output file is which"
+           ]} </p>
+        </TextContainer> 
         <ButtonGroup>
           <Button 
             onClick={() => {
@@ -265,57 +278,46 @@ export function renderRecord(recordPopChange, recordPop, status, Settings) {
             {'Record Raw Data'}  
           </Button>
         </ButtonGroup>
-        <p>
-
-        <br />      
-          {[
-    "As a first introduction to measurement of electrical potentials from the body we will look at something accessible. ",
-    "As the heart beats and pumps blood throuhgouts our body, a series of electrical potentials are created, which can be measured using electrodes placed around the heart. ",
-    "This is referred to as the Electrocardiogram (ECG), and is best measured comparing the potential accross the left vs. right side of the body. ",
-    "Therefore, we can take off the muse and place a finger on one hand on the muse's reference electrode (in the center of the forehead). ",
-    "We can then place a finger of our opposite hand on one of the eeg electrodes. For this example pick the left forehead electrode. ",
-    "So place your left fingers pinching the left forehead electrode, and your right fingers pinching the center electrode. ",
-    "Rest the muse on the table as you do this, and relax your body. Soon you should see spikes in voltage measured between thsoe two electrodes each time your heart beats. " 
-  ]}
-        <br />
-        <br />
-
+        <TextContainer>
+          <p> {[
+            "A .csv file will be saved that can be opened in your favorite spreadsheet software like Microsoft Excel or in our examples, Google Sheets. ",
+            "Remember for each person at your computer to record two files, one while they are standing and one while they are sitting. " 
+          ]} </p>
+        </TextContainer>
         <img 
           src={ require("./PlotEKG_Sheets.png")} 
           alt="F7Electrode"
           width="75%"
           height="auto"
         ></img>
-        <br />      
-          {[
-    "As a first introduction to measurement of electrical potentials from the body we will look at something accessible. ",
-    "As the heart beats and pumps blood throuhgouts our body, a series of electrical potentials are created, which can be measured using electrodes placed around the heart. ",
-    "This is referred to as the Electrocardiogram (ECG), and is best measured comparing the potential accross the left vs. right side of the body. ",
-    "Therefore, we can take off the muse and place a finger on one hand on the muse's reference electrode (in the center of the forehead). ",
-    "We can then place a finger of our opposite hand on one of the eeg electrodes. For this example pick the left forehead electrode. ",
-    "So place your left fingers pinching the left forehead electrode, and your right fingers pinching the center electrode. ",
-    "Rest the muse on the table as you do this, and relax your body. Soon you should see spikes in voltage measured between thsoe two electrodes each time your heart beats. " 
-  ]}
-        <br />
-        <br />
+        <TextContainer>
+          <p> {[
+            "The following youtube video will show you how to open the file in Google Sheets, rename it, plot the data, find the peaks,  ",
+            "Record them and find their difference in time, then take the average difference to estimate your average heart period. ",
+            "This value is then used to estimate your heart rate in beats per minute. ", 
+            "Finally each of you will enter this number for both sitting and standing into a google sheet that we are sharing as a class. ", 
+            "We will use this shared google sheet which combines all our data in order to compute group statistics. "  
+          ]} </p>
+        </TextContainer>
         <Link url="https://docs.google.com/spreadsheets/d/1v2JfPkkiSiXizY9SZOhsliSpCyWDv6oW0ESu-wAL-DY/edit?usp=sharing">
          Link to example google sheet from video 
-        </Link>      
-        </p>
+        </Link>  
+        <br />    
+        <br />
         <YouTube 
           videoId="GyIofXQUOvE"
           opts={opts}
         />
         <br />
         <br />
+        </Stack>
+      </Card.Section>
 
         <Modal
           open={recordPop}
           onClose={recordPopChange}
           title={"Data is recording"}
         >
-   
-
           <Modal.Section>
             <TextContainer>
               <p>
@@ -328,14 +330,8 @@ export function renderRecord(recordPopChange, recordPop, status, Settings) {
           </Modal.Section>
         </Modal>
 
-      </Stack>
     </Card>
   );
-
-  // _onReady(event) {
-  //   // access to player in all event handlers via event.target
-  //   event.target.pauseVideo();
-  // }
 }
 
 function saveToCSV(Settings) {
