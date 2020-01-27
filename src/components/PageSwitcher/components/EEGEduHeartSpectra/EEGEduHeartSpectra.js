@@ -202,6 +202,15 @@ export function renderModule(channels) {
             opts={opts}
           />
           <br />
+          <TextContainer>
+            <p> {[
+              "There are a few problems with the way we estimated heart rate in the previous module. ",
+              "We used only a single 10 second segment of data which adds variability. ",
+              "We also used peak detection to find each heart beat, which takes alot of time and is difficult with noisy data. ", 
+              "This required us to make arbirary thesholds to find peaks, and led to some poor estimates in heart rate, as indicated by the number of outliers we needed to remove (~15). ", 
+              "Therefore in this module we will use some signal processing to get a better estimate of heart rate. "  
+            ]} </p>
+          </TextContainer>
         </Stack>
       </Card.Section>
       <Card.Section>
@@ -218,8 +227,6 @@ export function renderModule(channels) {
             width="80%"
             height="auto"
           ></img>  
-          <br />
-          <br />
           <TextContainer>
             <p> {[
               "Therefore, we can use mathematical techniques such as a fourier transform to estimate what frequency is present in the ECG data. ",
@@ -243,7 +250,11 @@ export function renderModule(channels) {
                 "We now transform the data to show us what frequencies are present in the continuous signal. ",
                 "In this frequency domain, we now ignore time and consider how much power of each frequency there is in a segment of data. ",
                 "If you place your fingers the same way you did when looking at your ECG, you should start to see a peak ",
-                "It may help to return to Module 2 and look at the raw data first. ",
+                "It may help to return to Module 2 and look at the raw data first. "
+              ]} </p>
+          </TextContainer>
+          <TextContainer>
+            <p> {[
                 "In this new plot, Along the horizontal axis is the beats per minute, or the frequency of the peaks in your ECG. ", 
                 "The vertical y-axis shows the power of the rhythms in the data at each frequency, or how large the changes are between peak and through of the oscillations. ",
                 "The pink ball shows the estimated peak of the spectra, or your estimated heart rate. ",
@@ -354,7 +365,16 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
   return(
     <Card title={'Record ' + Settings.name +' Data'} sectioned>
       <Stack>
-        <RangeSlider 
+        <TextContainer>
+        <p> {[
+          "Clicking this button will immediately record a 10 second long segment of data just like it is shown in the plot above. ",
+          "Therefore, make sure the chart above looks clean and you can see you heart beat clearly before pressing record. ",
+           "We are going to compare two conditions that show a clear difference in heart rate due to blood pressure changes: ",
+           "Standing and Sitting. ",
+           "You will record two sessions, one standing and one sitting, pick the order randomly but keep track of which output file is which"
+           ]} </p>
+        </TextContainer> 
+       <RangeSlider 
           disabled={status === generalTranslations.connect} 
           min={2}
           max={180}
@@ -374,6 +394,44 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
             {'Save to CSV'}  
           </Button>
         </ButtonGroup>
+                <TextContainer>
+          <p> {[
+            "A .csv file will be saved that can be opened in your favorite spreadsheet software like Microsoft Excel or in our examples, Google Sheets. ",
+            "Remember for each person at your computer to record two files, one while they are standing and one while they are sitting. ", 
+            "Here is an example of what the data will look like once loaded. ",
+            "The top row shows the millsecond ellapsed in the data segment from 4 to 10,000. ",
+            "The bottom row shows the voltage measured from the difference between the two electrode, for each of those moments in time. ",
+            "The plot is plotting the data for each time point, this time with zero on the left. " 
+
+          ]} </p>
+        </TextContainer>
+        <img 
+          src={ require("./exampleECG.png")} 
+          alt="F7Electrode"
+          width="75%"
+          height="auto"
+        ></img>
+        <TextContainer>
+          <p> {[
+            "The following youtube video will show you how to open the file in Google Sheets, rename it, plot the data, find the peaks,  ",
+            "Record them and find their difference in time, then take the average difference to estimate your average heart period. ",
+            "This value is then used to estimate your heart rate in beats per minute. "
+            ]} 
+        <Link url="https://docs.google.com/spreadsheets/d/1v2JfPkkiSiXizY9SZOhsliSpCyWDv6oW0ESu-wAL-DY/edit?usp=sharing">
+         Link to example google sheet from video. 
+        </Link>  
+        </p>
+        </TextContainer>
+
+        <br />
+        <TextContainer>
+          <p> {[
+            "Finally each of you will enter this number for both sitting and standing into a google sheet that we are sharing as a class. ", 
+            "We will use this shared google sheet which combines all our data in order to compute group statistics. "  
+          ]} </p>
+        </TextContainer>
+        <br />
+
         <Modal
           open={recordPop}
           onClose={recordPopChange}
