@@ -1,13 +1,14 @@
 import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 
-import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal } from "@shopify/polaris";
+import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Link, Modal } from "@shopify/polaris";
 import { saveAs } from 'file-saver';
 import { takeUntil } from "rxjs/operators";
 import { Subject, timer  } from "rxjs";
 
 import { channelNames } from "muse-js";
 import { Line } from "react-chartjs-2";
+import YouTube from 'react-youtube'
 
 import { zipSamples } from "muse-js";
 
@@ -171,12 +172,83 @@ export function renderModule(channels) {
     });
   }
 
+  const opts = {
+    height: '195',
+    width: '320',
+    playerVars: { // https://developers.google.com/youtube/player_parameters
+      autoplay: false
+    }
+  };
+
   return (
     <Card title={specificTranslations.title}>
+            <Card.Section>
+        <Stack>
+          <TextContainer>
+            <p> {[
+              "In the previous module we each estimated our heart rate in two conditions, while we were sitting, and while we were standing. ", 
+              "We used a shared google sheet which combines all our data in order to compute group statistics. ",
+              "The following video shows how to use the data to make plots of the data, compute statistics, and test the difference. "  
+            ]} 
+          <Link url="https://docs.google.com/spreadsheets/d/1_R4ViDw5VQv72F-lzi9BJyRPx1-BhQsj7XFckrvSW-Y/edit?usp=sharing">
+            A copy of the anonymized data that you can use to follow along with the video can be found here. 
+          </Link>  
+            </p>
+          </TextContainer>
+          <br />
+          <br />
+          <YouTube 
+            videoId="uyrnVdKteoU"
+            opts={opts}
+          />
+          <br />
+        </Stack>
+      </Card.Section>
       <Card.Section>
         <Stack>
           <TextContainer>
-            <p>{specificTranslations.description}</p>
+            <p> {[
+              "Here is an example of some ECG data from our experiment in Module 2. ",
+              "Notice that just like many other aspects of our bodies function, our heart rate is a rhythm, that is, it repeats in time at regular intervals. "
+            ]} </p>
+          </TextContainer>
+          <img 
+            src={ require("./exampleECG.png")} 
+            alt="ECG"
+            width="80%"
+            height="auto"
+          ></img>  
+          <br />
+          <br />
+          <TextContainer>
+            <p> {[
+              "Therefore, we can use mathematical techniques such as a fourier transform to estimate what frequency is present in the ECG data. ",
+              "A fourier transform turns any series of numbers into a summed set of sine waves of different sizes. ",
+              "The following animation shows how a single time-series of data, can be thought of as the sum of different frequencies of sine waves, each of a different magnitude. ", 
+              "The blue line chart in the animation shows what is called the spectra, and indicates the power at each frequency." 
+            ]} </p>
+          </TextContainer>
+          <br />
+          <img 
+            src={ require("./fft_animation.gif")} 
+            alt="FFT"
+            width="100%"
+            height="auto"
+          ></img>  
+          <br />
+          <Link url="https://en.wikipedia.org/wiki/Electrocardiography#/media/File:Limb_leads_of_EKG.png"> Image Source - Wikipedia </Link>
+          <TextContainer>
+            <p> {[
+                "Now we can use the muse to estimate our heart rates, but in different ways. Instead of looking at the voltage over time, ",
+                "We now transform the data to show us what frequencies are present in the continuous signal. ",
+                "In this frequency domain, we now ignore time and consider how much power of each frequency there is in a segment of data. ",
+                "If you place your fingers the same way you did when looking at your ECG, you should start to see a peak ",
+                "It may help to return to Module 2 and look at the raw data first. ",
+                "In this new plot, Along the horizontal axis is the beats per minute, or the frequency of the peaks in your ECG. ", 
+                "The vertical y-axis shows the power of the rhythms in the data at each frequency, or how large the changes are between peak and through of the oscillations. ",
+                "The pink ball shows the estimated peak of the spectra, or your estimated heart rate. ",
+                "In the following experiment, it is only this pink value that will be saved over time while we record. "
+              ]} </p>
           </TextContainer>
         </Stack>
       </Card.Section>
