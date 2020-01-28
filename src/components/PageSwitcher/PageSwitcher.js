@@ -1,4 +1,4 @@
- import React, { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { MuseClient } from "muse-js";
 import { Select, Card, Stack, Button, ButtonGroup, Checkbox } from "@shopify/polaris";
 
