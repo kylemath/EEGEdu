@@ -200,7 +200,8 @@ export function renderModule(channels) {
               "We used a shared google sheet which combines all our data in order to compute group statistics. ",
               "The following video shows how to use the data to make plots of the data, compute statistics, and test the difference. "  
             ]} 
-          <Link url="https://docs.google.com/spreadsheets/d/1_R4ViDw5VQv72F-lzi9BJyRPx1-BhQsj7XFckrvSW-Y/edit?usp=sharing">
+          <Link url="https://docs.google.com/spreadsheets/d/1_R4ViDw5VQv72F-lzi9BJyRPx1-BhQsj7XFckrvSW-Y/edit?usp=sharing"
+                external={true}>
             A copy of the anonymized data that you can use to follow along with the video can be found here. 
           </Link>  
             </p>
@@ -253,7 +254,9 @@ export function renderModule(channels) {
             height="auto"
           ></img>  
           <br />
-          <Link url="https://en.wikipedia.org/wiki/Electrocardiography#/media/File:Limb_leads_of_EKG.png"> Image Source - Wikipedia </Link>
+          <Link url="https://en.wikipedia.org/wiki/Electrocardiography#/media/File:Limb_leads_of_EKG.png"
+          external={true}>
+           Image Source - Wikipedia </Link>
           <TextContainer>
             <p> {[
                 "Now we can use the muse to estimate our heart rates, but in different ways. Instead of looking at the voltage over time, ",
@@ -294,7 +297,9 @@ export function renderModule(channels) {
             width="25%"
             height="auto"
           ></img>
-          <Link url="https://github.com/NeuroTechX/eeg-101/blob/master/EEG101/src/assets/electrodediagram2.png"> Image Source - EEG101 </Link>
+          <Link url="https://github.com/NeuroTechX/eeg-101/blob/master/EEG101/src/assets/electrodediagram2.png"
+                external={true}>
+            Image Source - EEG101 </Link>
  
           <TextContainer>
             <p> {[
@@ -484,7 +489,9 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
             "The following youtube video will show you how to open the file in Google Sheets, rename it, plot the data, remove any harmonics or outliers,  ",
             "then take the average heart rate over the window as an estimate of your heart rate. "
             ]} 
-        <Link url="https://docs.google.com/spreadsheets/d/1AcFxuIZDMNfOifgql2vrFy2nSS3g7c14fOxAdptOgQY/edit?usp=sharing">
+        <Link url="https://docs.google.com/spreadsheets/d/1AcFxuIZDMNfOifgql2vrFy2nSS3g7c14fOxAdptOgQY/edit?usp=sharing"
+             external={true}>
+
          Link to example google sheet from video. 
         </Link>  
         </p>
