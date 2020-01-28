@@ -30,8 +30,8 @@ export function getSettings() {
     cutOffHigh: 20,
     interval: 100,
     bins: 8192,
-    sliceFFTLow: 0.6,
-    sliceFFTHigh: 2,
+    sliceFFTLow: 0.5,
+    sliceFFTHigh: 2.5,
     duration: 2048,
     srate: 256,
     name: 'HeartSpectra',
@@ -123,7 +123,7 @@ export function renderModule(channels) {
           }
         },
         animation: {
-          duration: 500
+          duration: 200
         },
         title: {
           ...generalOptions.title,
@@ -163,7 +163,16 @@ export function renderModule(channels) {
             </Card.Section>
           );
         } else {
-          return null
+           return( 
+            <Card.Section>
+                <TextContainer>
+                <p> {[
+                "Press connect above to see the chart."  
+                ]} 
+                </p>
+              </TextContainer>              
+            </Card.Section>
+            )
         }
 
       } else {
@@ -181,6 +190,7 @@ export function renderModule(channels) {
   };
 
   return (
+    <React.Fragment>
     <Card title={specificTranslations.title}>
             <Card.Section>
         <Stack>
@@ -249,24 +259,69 @@ export function renderModule(channels) {
                 "Now we can use the muse to estimate our heart rates, but in different ways. Instead of looking at the voltage over time, ",
                 "We now transform the data to show us what frequencies are present in the continuous signal. ",
                 "In this frequency domain, we now ignore time and consider how much power of each frequency there is in a segment of data. ",
-                "If you place your fingers the same way you did when looking at your ECG, you should start to see a peak ",
+                "If you place your fingers the same way you did when looking at your ECG, you should start to see a peak. ",
                 "It may help to return to Module 2 and look at the raw data first. "
               ]} </p>
           </TextContainer>
+                 <TextContainer>
+          <p> {[
+            "If you missed Module 2, here are the instructions: You can take off the muse from your head and place a finger on your right hand on the muse's reference electrode (in the center of the forehead). ",
+            "We can then place a finger of our left hand on one of the eeg electrodes. Lets use the left forehead electrode (position AF7). ",
+            "So place your left fingers pinching the left forehead electrode, and your right fingers pinching the center electrode. ",
+            "Otherwise try to hold the Muse as still as possible, and relax your body. " 
+         ]} </p>
+        </TextContainer>
+        <br />
+        </Stack>
+        <img 
+          src={ require("./LeftHand.png")} 
+          alt="LeftHand"
+          width="25%"
+          height="auto"
+        ></img>  
+        <img 
+          src={ require("./RightHand.png")} 
+          alt="RightHand"
+          width="25%"
+          height="auto"
+        ></img> 
+        <br />   
+        <Stack>
+          <br />        
+          <img 
+            src={ require("./electrodediagram2.png")} 
+            alt="F7Electrode"
+            width="25%"
+            height="auto"
+          ></img>
+          <Link url="https://github.com/NeuroTechX/eeg-101/blob/master/EEG101/src/assets/electrodediagram2.png"> Image Source - EEG101 </Link>
+ 
           <TextContainer>
             <p> {[
                 "In this new plot, Along the horizontal axis is the beats per minute, or the frequency of the peaks in your ECG. ", 
                 "The vertical y-axis shows the power of the rhythms in the data at each frequency, or how large the changes are between peak and through of the oscillations. ",
                 "The pink ball shows the estimated peak of the spectra, or your estimated heart rate. ",
-                "In the following experiment, it is only this pink value that will be saved over time while we record. "
+                "In the following experiment, it is only this pink value that will be saved over time while we record. ",
+                "Here is an example of what the plot should look like with a strong heart rate signal. ",
+                "Notice that there are two peaks, 60 BPM and 120 BPM. The larger peak is called the 1st Harmonic, a multiple of the true heart rate. ",
+                "These harmonics are common in the frequency domain: "
               ]} </p>
           </TextContainer>
+           <img 
+            src={ require("./exampleSpectra.png")} 
+            alt="exampleSpectra"
+            width="50%"
+            height="auto"
+          ></img>
         </Stack>
       </Card.Section>
+    </Card>
+    <Card title="Live spectra plot">
       <Card.Section>
         <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
       </Card.Section>
     </Card>
+    </React.Fragment>
   );
 }
 
@@ -361,14 +416,23 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
     setSettings(prevState => ({...prevState, secondsToSave: value}));
   }
 
+  const opts = {
+    height: '195',
+    width: '320',
+    playerVars: { // https://developers.google.com/youtube/player_parameters
+      autoplay: false
+    }
+  };
 
   return(
     <Card title={'Record ' + Settings.name +' Data'} sectioned>
       <Stack>
         <TextContainer>
         <p> {[
-          "Clicking this button will immediately record a 10 second long segment of data just like it is shown in the plot above. ",
-          "Therefore, make sure the chart above looks clean and you can see you heart beat clearly before pressing record. ",
+          "Clicking this button will immediately record the value of the pink dot above for ",
+          Settings.secondsToSave,
+          " seconds. ",
+          "Therefore, make sure the chart above looks clean and you can see a clear peak in the spectra before pressing record. ",
            "We are going to compare two conditions that show a clear difference in heart rate due to blood pressure changes: ",
            "Standing and Sitting. ",
            "You will record two sessions, one standing and one sitting, pick the order randomly but keep track of which output file is which"
@@ -396,38 +460,44 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
         </ButtonGroup>
                 <TextContainer>
           <p> {[
-            "A .csv file will be saved that can be opened in your favorite spreadsheet software like Microsoft Excel or in our examples, Google Sheets. ",
-            "Remember for each person at your computer to record two files, one while they are standing and one while they are sitting. ", 
+            "A .csv file will be saved that can be opened in Google Sheets. ",
+            "Remember for each person to record two files, one while  standing and one while  sitting. ", 
             "Here is an example of what the data will look like once loaded. ",
-            "The top row shows the millsecond ellapsed in the data segment from 4 to 10,000. ",
-            "The bottom row shows the voltage measured from the difference between the two electrode, for each of those moments in time. ",
-            "The plot is plotting the data for each time point, this time with zero on the left. " 
-
+            "The first column shows the time in msec of each estimate of heart rate. The second column shows the heart rate estimate in BPM. ",
+            "Each row represents an estimate from the previous 8 seconds of data. ",
+            "This is because you need a long segment of time to estimate frequency of rhythms over time. ",
+            "Each subsequent row is from an 8 second chunk of data, but is taken about 400 ms after the previous row. ",
+            "You can see the time values increase about 10000 ms during the recording, representing the 10 seconds of data. ",
+            "So 10000 milliseconds divided into ~400 ms shifts per row gives us the rough number of rows (~25). ", 
+            "The graph shows the values plotted over time, showing that the 1st Harmonic value of 120 BPM was incorrectly recorded on a few windows. "
           ]} </p>
         </TextContainer>
         <img 
-          src={ require("./exampleECG.png")} 
-          alt="F7Electrode"
+          src={ require("./exampleOutput.png")} 
+          alt="exampleOutput"
           width="75%"
           height="auto"
         ></img>
         <TextContainer>
           <p> {[
-            "The following youtube video will show you how to open the file in Google Sheets, rename it, plot the data, find the peaks,  ",
-            "Record them and find their difference in time, then take the average difference to estimate your average heart period. ",
-            "This value is then used to estimate your heart rate in beats per minute. "
+            "In this module the analysis will be much easier, since much of the work has been done by the webpage with the fourier transform and peak detection. ",
+            "The following youtube video will show you how to open the file in Google Sheets, rename it, plot the data, remove any harmonics or outliers,  ",
+            "then take the average heart rate over the window as an estimate of your heart rate. "
             ]} 
-        <Link url="https://docs.google.com/spreadsheets/d/1v2JfPkkiSiXizY9SZOhsliSpCyWDv6oW0ESu-wAL-DY/edit?usp=sharing">
+        <Link url="https://docs.google.com/spreadsheets/d/1AcFxuIZDMNfOifgql2vrFy2nSS3g7c14fOxAdptOgQY/edit?usp=sharing">
          Link to example google sheet from video. 
         </Link>  
         </p>
         </TextContainer>
-
         <br />
+        <YouTube 
+          videoId="6EtzwGXjB9Q"
+          opts={opts}
+        />
         <TextContainer>
           <p> {[
-            "Finally each of you will enter this number for both sitting and standing into a google sheet that we are sharing as a class. ", 
-            "We will use this shared google sheet which combines all our data in order to compute group statistics. "  
+            "Finally each of you will enter this estimated heart rate for both sitting and standing into a new anonymized google sheet that we are sharing as a class. ", 
+            "We will use this shared google sheet which combines all our data in order to compute group statistics and to compare the two methods of estimating our heart rate. "  
           ]} </p>
         </TextContainer>
         <br />
