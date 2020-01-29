@@ -1,7 +1,7 @@
 import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 
-import { TextContainer, Card, Stack, Button, ButtonGroup } from "@shopify/polaris";
+import { TextContainer, Card, Stack, Button, ButtonGroup, Modal } from "@shopify/polaris";
 import { Subject } from "rxjs";
 
 import { zipSamples } from "muse-js";
@@ -19,7 +19,7 @@ import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 
 import P5Wrapper from 'react-p5-wrapper';
-import sketchPredict from './sketchPredict';
+import sketchPredict from './sketchPredictSound';
 
 import ml5 from 'ml5'
 
@@ -142,7 +142,7 @@ window.confidences = {A: 1, B: 0};
 window.isPredicting = false;
 window.enoughLabels = false;
 
-export function renderRecord(status) {
+export function renderRecord(recordPopChange, status) {
   const condA = "A";
   const condB = "B";
   
@@ -217,13 +217,22 @@ export function renderRecord(status) {
             </Button>
           </ButtonGroup>
         </Stack>
-        <Card.Section>
-          <P5Wrapper sketch={sketchPredict} 
-            label={window.thisLabel}
-            confidences={window.confidences}
+        <Modal
+          open={window.isPredicting}
+          onClose={recordPopChange}
+          title="Live Prediction"
+          >
+          <Modal.Section>
+            <Card.Section>
+            <P5Wrapper sketch={sketchPredict} 
+              label={window.thisLabel}
+              confidences={window.confidences}
 
-          />          
-        </Card.Section>
+            />          
+            </Card.Section>
+          </Modal.Section>
+        </Modal>
+        
       </Card>
      
     </React.Fragment>

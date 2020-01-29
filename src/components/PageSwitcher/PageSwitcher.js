@@ -78,7 +78,7 @@ export function PageSwitcher() {
   const [status, setStatus] = useState(generalTranslations.connect);
 
   // for picking a new module
-  const [selected, setSelected] = useState(intro);
+  const [selected, setSelected] = useState(predict);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 
@@ -383,7 +383,7 @@ export function PageSwitcher() {
         )
       case predict:
         return (
-          funPredict.renderRecord(status)
+          funPredict.renderRecord(recordPopChange, status)
         )
       default:   
         console.log("Error on renderRecord.");
