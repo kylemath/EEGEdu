@@ -225,6 +225,10 @@ export function renderRecord(recordPopChange, status) {
               {'Predict State: ' + window.thisLabel + ', Confidence: ' + window.confidences[window.thisLabel].toFixed(2)}  
             </Button>
           </ButtonGroup>
+          <br />   
+          <TextContainer>
+            <p> {'Click or tap on the rectangle to toggle sound'} </p>
+          </TextContainer>
           <Card.Section>
             <P5Wrapper sketch={sketchPredict} 
               label={window.thisLabel}
