@@ -1,7 +1,7 @@
 import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 
-import { TextContainer, Card, Stack, Button, ButtonGroup, Modal } from "@shopify/polaris";
+import { TextContainer, Card, Stack, Button, ButtonGroup } from "@shopify/polaris";
 import { Subject } from "rxjs";
 
 import { zipSamples } from "muse-js";
@@ -135,9 +135,9 @@ export function renderSliders(setData, setSettings, status, Settings) {
 }
 
 // Classification algorithm (using renderRecord function)
-window.exampleCounts = {A: 0, B: 0}; 
+window.exampleCounts = {A: 0, B: 0, C: 0}; 
 window.thisLabel = 'A';
-window.confidences = {A: 1, B: 0}; 
+window.confidences = {A: 1, B: 0, C: 0}; 
 
 window.isPredicting = false;
 window.enoughLabels = false;
@@ -145,6 +145,7 @@ window.enoughLabels = false;
 export function renderRecord(recordPopChange, status) {
   const condA = "A";
   const condB = "B";
+  const condC = "C";
   
   // Adds example from current incoming psd 
   function addExample (label) {
@@ -153,7 +154,7 @@ export function renderRecord(recordPopChange, status) {
       window.exampleCounts[label]++;
 
       const numLabels = knnClassifier.getNumLabels();
-      if (numLabels === 2) {
+      if (numLabels === 3) {
         window.enoughLabels = true;
       }
     }
@@ -198,6 +199,14 @@ export function renderRecord(recordPopChange, status) {
             > 
               {'Record ' + condB + ' Data - Count: ' + window.exampleCounts['B']}  
             </Button> 
+            <Button 
+              onClick={() => {
+                addExample('C');
+              }}
+              disabled={window.isPredicting || status === generalTranslations.connect}
+            > 
+              {'Record ' + condC + ' Data - Count: ' + window.exampleCounts['C']}  
+            </Button>       
           </ButtonGroup>
         </Stack>
       </Card>
@@ -216,23 +225,14 @@ export function renderRecord(recordPopChange, status) {
               {'Predict State: ' + window.thisLabel + ', Confidence: ' + window.confidences[window.thisLabel].toFixed(2)}  
             </Button>
           </ButtonGroup>
-        </Stack>
-        <Modal
-          open={window.isPredicting}
-          onClose={recordPopChange}
-          title="Live Prediction"
-          >
-          <Modal.Section>
-            <Card.Section>
+          <Card.Section>
             <P5Wrapper sketch={sketchPredict} 
               label={window.thisLabel}
               confidences={window.confidences}
 
             />          
             </Card.Section>
-          </Modal.Section>
-        </Modal>
-        
+        </Stack>        
       </Card>
      
     </React.Fragment>
