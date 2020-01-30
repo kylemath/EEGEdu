@@ -383,7 +383,7 @@ export function PageSwitcher() {
         )
       case predict:
         return (
-          funPredict.renderRecord(status)
+          funPredict.renderRecord(recordPopChange, status)
         )
       default:   
         console.log("Error on renderRecord.");

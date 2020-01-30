@@ -19,7 +19,7 @@ import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 
 import P5Wrapper from 'react-p5-wrapper';
-import sketchPredict from './sketchPredict';
+import sketchPredict from './sketchPredictSound';
 
 import ml5 from 'ml5'
 
@@ -135,16 +135,17 @@ export function renderSliders(setData, setSettings, status, Settings) {
 }
 
 // Classification algorithm (using renderRecord function)
-window.exampleCounts = {A: 0, B: 0}; 
+window.exampleCounts = {A: 0, B: 0, C: 0}; 
 window.thisLabel = 'A';
-window.confidences = {A: 1, B: 0}; 
+window.confidences = {A: 1, B: 0, C: 0}; 
 
 window.isPredicting = false;
 window.enoughLabels = false;
 
-export function renderRecord(status) {
+export function renderRecord(recordPopChange, status) {
   const condA = "A";
   const condB = "B";
+  const condC = "C";
   
   // Adds example from current incoming psd 
   function addExample (label) {
@@ -153,7 +154,7 @@ export function renderRecord(status) {
       window.exampleCounts[label]++;
 
       const numLabels = knnClassifier.getNumLabels();
-      if (numLabels === 2) {
+      if (numLabels === 3) {
         window.enoughLabels = true;
       }
     }
@@ -198,6 +199,14 @@ export function renderRecord(status) {
             > 
               {'Record ' + condB + ' Data - Count: ' + window.exampleCounts['B']}  
             </Button> 
+            <Button 
+              onClick={() => {
+                addExample('C');
+              }}
+              disabled={window.isPredicting || status === generalTranslations.connect}
+            > 
+              {'Record ' + condC + ' Data - Count: ' + window.exampleCounts['C']}  
+            </Button>       
           </ButtonGroup>
         </Stack>
       </Card>
@@ -216,14 +225,18 @@ export function renderRecord(status) {
               {'Predict State: ' + window.thisLabel + ', Confidence: ' + window.confidences[window.thisLabel].toFixed(2)}  
             </Button>
           </ButtonGroup>
-        </Stack>
-        <Card.Section>
-          <P5Wrapper sketch={sketchPredict} 
-            label={window.thisLabel}
-            confidences={window.confidences}
+          <br />   
+          <TextContainer>
+            <p> {'Click or tap on the rectangle to toggle sound'} </p>
+          </TextContainer>
+          <Card.Section>
+            <P5Wrapper sketch={sketchPredict} 
+              label={window.thisLabel}
+              confidences={window.confidences}
 
-          />          
-        </Card.Section>
+            />          
+            </Card.Section>
+        </Stack>        
       </Card>
      
     </React.Fragment>
