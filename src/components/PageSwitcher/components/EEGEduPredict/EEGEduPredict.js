@@ -122,8 +122,6 @@ export function renderModule(channels) {
             <p>{specificTranslations.description}</p>
           </TextContainer>
         </Stack>
-      </Card.Section>
-      <Card.Section>
         <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
       </Card.Section>
     </Card>
@@ -143,9 +141,6 @@ window.isPredicting = false;
 window.enoughLabels = false;
 
 export function renderRecord(recordPopChange, status) {
-  const condA = "A";
-  const condB = "B";
-  const condC = "C";
   
   // Adds example from current incoming psd 
   function addExample (label) {
@@ -171,7 +166,19 @@ export function renderRecord(recordPopChange, status) {
     if (result.confidencesByLabel) {
       window.confidences = result.confidencesByLabel;
       if (result.label) {
-        window.thisLabel = result.label;
+        switch (result.label) {
+          case 'A':
+            window.thisLabel = 'A';
+            break;
+          case 'B':
+            window.thisLabel = 'B';
+            break;
+          case 'C':
+            window.thisLabel = 'C';
+            break;
+          default: 
+            console.log('error with prediction label');
+        }
       }
     }
     classify(); //recursive so it continues to run 
@@ -189,7 +196,7 @@ export function renderRecord(recordPopChange, status) {
               }}
               disabled={window.isPredicting || status === generalTranslations.connect}
             > 
-              {'Record ' + condA +' Data - Count: ' + window.exampleCounts['A']}  
+              {'Record Eyes Closed Data - 🔵 - Count: ' + window.exampleCounts['A']}  
             </Button>
             <Button 
               onClick={() => {
@@ -197,7 +204,7 @@ export function renderRecord(recordPopChange, status) {
               }}
               disabled={window.isPredicting || status === generalTranslations.connect}
             > 
-              {'Record ' + condB + ' Data - Count: ' + window.exampleCounts['B']}  
+              {'Record Eyes Open Data - 🍏 - Count: ' + window.exampleCounts['B']}  
             </Button> 
             <Button 
               onClick={() => {
@@ -205,7 +212,7 @@ export function renderRecord(recordPopChange, status) {
               }}
               disabled={window.isPredicting || status === generalTranslations.connect}
             > 
-              {'Record ' + condC + ' Data - Count: ' + window.exampleCounts['C']}  
+              {'Record Blinking Data - ❤️ - Count: ' + window.exampleCounts['C']}  
             </Button>       
           </ButtonGroup>
         </Stack>
@@ -222,7 +229,7 @@ export function renderRecord(recordPopChange, status) {
               disabled={window.isPredicting || !window.enoughLabels || status === generalTranslations.connect}
               primary={true}
             > 
-              {'Predict State: ' + window.thisLabel + ', Confidence: ' + window.confidences[window.thisLabel].toFixed(2)}  
+              {'Predictiction Confidence: ' + window.confidences[window.thisLabel].toFixed(2)}  
             </Button>
           </ButtonGroup>
           <br />   

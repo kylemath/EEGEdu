@@ -44,6 +44,10 @@ import "p5/lib/addons/p5.sound";
     confidence = props.confidences[label];
   };
 
+        // The notes C, E, and G have frequencies in the ratio of 4:5:6. 
+        // When they are played together, the three notes blend very well 
+        // and are pleasant to the ear; these notes form a major triad or a major chord.
+
   p.draw = function () {
     p.fill(0);
     p.strokeWeight(5);
@@ -53,8 +57,8 @@ import "p5/lib/addons/p5.sound";
         osc.amp(1, .1);
         osc.freq(262);
       } else {
-        p.fill(60, 60, 1250);
-        osc.amp(.5, .1);
+        p.fill(240, 240, 255);
+        osc.amp(.25, .1);
         osc.freq(262);
       }
     } else if (label === 'B') {
@@ -63,8 +67,8 @@ import "p5/lib/addons/p5.sound";
         osc.amp(1, .1);
         osc.freq(327.5);
       } else {
-        p.fill(60, 125, 60);
-        osc.amp(.5, .1)
+        p.fill(240, 255, 240);
+        osc.amp(.25, .1)
         osc.freq(327.5);
       }
     } else {
@@ -73,8 +77,8 @@ import "p5/lib/addons/p5.sound";
         osc.amp(1, .1);
         osc.freq(393);
       } else {
-        p.fill(125, 60, 60);
-        osc.amp(.5, .1)
+        p.fill(255, 240, 240);
+        osc.amp(.25, .1)
         osc.freq(393);
       }
 
