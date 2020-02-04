@@ -217,14 +217,14 @@ export function renderModule(channels) {
             videoId="v8xUYqqJAIg"
             opts={opts}
           />
-          
           <p> {[
             "The above chart shows the data coming from each of the four eeg electrodes. ",
             "Time, again, is on the horizontal X-axis and voltage is on the Y-axis. ",
             "An offset has been added to the electrodes to separate them vertically. ",
             "The saturation of the lines is controlled by the amount of noise in the data. ",
             "That is, the cleaner the data, the more rich the colours will become. ",
-            "Conversely, when the line gets dim, there is too much noise present in the signal. "
+            "Conversely, when the line gets dim, there is too much noise present in the signal. ", 
+            "I have set the filter settings above very loose (.1 to 100 Hz) to let in as much noise as possible so we can learn, we will restrict them in future modules. "
           ]} </p>
         </TextContainer>      
       </Card.Section>
@@ -252,7 +252,8 @@ export function renderModule(channels) {
           <p> {[
               "Your assignment this week will be to record plots of four different types of EEG artifact. ",
               "I will show you examples that I made using screenshots of the plot above. ", 
-              "You can also record data into a .csv file below and look for artifacts using Google Sheets. ", 
+              "To take a screenshot on a mac, press (⌘Command + ⇧Shift + 4) and select the area of the screen you want to save. ",
+              "You can also record data into a .csv file below and plot artifacts using Google Sheets. ", 
               "After making your plots, play around with the filter settings above (cutoff Low and cutoff High) and observe how they change the plotted data. ", 
               "How can we use these filters to help collect cleaner data free from some of these artifacts?"
             ]} </p>
