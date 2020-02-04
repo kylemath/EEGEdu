@@ -164,14 +164,14 @@ export function renderModule(channels) {
           );
         } else {
            return( 
-            <Card.Section>
-                <TextContainer>
-                <p> {[
-                "Press connect above to see the chart."  
-                ]} 
-                </p>
-              </TextContainer>              
-            </Card.Section>
+              <Card.Section>
+                  <TextContainer>
+                  <p> {[
+                  "Press connect above to see the chart."  
+                  ]} 
+                  </p>
+                </TextContainer>              
+              </Card.Section>
             )
         }
 
