@@ -2,7 +2,7 @@
 import { catchError, multicast } from "rxjs/operators";
 import { Subject, timer } from "rxjs";
 
-import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal } from "@shopify/polaris";
+import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal, Link } from "@shopify/polaris";
 import { saveAs } from 'file-saver';
 import { take, takeUntil } from "rxjs/operators";
 
@@ -123,7 +123,6 @@ export function renderModule(channels) {
     };
 
     if (channels.data.ch3.datasets[0].data) {
-      console.log(1-channels.data.ch0.datasets[0].qual/200)
       const newData = {
         datasets: [{
           label: channelNames[0],
@@ -160,9 +159,17 @@ export function renderModule(channels) {
         </Card.Section>
       );
     } else {
-      return null
-    }
-           
+      return( 
+        <Card.Section>
+            <TextContainer>
+            <p> {[
+            "Press connect above to see the chart."  
+            ]} 
+            </p>
+          </TextContainer>   
+        </Card.Section>  
+      )
+    }      
   }
 
   return (
@@ -170,13 +177,38 @@ export function renderModule(channels) {
       <Card.Section>
         <Stack>
           <TextContainer>
+            <p> {[
+              "Next we will move onto the head and look at the raw EEG data that is recorded and transmitted by the EEG headset. ",
+              "If you have not already, spend a few minutes going through the Introduction Module 1, which will give you an intro into the EEG signal. " 
+
+            ]} </p>
             <p>{specificTranslations.description}</p>
           </TextContainer>
-        </Stack>
+          <img 
+            src={ require("./electrodelocations.png")} 
+            alt="exampleSpectra"
+            width="50%"
+            height="auto"
+          ></img>  
+          </Stack>
+          <br />
+          <Link url="https://github.com/NeuroTechX/eeg-101/blob/master/EEG101/src/assets/electrodediagram2.png"
+                external={true}
+          > Image Source - EEG101 </Link>
       </Card.Section>
       <Card.Section>
         <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
+        <TextContainer>
+          <p> {[
+              "Before we try to use the EEG to estimate brain activity, we first need to observe what other things can influence the signal. ",
+              "Artifacts refer to non-EEG noise in the EEG recording that will cloud the results we want from the brain. ",
+              "There are many sources of noise that the EEG can pickup because all it is doing is recording the voltage changes on the head. ",
+              "Any other source of voltage or change in resistance of the sensor can affect the signal. ",
+              "Here will will go over some of the common sources of noise in the EEG data. " 
+            ]} </p>
+        </TextContainer>
       </Card.Section>
+
     </Card>
   );
 }
@@ -252,10 +284,10 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
     <Card title={'Record ' + Settings.name + ' Data'} sectioned>
       <Card.Section>
         <p>
-          {"When you are recording raw data it is recommended you set the "}
-          {"number of sampling points between epochs onsets to be equal to the epoch duration. "}
-          {"This will ensure that consecutive rows of your output file are not overlapping in time."}
-          {"It will make the live plots appear more choppy."}
+          {"When you are recording raw data it is recommended you "}
+          {"first set the sampling point between epochs to 1, then set the epoch duration to 1. "}
+          {"Once the live chart disappears entirely you have done it correctly."}
+          {"This will make it so every row of the output file is a single time point and make the data much easier to work with."}
         </p>        
       </Card.Section>
       <Stack>

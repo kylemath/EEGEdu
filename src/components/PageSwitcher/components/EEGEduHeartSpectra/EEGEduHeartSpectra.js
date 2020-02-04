@@ -253,10 +253,12 @@ export function renderModule(channels) {
             width="100%"
             height="auto"
           ></img>  
-          <br />
+          </Stack>
           <Link url="https://en.wikipedia.org/wiki/Electrocardiography#/media/File:Limb_leads_of_EKG.png"
           external={true}>
            Image Source - Wikipedia </Link>
+          <Stack>
+          <br />
           <TextContainer>
             <p> {[
                 "Now we can use the muse to estimate our heart rates, but in different ways. Instead of looking at the voltage over time, ",
@@ -506,6 +508,28 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
             "Finally each of you will enter this estimated heart rate for both sitting and standing into a new anonymized google sheet that we are sharing as a class. ", 
             "We will use this shared google sheet which combines all our data in order to compute group statistics and to compare the two methods of estimating our heart rate. "  
           ]} </p>
+
+        <ol>
+          <li>Open up the Module 2&amp;3 Anonymized Data Log and make a copy to work on:&nbsp;
+            <Link url="https://docs.google.com/spreadsheets/d/1Ip8Xitp548DVXikZhL55Ll-Vgg9UAFU0-N40_3-e8sw/edit?usp=sharing" 
+              external={true}>
+              https://docs.google.com/spreadsheets/d/1Ip8Xitp548DVXikZhL55Ll-Vgg9UAFU0-N40_3-e8sw/edit?usp=sharing
+            </Link>
+          </li>
+          <li>This time your report will focus on comparing the results from module 2 to module 3. Start by explaining that in your report, and explain what the difference was between the two modules measurement.</li>
+          <li>I have already removed outliers from Module 2, Why are there no outliers in Module 3? Include this in your report.</li>
+          <li>Recompute the statistics you did for the Module 2 data comparing sitting vs standing, and do the same for module 3. Compute the average, count, standard deviation, and standard error for each column. In our summary Report the mean and standard deviation in each of the four conditions.&nbsp;</li>
+          <li>Notice how some participants only have a score in one module, let us ignore that for now.</li>
+          <li>Now for both module 2 and module 3, compute a paired samples t-test comparing sitting vs standing. (You have already done this for module 2). Report the two result in apa format (eg. - <i>t</i>(df) = 3.904; p = .003).&nbsp;</li>
+          <li>Include bar graphs showing the sitting and standing HR in each of the four conditions.&nbsp;&nbsp;</li>
+          <li>For both module 2 and module 3, make a new column and compute the difference in heart rate Sitting minus standing (Sitting - Standing). Report the average difference in each condition, as well as the standard deviation of the difference. Show a bar graph of the differences and their standard error.</li>
+          <li>In which module is the standard deviation larger? What does this mean</li><li>It seems we found the same effect in module 2 and module 3. Both t-tests should be significant, but we also want to test how the scores on each module are related.&nbsp;</li>
+          <li>The following two steps require individuals to have a score for all four conditions, so first REMOVE ROWS where individuals only had values from one of the modules. This should leave 65 individuals (remember the row names are on the first row).&nbsp;</li>
+          <li>First we want to test if there is a difference between the differences. This would occur if our methods in module 2 and our methods in module 3 gave different changes in heart rate. Compute a t-test comparing the two difference columns. Report the results in APA format. Interpret the results.</li>
+          <li>Compute the correlation between the difference measured in module 2 and the difference measured in module 3, show a scatter plot comparing them as well. Interpret the strength of the relationship between the change we measured in module 2 and the change we measured in module 3.</li>
+          <li>Make a final concluding statement about which methods is better for estimating heart rate and why.</li>
+        </ol>
+
         </TextContainer>
         <br />
 
