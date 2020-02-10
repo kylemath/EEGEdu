@@ -26,12 +26,12 @@ import * as specificTranslations from "./translations/en";
 
 export function getSettings() {
   return {
-    cutOffLow: 2,
-    cutOffHigh: 20,
+    cutOffLow: 1,
+    cutOffHigh: 100,
     interval: 100,
     bins: 256,
     sliceFFTLow: 1,
-    sliceFFTHigh: 30,
+    sliceFFTHigh: 100,
     duration: 1024,
     srate: 256,
     name: 'Spectra',
@@ -373,7 +373,7 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
       autoplay: false
     }
   };
- 
+
   return(
     <Card title={'Record ' + Settings.name +' Data'} sectioned>
       <Stack>
@@ -420,7 +420,7 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
           ]} </p>
         </TextContainer>
         <img 
-          src={ require("./exampleOutput.png")} 
+          src={ require("./exampleRecording.png")} 
           alt="exampleOutput"
           width="75%"
           height="auto"
