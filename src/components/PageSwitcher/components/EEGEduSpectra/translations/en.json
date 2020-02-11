@@ -1,6 +1,6 @@
 {
-  "title": "Spectra Data",
-  "description": "In the next demo we will look at the same signal in the frequency domain. We want to identify the magnitude of oscillations of different frequencies in our live signal. We use the fast fourier transform to convert the voltage values over time to the power at each frequency. To use the fft we pick a particular chunk of data and get an output called a spectra. Each time the chart updates a new window of data is selected.",
+  "title": "Frequency Domain Data",
+  "description": "In the next demo we will look at the same raw EEG data but this time in the frequency domain. We want to identify the magnitude of oscillations of different frequencies in our live signal. We use the fast fourier transform (FFT) to convert the voltage values over time to the power at each frequency. To use the FFT we pick a particular chunk of data and get an output called a spectra. Every update of the chart is based on subsequent windows of time.",
   "xlabel": "Frequency (Hz)",
   "ylabel": "Power (\u03BCV\u00B2)"
 }

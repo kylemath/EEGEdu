@@ -180,7 +180,15 @@ export function renderModule(channels) {
         </Card.Section>
       );
     } else {
-      return null
+      return (
+        <Card.Section>
+          <Stack>
+            <TextContainer>
+              <p>{'Connect the device above to see the plot'}</p>
+            </TextContainer>
+          </Stack>
+        </Card.Section>
+      )
     }
 
 
@@ -214,10 +222,10 @@ export function renderModule(channels) {
           <Stack>
             <TextContainer>
               <p> {[
-                "In module 3 we saw how we can use mathematical techniques such as a fourier transform to estimate what frequency is present in the ECG data. ",
+                "In module 3 we saw how we can use a mathematical technique called the fourier transform to estimate what frequency is present in the ECG data, to estimate heart rate. ",
                 "A fourier transform turns any series of numbers into a summed set of sine waves of different sizes. ",
-                "The following animation shows how a single time-series of data, can be thought of as the sum of different frequencies of sine waves, each of a different magnitude. ", 
-                "The blue line chart in the animation shows what is called the spectra, and indicates the power at each frequency." 
+                "For review, the following animation shows how a single time-series of data can be thought of as the sum of different frequencies of sine waves, each of a different magnitude. ", 
+                "The blue bar chart at the end of the animation shows what is called the frequency spectra, and indicates the power at each frequency." 
               ]} </p>
             </TextContainer>
             <br />
@@ -235,25 +243,23 @@ export function renderModule(channels) {
               <br />
               <TextContainer>
               <p> {[
-                "The Fourier transform is a mathematical technique originally developed in the early 1800s. ",
-               "In module 3 we saw how we can use mathematical techniques such as a fourier transform to estimate what frequency is present in the ECG data. ",
-                "A fourier transform turns any series of numbers into a summed set of sine waves of different sizes. ",
-                "The following animation shows how a single time-series of data, can be thought of as the sum of different frequencies of sine waves, each of a different magnitude. ", 
-                            "In module 3 we saw how we can use mathematical techniques such as a fourier transform to estimate what frequency is present in the ECG data. ",
-                "A fourier transform turns any series of numbers into a summed set of sine waves of different sizes. ",
-                "The following animation shows how a single time-series of data, can be thought of as the sum of different frequencies of sine waves, each of a different magnitude. ", 
-                             "Something. " 
+                "The Fourier transform is a mathematical technique originally developed in the early 1800s in order to mathematically model the movement of heat. ",
+                "A discrete fourier transform (DFT) is this mathematical technique applied to digital data (a function sampled at different time points), like EEG data. ",
+                "In order to compute this efficiently, a pair of psychologists and statisticians created the FAST fourier transform (FFT) in the 60's, during the cold war ",
+                "as a signal processing technique needed to triangulate possible Soviet nuclear launches from a hypothetical array of sensors around the Soviet Union. ",
+                "The FFT has gone on to be one of the most useful and used algorithms ever created, and is used in a wide array of digital tools. ", 
                 ]} 
            <Link url="http://www.jezzamon.com/fourier/index.html"
               external={true}>
-              Follow this link to an excellent interactive tutorial on fourier transforms using sound
+              Follow this link to an excellent interactive tutorial on the graphical understanding of the fourier transforms using sound, drawings, and images
              </Link>
                 </p>
              <p> {[
-                "In module 3 we saw how we can use mathematical techniques such as a fourier transform to estimate what frequency is present in the ECG data. ",
+                "We will not cover the mathematical formula or algorithm behind the DFT or FFT here. ",
                 "A fourier transform turns any series of numbers into a summed set of sine waves of different sizes. ",
                 "The following animation shows how a single time-series of data, can be thought of as the sum of different frequencies of sine waves, each of a different magnitude. ", 
-                "The blue line chart in the animation shows what is called the spectra, and indicates the power at each frequency." 
+                "Amazingly, before digital computers in the late 1800's, in order to model details of light movement, a physical machine was constructed to perform these calculations by hand. ",
+                "This amazing Harmonic Analyzer still provides an excellent intuition into the mechanics behind decomposing a time series signal into a sum of sin waves. " 
               ]} </p>
             </TextContainer>
 
@@ -262,12 +268,34 @@ export function renderModule(channels) {
               opts={opts}
             />
              <p> {[
-                "In module 3 we saw how we can use mathematical techniques such as a fourier transform to estimate what frequency is present in the ECG data. ",
-                "A fourier transform turns any series of numbers into a summed set of sine waves of different sizes. ",
-                "The following animation shows how a single time-series of data, can be thought of as the sum of different frequencies of sine waves, each of a different magnitude. ", 
-                "The blue line chart in the animation shows what is called the spectra, and indicates the power at each frequency." 
+                "Most computer programming languages now provide an easy way to compute the FFT on time series data. ",
+                "Other methods of converting time series data into the frequency domain also exist, such as wavelet analysis, in which the product of the data and a family of different frequency wavelets is used to esitmate the data decomposition. ",
+                "The resolution in frequency of the FFT depends on the NUMBER OF TIME POINTS. ",
+                "The range of frequencies provided by the FFT depends on the sampling rate of the data , in our case 256 Hz provides frequencies up to 128 Hz (half). " 
+              ]} </p>
+            <p> {[
+                "Importantly, the uncertainty principle applies to the FFT as well. ",
+                "It is impossible to know both exactly when something happens, and what frequency it happens at, at the same time. ",
+                "As an intuition, imagine that in order to estimate your heart rate you obviously need more than a single time point of data, you need multiple beats of the heart (at least one). ",
+                "Therefore, the resultant estimate of heart rate will not be precise in time, and will apply to the entire time window you put into the FFT. " 
               ]} </p>
 
+          </Stack>
+        </Card.Section>
+      </Card>
+      <Card title={'Artifact Assignment'}>
+        <Card.Section>
+          <Stack>
+            <TextContainer>
+              <p> {[
+                "In module 4 we plotted the range of various artifacts that are common in EEG data. ",
+                "Obviously, these artifacts remain (if not filtered out) in the window of data that is used to compute the FFT. ",
+                "Therefore, NOT ALL THE DATA IN THE SPECTRA IS FROM THE BRAIN!!! ", 
+                "For instance, blinks show up as low frequencies, and you have already seen how heart artifacts in the data would show up as low frequency power as well, but these are not brain activity. ",
+                "For your assignment this module, for each type of artifact you observed in Module 4, now you will observe what the spectra looks like, take a screenshot of the result and save these in a google doc. ",
+                "To take a screenshot on a mac, press (⌘Command + ⇧Shift + 4) and select the area of the screen you want to save."
+              ]} </p>
+            </TextContainer>
           </Stack>
         </Card.Section>
       </Card>
@@ -379,10 +407,7 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
       <Stack>
          <TextContainer>
           <p> {[
-            "In module 3 we saw how we can use mathematical techniques such as a fourier transform to estimate what frequency is present in the ECG data. ",
-            "A fourier transform turns any series of numbers into a summed set of sine waves of different sizes. ",
-            "The following animation shows how a single time-series of data, can be thought of as the sum of different frequencies of sine waves, each of a different magnitude. ", 
-            "The blue line chart in the animation shows what is called the spectra, and indicates the power at each frequency." 
+            "Press the following button after adjusting the settings above in order to record the live spectra over time into a .csv file. "
           ]} </p>
         </TextContainer>
         <RangeSlider 
@@ -408,30 +433,36 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
    <TextContainer>
           <p> {[
             "A .csv file will be saved that can be opened in Google Sheets. ",
-            "Remember for each person to record two files, one while  standing and one while  sitting. ", 
             "Here is an example of what the data will look like once loaded. ",
-            "The first column shows the time in msec of each estimate of heart rate. The second column shows the heart rate estimate in BPM. ",
-            "Each row represents an estimate from the previous 8 seconds of data. ",
-            "This is because you need a long segment of time to estimate frequency of rhythms over time. ",
-            "Each subsequent row is from an 8 second chunk of data, but is taken about 400 ms after the previous row. ",
+            "The first column shows the time in msec of each estimate of the spectra.",
+            "Each row therefore represents an estimate from the previous 8 seconds of data EEG data, and the windows used to compute each row are overlapping. ",
+            "Again, this is because you need a long segment of time to estimate frequency of rhythms over time. ",
             "You can see the time values increase about 10000 ms during the recording, representing the 10 seconds of data. ",
-            "So 10000 milliseconds divided into ~400 ms shifts per row gives us the rough number of rows (~25). ", 
-            "The graph shows the values plotted over time, showing that the 1st Harmonic value of 120 BPM was incorrectly recorded on a few windows. "
+            "So 10000 milliseconds divided into ~400 ms shifts per row gives us the rough number of rows (~25). "
+          ]} </p>
+          <img 
+            src={ require("./exampleRecording.png")} 
+            alt="exampleOutput"
+            width="75%"
+            height="auto"
+          ></img>
+          <p> {[
+            "The spectra are then shown on each row. Each column represents the power at a different frequency. ",
+            "The first row shows the frequency and channel label for all the data in that column. ",
+            "So the first 30 columns after the timestamp are the 30 frequencies from the TP9 electrode ",
+            "(where 30 is the number of frequencies saved which can be adjusted with the FFT Slice Settings). ",
+            "After that, the next electrode starts, with another 30 frequencies.",
+            "After columns for all 30 frequencies from all four electrodes, another 30 columns show zeros, this is for an optional auxillary channel we are not using here. ",
+            "Finally columns are saved to record the exact frequencies of each bin of the FFT (redundant with the column names). "
           ]} </p>
         </TextContainer>
-        <img 
-          src={ require("./exampleRecording.png")} 
-          alt="exampleOutput"
-          width="75%"
-          height="auto"
-        ></img>
+   
         <TextContainer>
           <p> {[
-            "In this module the analysis will be much easier, since much of the work has been done by the webpage with the fourier transform and peak detection. ",
-            "The following youtube video will show you how to open the file in Google Sheets, rename it, plot the data, remove any harmonics or outliers,  ",
-            "then take the average heart rate over the window as an estimate of your heart rate. "
+            "The second part of the assignment for this module involves parsing this output file to organize the data into a format that can be plotted like the live plot on the page. ",
+            "Data will be averaged over time, and then data for each electrode will be organized and used to make a chart of the spectra"
             ]} 
-        <Link url="https://docs.google.com/spreadsheets/d/1AcFxuIZDMNfOifgql2vrFy2nSS3g7c14fOxAdptOgQY/edit?usp=sharing"
+        <Link url="https://docs.google.com/spreadsheets/d/1Zdnmti-A0kb1ru3HUNMT9rMTbZYbkStSRNtiRPu3TVU/edit?usp=sharing"
              external={true}>
 
          Link to example google sheet from video. 
@@ -440,7 +471,7 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
         </TextContainer>
         <br />
         <YouTube 
-          videoId="6EtzwGXjB9Q"
+          videoId="YgEgi73e9OM"
           opts={opts}
         />
 
