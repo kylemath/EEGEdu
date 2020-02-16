@@ -1,5 +1,3 @@
-import * as generalTranslations from "./translations/en";
-
 export const chartStyles = {
   wrapperStyle: {
     display: "flex",
@@ -72,7 +70,7 @@ export const generalOptions = {
   },
   title: {
     display: true,
-    text: generalTranslations.channel
+    text: 'Channel: '
   },
   responsive: true,
   tooltips: { enabled: false },

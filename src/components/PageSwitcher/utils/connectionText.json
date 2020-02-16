@@ -6,6 +6,5 @@
   "connected": "Muse Headband Connected",
   "connectedMock": "Mock Data Connected",
   "connectionFailed": "Connection failed",
-  "disconnect": "Disconnect",
-  "channel": "Channel: "
+  "disconnect": "Disconnect"
 }

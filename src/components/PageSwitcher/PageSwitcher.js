@@ -1,17 +1,20 @@
 import React, { useState, useCallback } from "react";
 import { MuseClient } from "muse-js";
 import { Select, Card, Stack, Button, ButtonGroup, Checkbox } from "@shopify/polaris";
-
 import { mockMuseEEG } from "./utils/mockMuseEEG";
-import * as translations from "./translations/en.json";
-import * as generalTranslations from "./components/translations/en";
-import { emptyAuxChannelData } from "./components/chartOptions";
-
+import * as connectionText from "./utils/connectionText";
+import { emptyAuxChannelData } from "./utils/chartOptions";
 import * as funRaw from "./components/EEGEduRaw/EEGEduRaw";
 import * as funSpectra from "./components/EEGEduSpectra/EEGEduSpectra";
 
-const raw = translations.types.raw;
-const spectra = translations.types.spectra;
+let modules = {
+  "raw": "1. Raw and Filtered Data",
+  "spectra": "2. Frequency Spectra"
+};
+
+const raw = modules.raw;
+console.log(raw)
+const spectra = modules.spectra;
 
 export function PageSwitcher() {
 
@@ -35,7 +38,7 @@ export function PageSwitcher() {
   const [spectraSettings, setSpectraSettings] = useState(funSpectra.getSettings); 
 
   // connection status
-  const [status, setStatus] = useState(generalTranslations.connect);
+  const [status, setStatus] = useState(connectionText.connect);
 
   // for picking a new module
   const [selected, setSelected] = useState(raw);
@@ -96,21 +99,21 @@ export function PageSwitcher() {
     try {
       if (window.debugWithMock) {
         // Debug with Mock EEG Data
-        setStatus(generalTranslations.connectingMock);
+        setStatus(connectionText.connectingMock);
         window.source = {};
         window.source.connectionStatus = {};
         window.source.connectionStatus.value = true;
         window.source.eegReadings$ = mockMuseEEG(256);
-        setStatus(generalTranslations.connectedMock);
+        setStatus(connectionText.connectedMock);
       } else {
         // Connect with the Muse EEG Client
-        setStatus(generalTranslations.connecting);
+        setStatus(connectionText.connecting);
         window.source = new MuseClient();
         window.source.enableAux = window.enableAux;
         await window.source.connect();
         await window.source.start();
         window.source.eegReadings$ = window.source.eegReadings;
-        setStatus(generalTranslations.connected);
+        setStatus(connectionText.connected);
       }
       if (
         window.source.connectionStatus.value === true &&
@@ -120,7 +123,7 @@ export function PageSwitcher() {
         subscriptionSetup(selected);
       }
     } catch (err) {
-      setStatus(generalTranslations.connect);
+      setStatus(connectionText.connect);
       console.log("Connection error: " + err);
     }
   }
@@ -176,8 +179,8 @@ export function PageSwitcher() {
         <Stack>
           <ButtonGroup>
             <Button
-              primary={status === generalTranslations.connect}
-              disabled={status !== generalTranslations.connect}
+              primary={status === connectionText.connect}
+              disabled={status !== connectionText.connect}
               onClick={() => {
                 window.debugWithMock = false;
                 connect();
@@ -186,32 +189,32 @@ export function PageSwitcher() {
               {status}
             </Button>
             <Button
-              disabled={status !== generalTranslations.connect}
+              disabled={status !== connectionText.connect}
               onClick={() => {
                 window.debugWithMock = true;
                 connect();
               }}
             >
-              {status === generalTranslations.connect ? generalTranslations.connectMock : status}
+              {status === connectionText.connect ? connectionText.connectMock : status}
             </Button>
             <Button
               destructive
               onClick={refreshPage}
-              primary={status !== generalTranslations.connect}
-              disabled={status === generalTranslations.connect}
+              primary={status !== connectionText.connect}
+              disabled={status === connectionText.connect}
             >
-              {generalTranslations.disconnect}
+              {connectionText.disconnect}
             </Button>     
           </ButtonGroup>
           <Checkbox
             label="Enable Muse Auxillary Channel"
             checked={checked}
             onChange={handleChange}
-            disabled={!showAux || status !== generalTranslations.connect}
+            disabled={!showAux || status !== connectionText.connect}
           />
         </Stack>
       </Card>
-      <Card title={translations.title} sectioned>
+      <Card title={'Choose your Module'} sectioned>
         <Select
           label={""}
           options={chartTypes}

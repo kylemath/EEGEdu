@@ -1,26 +1,16 @@
- import React from "react";
+import React from "react";
+import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal,  } from "@shopify/polaris";
 import { catchError, multicast } from "rxjs/operators";
-import { Subject, timer } from "rxjs";
-
-import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal } from "@shopify/polaris";
-import { saveAs } from 'file-saver';
 import { take, takeUntil } from "rxjs/operators";
-
-import { channelNames } from "muse-js";
+import { Subject, timer } from "rxjs";
 import { Line } from "react-chartjs-2";
-
-import { zipSamples } from "muse-js";
-
-import {
-  bandpassFilter,
-  epoch
-} from "@neurosity/pipes";
-
-import { chartStyles, generalOptions } from "../chartOptions";
-
-import * as generalTranslations from "../translations/en";
+import { saveAs } from 'file-saver';
+import { channelNames, zipSamples } from "muse-js";
+import { chartStyles, generalOptions } from "../../utils/chartOptions";
+import * as connectionText from "../../utils/connectionText";
 import * as specificTranslations from "./translations/en";
 
+import { bandpassFilter, epoch} from "@neurosity/pipes";
 import { generateXTics, standardDeviation } from "../../utils/chartUtils";
 
 export function getSettings () {
@@ -209,28 +199,28 @@ export function renderSliders(setData, setSettings, status, Settings) {
   return (
     <Card title={Settings.name + ' Settings'} sectioned>
       <RangeSlider 
-        disabled={status === generalTranslations.connect} 
+        disabled={status === connectionText.connect} 
         min={1} step={1} max={4096}
         label={'Epoch duration (Sampling Points): ' + Settings.duration} 
         value={Settings.duration} 
         onChange={handleDurationRangeSliderChange} 
       />          
       <RangeSlider 
-        disabled={status === generalTranslations.connect} 
+        disabled={status === connectionText.connect} 
         min={1} step={1} max={Settings.duration}
         label={'Sampling points between epochs onsets: ' + Settings.interval} 
         value={Settings.interval} 
         onChange={handleIntervalRangeSliderChange} 
       />
       <RangeSlider 
-        disabled={status === generalTranslations.connect} 
+        disabled={status === connectionText.connect} 
         min={.01} step={.5} max={Settings.cutOffHigh - .5}
         label={'Cutoff Frequency Low: ' + Settings.cutOffLow + ' Hz'} 
         value={Settings.cutOffLow} 
         onChange={handleCutoffLowRangeSliderChange} 
       />
       <RangeSlider 
-        disabled={status === generalTranslations.connect} 
+        disabled={status === connectionText.connect} 
         min={Settings.cutOffLow + .5} step={.5} max={Settings.srate/2}
         label={'Cutoff Frequency High: ' + Settings.cutOffHigh + ' Hz'} 
         value={Settings.cutOffHigh} 
@@ -258,7 +248,7 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
       </Card.Section>
       <Stack>
         <RangeSlider 
-          disabled={status === generalTranslations.connect} 
+          disabled={status === connectionText.connect} 
           min={2}
           max={180}
           label={'Recording Length: ' + Settings.secondsToSave + ' Seconds'} 
@@ -271,8 +261,8 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
               saveToCSV(Settings);
               recordPopChange();
             }}
-            primary={status !== generalTranslations.connect}
-            disabled={status === generalTranslations.connect}
+            primary={status !== connectionText.connect}
+            disabled={status === connectionText.connect}
           > 
             {'Save to CSV'}  
           </Button>
