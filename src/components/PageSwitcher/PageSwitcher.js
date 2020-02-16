@@ -4,6 +4,7 @@ import { Select, Card, Stack, Button, ButtonGroup, Checkbox } from "@shopify/pol
 import { mockMuseEEG } from "./utils/mockMuseEEG";
 import * as connectionText from "./utils/connectionText";
 import { emptyAuxChannelData } from "./utils/chartOptions";
+
 import * as funRaw from "./components/EEGEduRaw/EEGEduRaw";
 import * as funSpectra from "./components/EEGEduSpectra/EEGEduSpectra";
 
@@ -11,37 +12,36 @@ let modules = {
   "raw": "1. Raw and Filtered Data",
   "spectra": "2. Frequency Spectra"
 };
-
 const raw = modules.raw;
-console.log(raw)
 const spectra = modules.spectra;
+
+const chartTypes = [
+  { label: raw, value: raw },
+  { label: spectra, value: spectra }
+];
+
+let showAux = true; // if it is even available to press (to prevent in some modules)
+
 
 export function PageSwitcher() {
 
-  // For auxEnable settings
-  const [checked, setChecked] = useState(false);
-  const handleChange = useCallback((newChecked) => setChecked(newChecked), []);
-  window.enableAux = checked;
-  if (window.enableAux) {
-    window.nchans = 5;
-  } else {
-    window.nchans = 4;
-  }
-  let showAux = true; // if it is even available to press (to prevent in some modules)
+  //-----Setup Constants
+
+  // connection status
+  const [status, setStatus] = useState(connectionText.connect);
 
   // data pulled out of multicast$
   const [rawData, setRawData] = useState(emptyAuxChannelData);
   const [spectraData, setSpectraData] = useState(emptyAuxChannelData); 
 
+  // for picking a new module
+  const [selected, setSelected] = useState(raw);
+
   // pipe settings
   const [rawSettings, setRawSettings] = useState(funRaw.getSettings); 
   const [spectraSettings, setSpectraSettings] = useState(funSpectra.getSettings); 
 
-  // connection status
-  const [status, setStatus] = useState(connectionText.connect);
-
-  // for picking a new module
-  const [selected, setSelected] = useState(raw);
+  // Whenever settings changed
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 
@@ -58,6 +58,20 @@ export function PageSwitcher() {
   const [recordPop, setRecordPop] = useState(false);
   const recordPopChange = useCallback(() => setRecordPop(!recordPop), [recordPop]);
 
+  // For auxEnable settings
+  const [checked, setChecked] = useState(false);
+  const handleChange = useCallback((newChecked) => setChecked(newChecked), []);
+
+
+  // ---- Manage Auxillary channel
+
+  window.enableAux = checked;
+  if (window.enableAux) {
+    window.nchans = 5;
+  } else {
+    window.nchans = 4;
+  }
+
   switch (selected) {
     case raw:
       showAux = true;
@@ -69,11 +83,7 @@ export function PageSwitcher() {
       console.log("Error on showAux");
   }
 
-
-  const chartTypes = [
-    { label: raw, value: raw },
-    { label: spectra, value: spectra }
-  ];
+  //---- Main functions to build and setup called once connect pressed
 
   function buildPipes(value) {
     funRaw.buildPipe(rawSettings);
@@ -95,6 +105,8 @@ export function PageSwitcher() {
     }
   }
 
+  // --- Once connect button pressed
+
   async function connect() {
     try {
       if (window.debugWithMock) {
@@ -105,6 +117,7 @@ export function PageSwitcher() {
         window.source.connectionStatus.value = true;
         window.source.eegReadings$ = mockMuseEEG(256);
         setStatus(connectionText.connectedMock);
+
       } else {
         // Connect with the Muse EEG Client
         setStatus(connectionText.connecting);
@@ -114,24 +127,30 @@ export function PageSwitcher() {
         await window.source.start();
         window.source.eegReadings$ = window.source.eegReadings;
         setStatus(connectionText.connected);
+
       }
       if (
         window.source.connectionStatus.value === true &&
         window.source.eegReadings$
       ) {
+
+        //Build and Setup
         buildPipes(selected);
         subscriptionSetup(selected);
       }
+
     } catch (err) {
       setStatus(connectionText.connect);
       console.log("Connection error: " + err);
     }
   }
 
+  // For disconnect button
   function refreshPage(){
     window.location.reload();
   }
 
+  // Display settings sliders
   function pipeSettingsDisplay() {
     switch(selected) {
       case raw:
@@ -146,6 +165,7 @@ export function PageSwitcher() {
     }
   }
 
+  // Show the chart
   function renderModules() {
     switch (selected) {
       case raw:
@@ -157,6 +177,7 @@ export function PageSwitcher() {
     }
   }
  
+  // Show the record button
   function renderRecord() {
     switch (selected) {
       case raw: 
