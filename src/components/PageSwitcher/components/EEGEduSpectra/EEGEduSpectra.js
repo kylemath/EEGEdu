@@ -24,10 +24,8 @@ export function getSettings() {
     srate: 256,
     name: 'Spectra',
     secondsToSave: 10
-
   }
 };
-
 
 export function buildPipe(Settings) {
   if (window.subscriptionSpectra) window.subscriptionSpectra.unsubscribe();
