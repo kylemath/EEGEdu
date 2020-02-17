@@ -176,26 +176,12 @@ export function renderModule(channels) {
         </Card.Section>
       )
     }
-
-
   }
 
   return (
-    <React.Fragment>
-      <Card title={specificTranslations.title}>
-        <Card.Section>
-          <Stack>
-            <TextContainer>
-              <p>{specificTranslations.description}</p>
-            </TextContainer>
-          </Stack>
-        </Card.Section>
-        <Card.Section>
-          <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
-        </Card.Section>
-      </Card>
-      
-    </React.Fragment>
+    <Card title={specificTranslations.title}>
+        <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
+    </Card>
   );
 }
 
@@ -293,11 +279,6 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
   return(
     <Card title={'Record ' + Settings.name +' Data'} sectioned>
       <Stack>
-         <TextContainer>
-          <p> {[
-            "Press the following button after adjusting the settings above in order to record the live spectra over time into a .csv file. "
-          ]} </p>
-        </TextContainer>
         <RangeSlider 
           disabled={status === connectionText.connect} 
           min={2}
@@ -318,9 +299,6 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
             {'Save to CSV'}  
           </Button>
         </ButtonGroup>
-   
-   
-
         <Modal
           open={recordPop}
           onClose={recordPopChange}

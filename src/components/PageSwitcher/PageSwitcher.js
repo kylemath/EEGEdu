@@ -243,8 +243,8 @@ export function PageSwitcher() {
           value={selected}
         />
       </Card>
-      {pipeSettingsDisplay()}
       {renderModules()}
+      {pipeSettingsDisplay()}
       {renderRecord()}
     </React.Fragment>
   );

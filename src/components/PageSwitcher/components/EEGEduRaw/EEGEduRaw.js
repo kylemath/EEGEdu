@@ -151,12 +151,11 @@ export function renderModule(channels) {
     } else {
       return( 
         <Card.Section>
+          <Stack>
             <TextContainer>
-            <p> {[
-            "Press connect above to see the chart."  
-            ]} 
-            </p>
-          </TextContainer>   
+              <p>{'Press connect above to see the chart.'}</p>
+            </TextContainer>   
+          </Stack>
         </Card.Section>  
       )
     }      
@@ -238,14 +237,6 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
 
   return (
     <Card title={'Record ' + Settings.name + ' Data'} sectioned>
-      <Card.Section>
-        <p>
-          {"When you are recording raw data it is recommended you "}
-          {"first set the sampling point between epochs to 1, then set the epoch duration to 1. "}
-          {"Once the live chart disappears entirely you have done it correctly. "}
-          {"This will make it so every row of the output file is a single time point and make the data much easier to work with."}
-        </p>        
-      </Card.Section>
       <Stack>
         <RangeSlider 
           disabled={status === connectionText.connect} 
