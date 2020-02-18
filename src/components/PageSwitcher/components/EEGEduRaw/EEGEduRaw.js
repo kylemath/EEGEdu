@@ -1,6 +1,6 @@
 import React from "react";
 import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal,  } from "@shopify/polaris";
-import { catchError, multicast } from "rxjs/operators";
+import { multicast } from "rxjs/operators";
 import { take, takeUntil } from "rxjs/operators";
 import { Subject, timer } from "rxjs";
 import { Line } from "react-chartjs-2";
@@ -25,15 +25,12 @@ export function getSettings () {
   }
 };
 
-export function buildPipe(Settings) {
-  if (window.subscriptionRaw) window.subscriptionRaw.unsubscribe();
-
-  window.pipeRaw$ = null;
-  window.multicastRaw$ = null;
-  window.subscriptionRaw = null;
-
+export function buildPipe(source, Settings) {
+  if (window.subscriptions[Settings.name]) window.subscriptions[Settings.name].unsubscribe();
+    
+  console.log("Building Multicast for " + Settings.name);
   // Build Pipe
-  window.pipeRaw$ = zipSamples(window.source.eegReadings$).pipe(
+  window.multicasts[Settings.name]  = zipSamples(source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
       nbChannels: window.nchans }),
@@ -41,39 +38,34 @@ export function buildPipe(Settings) {
       duration: Settings.duration,
       interval: Settings.interval,
       samplingRate: Settings.srate
-    }),
-    catchError(err => {
-      console.log(err);
     })
-  );
-  window.multicastRaw$ = window.pipeRaw$.pipe(
-    multicast(() => new Subject())
+  ).pipe(multicast(() => new Subject())
   );
 }
 
-export function setup(setData, Settings) {
+export function setup(setData, Settings, inData) {
   console.log("Subscribing to " + Settings.name);
 
-  if (window.multicastRaw$) {
-    window.subscriptionRaw = window.multicastRaw$.subscribe(data => {
-      setData(rawData => {
-        Object.values(rawData).forEach((channel, index) => {
+  if (window.multicasts[Settings.name]) {
+    window.multicasts[Settings.name].connect();
+    window.subscriptions[Settings.name] = window.multicasts[Settings.name].subscribe(data => {
+      setData(inData => {
+        Object.values(inData).forEach((channel, index) => {
             channel.datasets[0].data = data.data[index];
             channel.xLabels = generateXTics(Settings.srate, Settings.duration);
             channel.datasets[0].qual = standardDeviation(data.data[index])          
         });
 
         return {
-          ch0: rawData.ch0,
-          ch1: rawData.ch1,
-          ch2: rawData.ch2,
-          ch3: rawData.ch3,
-          ch4: rawData.ch4
+          ch0: inData.ch0,
+          ch1: inData.ch1,
+          ch2: inData.ch2,
+          ch3: inData.ch3,
+          ch4: inData.ch4
         };
       });
     });
 
-    window.multicastRaw$.connect();
     console.log("Subscribed to Raw");
   }
 }
@@ -168,10 +160,10 @@ export function renderModule(channels) {
   );
 }
   
-export function renderSliders(setData, setSettings, status, Settings) {
+export function renderSliders(setData, setSettings, status, Settings, source) {
 
   function resetPipeSetup(value) {
-    buildPipe(Settings);
+    buildPipe(source, Settings);
     setup(setData, Settings)
   }
   

@@ -21,11 +21,22 @@ const chartTypes = [
 ];
 
 let showAux = true; // if it is even available to press (to prevent in some modules)
+let source = {};
+window.multicasts = {}
+window.subscriptions = {};
+
+//-----Setup Constants
+window.multicasts['Raw'] = null;
+window.multicasts['Spectra'] = null;
+
+window.subscriptions['Raw'] = null;
+window.subscriptions['Spectra'] = null;
 
 
 export function PageSwitcher() {
 
-  //-----Setup Constants
+
+
 
   // connection status
   const [status, setStatus] = useState(connectionText.connect);
@@ -50,6 +61,7 @@ export function PageSwitcher() {
     if (window.subscriptionRaw) window.subscriptionRaw.unsubscribe();
     if (window.subscriptionSpectra) window.subscriptionSpectra.unsubscribe();
 
+    buildPipes(value);
     subscriptionSetup(value);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -61,7 +73,14 @@ export function PageSwitcher() {
   // For auxEnable settings
   const [checked, setChecked] = useState(false);
   const handleChange = useCallback((newChecked) => setChecked(newChecked), []);
-
+      
+      // const [pipeRaw] = useState();
+      // const [multicastRaw] = useState('0');
+      // const [subscriptionRaw] = useState(); 
+      
+      // const [pipeSpectra] = useState();
+      // const [multicastSpectra] = useState();
+      // const [subscriptionSpectra] = useState(); 
 
   // ---- Manage Auxillary channel
 
@@ -75,6 +94,7 @@ export function PageSwitcher() {
   switch (selected) {
     case raw:
       showAux = true;
+
       break
     case spectra:
       showAux = true;
@@ -86,17 +106,17 @@ export function PageSwitcher() {
   //---- Main functions to build and setup called once connect pressed
 
   function buildPipes(value) {
-    funRaw.buildPipe(rawSettings);
-    funSpectra.buildPipe(spectraSettings);
+    funRaw.buildPipe(source, rawSettings);
+    funSpectra.buildPipe(source, spectraSettings);
   }
 
   function subscriptionSetup(value) {
     switch (value) {
       case raw:
-        funRaw.setup(setRawData, rawSettings);
+        funRaw.setup(setRawData, rawSettings, rawData);
         break;
       case spectra:
-        funSpectra.setup(setSpectraData, spectraSettings);
+        funSpectra.setup(setSpectraData, spectraSettings, spectraData);
         break;
       default:
         console.log(
@@ -112,26 +132,26 @@ export function PageSwitcher() {
       if (window.debugWithMock) {
         // Debug with Mock EEG Data
         setStatus(connectionText.connectingMock);
-        window.source = {};
-        window.source.connectionStatus = {};
-        window.source.connectionStatus.value = true;
-        window.source.eegReadings$ = mockMuseEEG(256);
+        source = {};
+        source.connectionStatus = {};
+        source.connectionStatus.value = true;
+        source.eegReadings$ = mockMuseEEG(256);
         setStatus(connectionText.connectedMock);
 
       } else {
         // Connect with the Muse EEG Client
         setStatus(connectionText.connecting);
-        window.source = new MuseClient();
-        window.source.enableAux = window.enableAux;
-        await window.source.connect();
-        await window.source.start();
-        window.source.eegReadings$ = window.source.eegReadings;
+        source = new MuseClient();
+        source.enableAux = window.enableAux;
+        await source.connect();
+        await source.start();
+        source.eegReadings$ = source.eegReadings;
         setStatus(connectionText.connected);
 
       }
       if (
-        window.source.connectionStatus.value === true &&
-        window.source.eegReadings$
+        source.connectionStatus.value === true &&
+        source.eegReadings$
       ) {
 
         //Build and Setup
@@ -155,11 +175,11 @@ export function PageSwitcher() {
     switch(selected) {
       case raw:
         return (
-          funRaw.renderSliders(setRawData, setRawSettings, status, rawSettings)
+          funRaw.renderSliders(setRawData, setRawSettings, status, rawSettings, source)
         );
       case spectra:
         return (
-          funSpectra.renderSliders(setSpectraData, setSpectraSettings, status, spectraSettings)
+          funSpectra.renderSliders(setSpectraData, setSpectraSettings, status, spectraSettings, source)
         );
       default: console.log('Error rendering settings display');
     }
