@@ -23,7 +23,8 @@ export function getSettings() {
     duration: 1024,
     srate: 256,
     name: 'Spectra',
-    secondsToSave: 10
+    secondsToSave: 10,
+    nchans: 4
   }
 };
 
@@ -35,7 +36,7 @@ export function buildPipe(source, Settings) {
   window.multicasts[Settings.name] = zipSamples(source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
-      nbChannels: window.nchans }),
+      nbChannels: Settings.nchans }),
     epoch({
       duration: Settings.duration,
       interval: Settings.interval,

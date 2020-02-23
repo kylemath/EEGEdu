@@ -21,19 +21,19 @@ export function getSettings () {
     srate: 256,
     duration: 1024,
     name: 'Raw',
-    secondsToSave: 10
+    secondsToSave: 10, 
+    nchans: 4
   }
 };
 
 export function buildPipe(source, Settings) {
   if (window.subscriptions[Settings.name]) window.subscriptions[Settings.name].unsubscribe();
-    
   console.log("Building Multicast for " + Settings.name);
   // Build Pipe
   window.multicasts[Settings.name]  = zipSamples(source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
-      nbChannels: window.nchans }),
+      nbChannels: Settings.nchans }),
     epoch({
       duration: Settings.duration,
       interval: Settings.interval,
@@ -45,7 +45,6 @@ export function buildPipe(source, Settings) {
 
 export function setup(setData, Settings, inData) {
   console.log("Subscribing to " + Settings.name);
-
   if (window.multicasts[Settings.name]) {
     window.multicasts[Settings.name].connect();
     window.subscriptions[Settings.name] = window.multicasts[Settings.name].subscribe(data => {
@@ -65,7 +64,6 @@ export function setup(setData, Settings, inData) {
         };
       });
     });
-
     console.log("Subscribed to Raw");
   }
 }
