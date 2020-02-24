@@ -22,7 +22,7 @@ import { chartStyles, generalOptions } from "../chartOptions";
 import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 
-import { generateXTics, standardDeviation } from "../../utils/chartUtils";
+import { generateXTics } from "../../utils/chartUtils";
 
 export function getSettings () {
   return {
@@ -71,7 +71,7 @@ export function setup(setData, Settings) {
         Object.values(rawData).forEach((channel, index) => {
             channel.datasets[0].data = data.data[index];
             channel.xLabels = generateXTics(Settings.srate, Settings.duration);
-            channel.datasets[0].qual = standardDeviation(data.data[index])          
+            // channel.datasets[0].qual = standardDeviation(data.data[index])          
         });
 
         return {
