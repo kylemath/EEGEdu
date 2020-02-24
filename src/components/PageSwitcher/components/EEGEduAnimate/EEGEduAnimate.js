@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { catchError, multicast } from "rxjs/operators";
 
-import { Card, Stack, TextContainer, RangeSlider, Select} from "@shopify/polaris";
+import { Card, Stack, TextContainer, RangeSlider, Select, Link} from "@shopify/polaris";
 import { Subject } from "rxjs";
 
 import { zipSamples } from "muse-js";
@@ -207,6 +207,19 @@ export function renderModule(channels) {
             width="25%"
             height="auto"
           ></img>
+          <Link url="https://p5js.org/learn/interactivity.html"
+              external={true}>
+              Link to learn more about making your own easy P5.js animations </Link>
+          <br />
+           <Link url="https://p5js.org/examples/"
+              external={true}>
+              Examples of other P5.js animations to get started </Link>
+          <TextContainer>
+            <p>{[
+              "We are working on allowing for people to make their own animations with a p5.js editor. ", 
+              "For now if you want us to make a new one make a github issue with your p5.js animation and describe your idea"
+              ]}</p>
+          </TextContainer>
         </Stack>
       </Card.Section>
       <Card.Section>

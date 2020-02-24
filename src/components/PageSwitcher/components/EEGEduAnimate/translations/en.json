@@ -3,6 +3,7 @@
   "description": [
     "In the next demo we look at the traditional frequency bands. ",
     "This time instead of graphing them we pipe them into a live web animation. ",
-    "For simplicity for now we will only use the left frontal electrode AF7"
+    "For simplicity for now we will only use the left frontal electrode AF7. ",
+    "All of these animations are embedded p5js animations."
   ]
 }
