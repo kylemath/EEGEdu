@@ -24,8 +24,8 @@ import P5Wrapper from 'react-p5-wrapper';
 
 export function getSettings () {
   return {
-    cutOffLow: 1,
-    cutOffHigh: 100,
+    cutOffLow: 2,
+    cutOffHigh: 50,
     interval: 16,
     bins: 128,
     duration: 128,
@@ -102,14 +102,16 @@ export function renderModule(channels) {
       }   
 
       //only left frontal channel
-      if (index === 1) {
+      if (index === 1 && window.freqs) {
         return (
           <React.Fragment key={'dum'}>
             <Card.Section>
+              {window.freqs.slice(-1)[0] + ' Hz'}
               <P5Wrapper sketch={sketchSpectro} 
                 psd={window.psd}
                 bins={window.bins}
-                 />          
+                 />   
+              {window.freqs[0] + ' Hz'}       
             </Card.Section>
           </React.Fragment>
         );
@@ -127,6 +129,12 @@ export function renderModule(channels) {
           <TextContainer>
             <p>{specificTranslations.description}</p>
           </TextContainer>
+          <img 
+            src={ require("./electrodediagram2.png")} 
+            alt="F7Electrode"
+            width="25%"
+            height="auto"
+          ></img>
         </Stack>
       </Card.Section>
       <Card.Section>

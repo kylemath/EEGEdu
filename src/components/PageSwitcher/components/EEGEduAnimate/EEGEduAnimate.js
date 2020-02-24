@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { catchError, multicast } from "rxjs/operators";
 
-import { Card, Stack, TextContainer, RangeSlider, Select} from "@shopify/polaris";
+import { Card, Stack, TextContainer, RangeSlider, Select, Link} from "@shopify/polaris";
 import { Subject } from "rxjs";
 
 import { zipSamples } from "muse-js";
@@ -103,12 +103,12 @@ export function setup(setData, Settings) {
 export function renderModule(channels) {
   function RenderCharts() {
 
-    const bands = 'bands';
-    const tone = 'tone';
-    const cube = 'cube';
-    const flock = 'flock';
-    const draw = 'draw';
-    const flock3d = 'flock3d';
+    const bands = '3D Frequency Bands';
+    const tone = 'Play simple music with your frequency bands';
+    const cube = 'Control a Cube with your Alpha Power';
+    const flock = 'Control a Flock with Alpha and Beta';
+    const draw = 'Draw a picture with Alpha and Beta';
+    const flock3d = 'Control a 3d Flock with Alpha, Beta, and Theta';
 
     const chartTypes = [
       { label: bands, value: bands },
@@ -200,6 +200,25 @@ export function renderModule(channels) {
         <Stack>
           <TextContainer>
             <p>{specificTranslations.description}</p>
+          </TextContainer>
+           <img 
+            src={ require("./electrodediagram2.png")} 
+            alt="F7Electrode"
+            width="25%"
+            height="auto"
+          ></img>
+          <Link url="https://p5js.org/learn/interactivity.html"
+              external={true}>
+              Link to learn more about making your own easy P5.js animations </Link>
+          <br />
+           <Link url="https://p5js.org/examples/"
+              external={true}>
+              Examples of other P5.js animations to get started </Link>
+          <TextContainer>
+            <p>{[
+              "We are working on allowing for people to make their own animations with a p5.js editor. ", 
+              "For now if you want us to make a new one make a github issue with your p5.js animation and describe your idea"
+              ]}</p>
           </TextContainer>
         </Stack>
       </Card.Section>

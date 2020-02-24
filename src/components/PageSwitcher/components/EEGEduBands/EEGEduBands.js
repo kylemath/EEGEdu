@@ -1,7 +1,7 @@
 import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 
-import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal } from "@shopify/polaris";
+import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal, Link } from "@shopify/polaris";
 import { saveAs } from 'file-saver';
 import { takeUntil } from "rxjs/operators";
 import { Subject, timer } from "rxjs";
@@ -27,7 +27,7 @@ import { bandLabels } from "../../utils/chartUtils";
 export function getSettings () {
   return {
     cutOffLow: 2,
-    cutOffHigh: 20,
+    cutOffHigh: 50,
     interval: 100,
     bins: 256,
     duration: 1024,
@@ -119,7 +119,6 @@ export function renderModule(channels) {
                   labelString: specificTranslations.ylabel
                 },
                 ticks: {
-                  max: 25,
                   min: 0
                 }
               }
@@ -146,9 +145,75 @@ export function renderModule(channels) {
     <Card title={specificTranslations.title}>
       <Card.Section>
         <Stack>
+            <TextContainer>
+              <p>{[
+                "In the next demo we look at the traditional frequency bands. ",
+                "Oscillations in the brain are important as a mechinasm of brain function and communication. ", 
+                "For example, within a brain area, cellular firing becomes locked to the ongoing oscillations of the local field potential: "
+              ]}</p>
+            </TextContainer>
+            <img 
+              src={ require("./phaseLockedFiring.png")} 
+              alt="phaseLocked"
+              width="50%"
+              height="auto"
+            ></img> 
+            </Stack>
+            <Stack> 
+            <Link url="hhttps://en.wikipedia.org/wiki/Neural_oscillation#/media/File:SimulationNeuralOscillations.png"
+              external={true}>
+              Image Source - Wikipedia </Link>
+              <br />
+            <TextContainer>
+              <p>{[
+                "Since oscillations can control the timing of neural firing, they can also be used to communciate information and create distributed representations. ",
+                "Two nearby brain regions that oscillate in sync will have cells that also fire in sync, which also means the neurons they connect to will be more influenced. ", 
+                "Different brain regions have different frequency oscillations at different times "
+              ]}</p>
+            </TextContainer>
           <TextContainer>
-            <p>{specificTranslations.description}</p>
+            <p>{[
+              "Oscillations in the brain seem to belong to a number of basic families or frequency bands that are influenced by cognition in different ways. ",
+              "We take the same spectra that was computed in Spectra and divide into five bands. ",
+              "Delta (1-4 Hz), Theta (4-7 Hz), Alpha (7-12 Hz), Beta (12-30 Hz), and Gamma (30+ Hz). "
+            ]}</p>
           </TextContainer>
+            <img 
+              src={ require("./freqBands.jpg")} 
+              alt="freqBands"
+              width="50%"
+              height="auto"
+            ></img> 
+            </Stack>
+            <Stack> 
+            <Link url="https://upload.wikimedia.org/wikipedia/commons/5/59/Analyse_spectrale_d%27un_EEG.jpg"
+              external={true}>
+              Image Source - Wikipedia </Link>
+              <br />
+          
+          <TextContainer>
+            <p>{[
+              "These different frequency bands are associated with different brain states. ", 
+              "For example, when we pay focus attention to something, our alpha goes down and our beta oscillations increase. ",
+              "Gamma oscillations are associated with neural activity, but for the most part Gamma oscillations are very difficult to measure outside the head (very small) and so we will ignore them. ",
+              "Theta oscillations increase during spatial navigation and are associated with learning and memory. ",
+              "Alpha oscillations are assocaited with attention and active inhbition of neural activity, we will consider them further below. "
+            ]}</p>
+          </TextContainer>
+
+
+              </Stack>
+            </Card.Section>
+          <Card.Section>
+          <Stack>
+
+      <TextContainer>
+            <p>{[
+              "Connect a muse and watch the following bar charts of the frequency band power. There is one chart for each electrode. ",
+              "See if you can pick one of the bars and try to control its height by relaxing."
+            ]}</p>
+          </TextContainer>
+           
         </Stack>
       </Card.Section>
       <Card.Section>
@@ -157,6 +222,11 @@ export function renderModule(channels) {
     </Card>
   );
 }
+
+
+// https://en.wikipedia.org/wiki/Neural_oscillation#/media/File:SimulationNeuralOscillations.png
+// https://upload.wikimedia.org/wikipedia/commons/5/59/Analyse_spectrale_d%27un_EEG.jpg
+//
 
 export function renderSliders(setData, setSettings, status, Settings) {
 
@@ -228,6 +298,46 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
   return (
     <Card title={'Record Data'} sectioned>
       <Stack>
+          <TextContainer>
+            <p>{[
+              "One of the earliest and easiest to measure changes in the EEG is that of alpha oscillations when the eyes closed. ",
+              "We will test these changes by recording data in two conditions, and comparing the average alpha at all four electrodes between conditions. ", 
+              "We expect to replicate the following relationship: "
+            ]}</p>
+          </TextContainer>
+            <img 
+              src={ require("./alphaOpenClosed.png")} 
+              alt="closedOpen"
+              width="50%"
+              height="auto"
+            ></img> 
+            </Stack>
+            <Stack> 
+            <Link url="https://www.semanticscholar.org/paper/Coupling-between-visual-alpha-oscillations-and-mode-Mo-Liu/82593c9b9662d4dc022d51607b313f851f670246"
+              external={true}>
+              Image Source - Mo et al., 2013, Neuroimage </Link>
+              <br />
+              <br />
+              <br />
+
+        <TextContainer>
+            <p>{[
+              "First go to the Raw module 3 and check the data and connection quality. ",
+              "Then come back to Module 6, no need to change any settings. ",
+              "We will record two sessions for each person in your group, one with eyes open and one with eyes closed. ",
+              "Once recorded you can open the .csv file and observe what gets saved. Along the rows are the different frequency bands from each electrode, we are going to average over all four electrodes in this assignment. ",
+              "We are also going to average over time, which is shown on different rows. ", 
+              "So please compute the average ALPHA power in that output file, and do the same for the other condition, make sure to keep track of which file was created during which condition. ", 
+              "Compare your values for eyes open vs eyes closed, did you find the expected difference? ",
+              "Why do you think alpha differs when we close our eyes? "
+             ]}</p>
+          </TextContainer>
+        <TextContainer>
+            <p>{[
+              "Once you are complete, move on to the next Module and control live animations with the values of these frequency bands. ",
+             ]}</p>
+          </TextContainer>
+
         <RangeSlider 
           disabled={status === generalTranslations.connect} 
           min={2}

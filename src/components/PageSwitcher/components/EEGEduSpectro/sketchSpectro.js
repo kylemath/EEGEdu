@@ -35,7 +35,7 @@ export default function sketchSpectro (p) {
         value = spectrum[i];
 
         let c = (value/5)*255;
-        p.fill(255-c, 255-c, 255-c);
+        p.fill(c, c, c);
         let percent = i / binCount;
         let y = percent * p.height;
         p.rect(p.width - speed, p.height - y, speed, p.height / binCount);

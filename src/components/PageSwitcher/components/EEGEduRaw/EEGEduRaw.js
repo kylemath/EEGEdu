@@ -22,7 +22,7 @@ import { chartStyles, generalOptions } from "../chartOptions";
 import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 
-import { generateXTics, standardDeviation } from "../../utils/chartUtils";
+import { generateXTics } from "../../utils/chartUtils";
 
 export function getSettings () {
   return {
@@ -71,7 +71,7 @@ export function setup(setData, Settings) {
         Object.values(rawData).forEach((channel, index) => {
             channel.datasets[0].data = data.data[index];
             channel.xLabels = generateXTics(Settings.srate, Settings.duration);
-            channel.datasets[0].qual = standardDeviation(data.data[index])          
+            // channel.datasets[0].qual = standardDeviation(data.data[index])          
         });
 
         return {
@@ -127,27 +127,27 @@ export function renderModule(channels) {
       const newData = {
         datasets: [{
           label: channelNames[0],
-          borderColor: 'rgba(217,95,2, '  + Math.max(0.2,(2-channels.data.ch0.datasets[0].qual/200)) +   ')',
+          borderColor: 'rgba(217,95,2)',
           data: channels.data.ch0.datasets[0].data.map(function(x) {return x + 300}),
           fill: false
         }, {
           label: channelNames[1],
-          borderColor: 'rgba(27,158,119, '  + Math.max(0.2,(2-channels.data.ch1.datasets[0].qual/200)) +   ')',
+          borderColor: 'rgba(27,158,119)',
           data: channels.data.ch1.datasets[0].data.map(function(x) {return x + 200}),
           fill: false
         }, {
           label: channelNames[2],
-          borderColor: 'rgba(117,112,179, '  + Math.max(0.2,(2-channels.data.ch2.datasets[0].qual/200)) +   ')',
+          borderColor: 'rgba(117,112,179)',
           data: channels.data.ch2.datasets[0].data.map(function(x) {return x + 100}),
           fill: false
         }, {
           label: channelNames[3],
-          borderColor: 'rgba(231,41,138, '  + Math.max(0.2,(2-channels.data.ch3.datasets[0].qual/200)) +   ')',
+          borderColor: 'rgba(231,41,138)',
           data: channels.data.ch3.datasets[0].data.map(function(x) {return x + 0}),
           fill: false  
         }, {
           label: channelNames[4],
-          borderColor: 'rgba(20,20,20, '  + Math.max(0.2,(2-channels.data.ch4.datasets[0].qual/200)) +   ')',
+          borderColor: 'rgba(20,20,20)',
           data: channels.data.ch4.datasets[0].data.map(function(x) {return x + -100}),
           fill: false  
         }],
