@@ -103,12 +103,12 @@ export function setup(setData, Settings) {
 export function renderModule(channels) {
   function RenderCharts() {
 
-    const bands = 'bands';
-    const tone = 'tone';
-    const cube = 'cube';
-    const flock = 'flock';
-    const draw = 'draw';
-    const flock3d = 'flock3d';
+    const bands = '3D Frequency Bands';
+    const tone = 'Play simple music with your frequency bands';
+    const cube = 'Control a Cube with your Alpha Power';
+    const flock = 'Control a Flock with Alpha and Beta';
+    const draw = 'Draw a picture with Alpha and Beta';
+    const flock3d = 'Control a 3d Flock with Alpha, Beta, and Theta';
 
     const chartTypes = [
       { label: bands, value: bands },
@@ -201,6 +201,12 @@ export function renderModule(channels) {
           <TextContainer>
             <p>{specificTranslations.description}</p>
           </TextContainer>
+           <img 
+            src={ require("./electrodediagram2.png")} 
+            alt="F7Electrode"
+            width="25%"
+            height="auto"
+          ></img>
         </Stack>
       </Card.Section>
       <Card.Section>

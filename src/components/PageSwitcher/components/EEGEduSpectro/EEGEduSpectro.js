@@ -24,8 +24,8 @@ import P5Wrapper from 'react-p5-wrapper';
 
 export function getSettings () {
   return {
-    cutOffLow: 1,
-    cutOffHigh: 100,
+    cutOffLow: 2,
+    cutOffHigh: 50,
     interval: 16,
     bins: 128,
     duration: 128,
