@@ -119,7 +119,6 @@ export function renderModule(channels) {
                   labelString: specificTranslations.ylabel
                 },
                 ticks: {
-                  max: 25,
                   min: 0
                 }
               }
@@ -157,6 +156,11 @@ export function renderModule(channels) {
     </Card>
   );
 }
+
+
+// https://en.wikipedia.org/wiki/Neural_oscillation#/media/File:SimulationNeuralOscillations.png
+// https://upload.wikimedia.org/wikipedia/commons/5/59/Analyse_spectrale_d%27un_EEG.jpg
+//
 
 export function renderSliders(setData, setSettings, status, Settings) {
 
