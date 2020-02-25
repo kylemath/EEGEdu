@@ -100,7 +100,7 @@ export function setup(setData, Settings) {
 export function renderModule(channels) {
   function renderCharts() {
     return Object.values(channels.data).map((channel, index) => {
-      if (index < window.nchans) {
+        if (index === 0) {
         const options = {
           ...generalOptions,
           scales: {
@@ -119,22 +119,66 @@ export function renderModule(channels) {
                   labelString: specificTranslations.ylabel
                 },
                 ticks: {
-                  min: 0
+                  min: 0,
+                  max: 100
                 }
               }
             ]
           },
           title: {
             ...generalOptions.title,
-            text: generalTranslations.channel + channelNames[index]
+            text: 'Power by Frequency Band'
           }
         };
 
-        return (
-            <Card.Section key={"Card_" + index}>
-              <Bar key={"Line_" + index} data={channel} options={options} />
+      if (channels.data.ch3.datasets[0].data) {
+          const newData = {
+            datasets: [{
+              label: channelNames[0],
+              backgroundColor: 'rgba(217,95,2)',
+              data: channels.data.ch0.datasets[0].data,
+              fill: false
+            }, {
+              label: channelNames[1],
+              backgroundColor: 'rgba(27,158,119)',
+              data: channels.data.ch1.datasets[0].data,
+              fill: false
+            }, {
+              label: channelNames[2],
+              backgroundColor: 'rgba(117,112,179)',
+              data: channels.data.ch2.datasets[0].data,
+              fill: false
+            }, {
+              label: channelNames[3],
+              backgroundColor: 'rgba(231,41,138)',
+              data: channels.data.ch3.datasets[0].data,
+              fill: false  
+            }, {
+              label: channelNames[4],
+              backgroundColor: 'rgba(20,20,20)',
+              data: channels.data.ch4.datasets[0].data,
+              fill: false  
+            }],
+            xLabels: channels.data.ch0.xLabels
+          }
+
+          return (
+            <Card.Section key={"Card_" + 1}>
+              <Bar key={"Line_" + 1} data={newData} options={options} />
             </Card.Section>
-        );
+          );
+        } else {
+          return( 
+            <Card.Section>
+                <TextContainer>
+                <p> {[
+                "Press connect above to see the chart."  
+                ]} 
+                </p>
+              </TextContainer>   
+            </Card.Section>  
+          )
+        }
       } else {
         return null
       }
@@ -209,11 +253,16 @@ export function renderModule(channels) {
 
       <TextContainer>
             <p>{[
-              "Connect a muse and watch the following bar charts of the frequency band power. There is one chart for each electrode. ",
-              "See if you can pick one of the bars and try to control its height by relaxing."
+              "Connect a muse and watch the following bar chart of the frequency band power. There is bar for each electrode. ",
+              "See if you can pick one of the frequency bands and try to control the height by relaxing."
             ]}</p>
           </TextContainer>
-           
+         <img 
+              src={ require("./electrodediagram.png")} 
+              alt="Electrodes"
+              width="20%"
+              height="auto"
+            ></img> 
         </Stack>
       </Card.Section>
       <Card.Section>
