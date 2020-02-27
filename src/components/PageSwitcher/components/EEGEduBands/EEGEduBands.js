@@ -283,7 +283,7 @@ function saveToCSV(Settings) {
     "theta0,theta1,theta2,theta3,thetaAux,",  
     "alpha0,alpha1,alpha2,alpha3,alphaAux,",  
     "beta0,beta1,beta2,beta3,betaAux,", 
-    "delta0,delta1,delta2,delta3,deltaAux\n"
+    "gamma0,gamma1,gamma2,gamma3,gammaAux\n"
   );
 
   // Create timer 
