@@ -37,7 +37,7 @@ export function getSettings() {
     duration: 1024,
     srate: 256,
     name: 'Alpha',
-    secondsToSave: 10
+    secondsToSave: 60
   }
 };
 
@@ -254,6 +254,8 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, recor
     setSettings(prevState => ({...prevState, secondsToSave: value}));
   }
 
+  const recordDelay = 2000;
+
   return(
     <Card title={'Record ' + Settings.name +' Data'} sectioned>
       <Stack>
@@ -268,21 +270,25 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, recor
         <ButtonGroup>
           <Button 
             onClick={() => {
-              saveToCSV(Settings, "Closed");
               recordPopChange();
+              setTimeout(() => {  
+                saveToCSV(Settings, "Closed");
+               }, recordDelay);
             }}
             primary={status !== generalTranslations.connect}
-            disabled={status === generalTranslations.connect}
+            disabled={status === generalTranslations.connect || recordPop}
           > 
             {'Record Eyes Closed Data'}  
           </Button>
           <Button 
             onClick={() => {
-              saveToCSV(Settings, "Open");
               recordTwoPopChange();
+              setTimeout(() => {  
+                saveToCSV(Settings, "Open");
+              }, recordDelay); 
             }}
             primary={status !== generalTranslations.connect}
-            disabled={status === generalTranslations.connect}
+            disabled={status === generalTranslations.connect || recordTwoPop}
           > 
             {'Record Eyes Open Data'}  
           </Button> 
