@@ -1,7 +1,7 @@
 import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 
-import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal } from "@shopify/polaris";
+import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal, Link } from "@shopify/polaris";
 import { saveAs } from 'file-saver';
 import { take, takeUntil } from "rxjs/operators";
 import { Subject, timer } from "rxjs";
@@ -10,6 +10,7 @@ import { channelNames } from "muse-js";
 import { Line } from "react-chartjs-2";
 
 import { zipSamples } from "muse-js";
+import YouTube from 'react-youtube'
 
 import {
   bandpassFilter,
@@ -37,9 +38,13 @@ export function getSettings() {
     duration: 1024,
     srate: 256,
     name: 'Alpha',
-    secondsToSave: 10
+    secondsToSave: 60
   }
 };
+
+const conds = ['Open', 'Closed'];
+const thisRand = Math.floor(Math.random() * 2); 
+const firstType = conds[thisRand];
 
 
 export function buildPipe(Settings) {
@@ -156,6 +161,64 @@ export function renderModule(channels) {
           </TextContainer>
         </Stack>
       </Card.Section>
+      <Card.Section title={'Previous Module'}>
+        <TextContainer>
+          <p> {
+            "Last module we recorded the frequency bands while people had their eyes open or closed for 10 seconds. Although we predicted there should be larger alpha power when the eyes are closed, are results showed the opposite effect:"
+          } </p>
+        </TextContainer>
+        <br />
+        <img 
+          src={ require("./module5.png")} 
+          alt="module5"
+          width="50%"
+          height="auto"
+        ></img> 
+        <br />     
+        <br />     
+        <TextContainer>
+          <p> {
+            "We pooled our estimates for alpha in eyes open vs eyes closed as a class, and computed the average and compared the results with a paired samples t-test. As you can see, even if we remove some of the outliers with extreme values that may have been artifacts, we still find that for most people we estimated larger alpha power when their eyes were open. Why could this be?"
+          } 
+        <Link url="https://docs.google.com/spreadsheets/d/1Ip8Xitp548DVXikZhL55Ll-Vgg9UAFU0-N40_3-e8sw/edit?usp=sharing"
+                external={true}
+        > You can access a read only copy of the spreadsheet we used to compute these group level effects here. </Link>  
+        </p>
+        </TextContainer>   
+      </Card.Section>
+      <Card.Section title={'Limitations'}>
+        <TextContainer>
+          <p> {
+            "We discussed in class that we had very little control over WHAT people were doing while their eyes were open. Some were looking around, some may have been blinking, some may have been reading their screen. There was a great deal of variability in the EEG signal due to differences in peoples behaviour during our task. As we have seen in previous modules, these kind of artifacts can create artificial power in most lower frequency bands. Because we were looking just at the alpha frequency band, we did not estimate the full range of differences across frequencies. "
+          } </p>
+        </TextContainer>
+        <br />
+        <TextContainer>
+          <p> {
+            "Furthermore, the short recording time (10 Seconds) also allows for less reliable measurement of the EEG signal. In addition, people may not have been prepared when the button was pressed to start their recording. "
+          } </p>
+        </TextContainer>
+      </Card.Section>
+      <Card.Section title={'New Experiment'}>
+        <TextContainer>
+          <p> {
+            "Based on all these ideas, in this module we are going to run a more controlled experiment comparing the EEG during eyes open and eyes closed conditions. Instead of just recording averages over frequency bands, we will record the whole spectra."
+          } </p>
+        </TextContainer>
+        <br />
+        <TextContainer>
+          <p> {
+            "This module, the recording sessions will be 60 seconds long. They will also begin with a 2 second delay after pressing the button. A window will pop up with a red fixation cross. In the eyes open condition participants should keep their eyes fixed on this red fixation cross the entire 60 seconds, and should try to minimize blinking as much as possible."
+          } </p>
+        </TextContainer>
+        <br />
+        <TextContainer>
+          <p> {
+            "Please DO NOT change any of the settings. The module will pick a random number to tell you which condition to run first, so that we can counterbalance the order. Keep track of this order in a lab notebook you will submit."
+          } </p>
+        </TextContainer>
+        <br />     
+      </Card.Section>
       <Card.Section>
         <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
       </Card.Section>
@@ -254,10 +317,32 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, recor
     setSettings(prevState => ({...prevState, secondsToSave: value}));
   }
 
+  const recordDelay = 2000;
+
+  const opts = {
+    height: '195',
+    width: '320',
+    playerVars: { // https://developers.google.com/youtube/player_parameters
+      autoplay: false
+    }
+  };
+
   return(
     <Card title={'Record ' + Settings.name +' Data'} sectioned>
       <Stack>
-        <RangeSlider 
+        <TextContainer>
+          <p> {
+            "Each person will record two sessions, one with eyes open and one with eyes closed. The output files are identical to those we recorded in the spectra module 5. "
+          } </p>
+        </TextContainer>   
+        <TextContainer>
+          <p> {
+            "The random number generator suggest you run the following condition first: " + firstType
+          } </p>
+        </TextContainer>  
+        <br />
+        <ButtonGroup>
+                <RangeSlider 
           disabled={status === generalTranslations.connect} 
           min={2}
           max={180}
@@ -265,28 +350,49 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, recor
           value={Settings.secondsToSave} 
           onChange={handleSecondsToSaveRangeSliderChange} 
         />
-        <ButtonGroup>
           <Button 
             onClick={() => {
-              saveToCSV(Settings, "Closed");
               recordPopChange();
+              setTimeout(() => {  
+                saveToCSV(Settings, "Closed");
+               }, recordDelay);
             }}
             primary={status !== generalTranslations.connect}
-            disabled={status === generalTranslations.connect}
+            disabled={status === generalTranslations.connect || recordPop}
           > 
             {'Record Eyes Closed Data'}  
           </Button>
           <Button 
             onClick={() => {
-              saveToCSV(Settings, "Open");
               recordTwoPopChange();
+              setTimeout(() => {  
+                saveToCSV(Settings, "Open");
+              }, recordDelay); 
             }}
             primary={status !== generalTranslations.connect}
-            disabled={status === generalTranslations.connect}
+            disabled={status === generalTranslations.connect || recordTwoPop}
           > 
             {'Record Eyes Open Data'}  
           </Button> 
         </ButtonGroup>
+        <TextContainer>
+          <p> {
+            "Instead of averaging over all electrodes, we will separately average the frontal and temporal electrodes to look for differences in different locations on the head. First you will each analyze your own data to summarize what you found. We will average the spectra values over the entire 60 seconds, and also over contralateral pairs of electrodes. You can watch a video showing you how to do this if you need a reminder here: "
+          } </p>
+        </TextContainer>          
+        <YouTube 
+            videoId="D9skUfAOstE"
+            opts={opts}
+          />
+        <TextContainer>
+          <p> {
+            "Finally, we will paste the resulting average spectra in each condition, at each of the two electrode locations into a group spreadsheet that we will use for our final assignment paper in the class. To clarify, each participant will make two recordings 1) Eyes open, and 2) Eyes closed. For each, the analysis will produce two arrays of numbers (spectra), one for Frontal electrodes, and one for posterior electrodes. Therefore there are four different tabs in the following group data log:"
+          } </p>
+        </TextContainer>
+        <Link url="https://docs.google.com/spreadsheets/d/1Ip8Xitp548DVXikZhL55Ll-Vgg9UAFU0-N40_3-e8sw/edit?usp=sharing"
+                external={true}
+        > Group Data Log (4 tabs) </Link>  
+
         <Modal
           open={recordPop}
           onClose={recordPopChange}
