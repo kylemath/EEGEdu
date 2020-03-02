@@ -186,10 +186,9 @@ export function renderModule(channels) {
       <Card.Section>
         <Stack>
           <TextContainer>
-            <p> {[
-              "Next we will move onto the head and look at the raw EEG data that is recorded and transmitted by the EEG headset. ",
-              "If you have not already, spend a few minutes going through the Introduction Module 1, which will give you an intro into the EEG signal. " 
-            ]} </p>
+            <p> {
+              "Last module we recorded the frequency bands while people had their eyes open or closed for 10 seconds. Although we predicted there should be larger alpha power when the eyes are closed, are results showed the opposite effect:"
+            } </p>
             <p>{specificTranslations.description}</p>
           </TextContainer>
           <img 
