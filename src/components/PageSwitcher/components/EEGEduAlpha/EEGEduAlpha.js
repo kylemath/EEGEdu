@@ -340,8 +340,9 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, recor
             "The random number generator suggest you run the following condition first: " + firstType
           } </p>
         </TextContainer>  
-
-        <RangeSlider 
+        <br />
+        <ButtonGroup>
+                <RangeSlider 
           disabled={status === generalTranslations.connect} 
           min={2}
           max={180}
@@ -349,7 +350,6 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, recor
           value={Settings.secondsToSave} 
           onChange={handleSecondsToSaveRangeSliderChange} 
         />
-        <ButtonGroup>
           <Button 
             onClick={() => {
               recordPopChange();
