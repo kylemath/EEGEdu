@@ -180,7 +180,7 @@ export function renderModule(channels) {
           <p> {
             "We pooled our estimates for alpha in eyes open vs eyes closed as a class, and computed the average and compared the results with a paired samples t-test. As you can see, even if we remove some of the outliers with extreme values that may have been artifacts, we still find that for most people we estimated larger alpha power when their eyes were open. Why could this be?"
           } 
-        <Link url="https://docs.google.com/spreadsheets/d/1Ip8Xitp548DVXikZhL55Ll-Vgg9UAFU0-N40_3-e8sw/edit?usp=sharing"
+        <Link url="https://docs.google.com/spreadsheets/d/1d4oakU6ER_fDO-t2eHk1Wrj3F99eZYZGkjVXVXVwNQs/edit?usp=sharing"
                 external={true}
         > You can access a read only copy of the spreadsheet we used to compute these group level effects here. </Link>  
         </p>
