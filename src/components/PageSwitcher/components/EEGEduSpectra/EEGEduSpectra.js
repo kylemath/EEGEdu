@@ -22,6 +22,8 @@ import { chartStyles, generalOptions } from "../chartOptions";
 import * as generalTranslations from "../translations/en";
 import * as specificTranslations from "./translations/en";
 
+const io = require('socket.io-client');
+
 export function getSettings() {
   return {
     cutOffLow: 1,
@@ -322,7 +324,7 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
         <ButtonGroup>
           <Button 
             onClick={() => {
-              saveToCSV(Settings);
+              streamToSocket(Settings);
               recordPopChange();
             }}
             primary={status !== generalTranslations.connect}
@@ -357,12 +359,14 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
 }
 
 
-function saveToCSV(Settings) {
-  console.log('Saving ' + Settings.secondsToSave + ' seconds...');
+async function streamToSocket(Settings) {
+  console.log('Streaming for ' + Settings.secondsToSave + ' seconds...');
   var localObservable$ = null;
   const dataToSave = [];
+  
+  console.log('Creating Socket')
+  const socket = await io.connect('http://localhost:8080');
 
-  console.log('making ' + Settings.name + ' headers')
 
   // take one sample from selected observable object for headers
   localObservable$ = window.multicastSpectra$.pipe(
@@ -401,7 +405,7 @@ function saveToCSV(Settings) {
       // dataToSave.push(Date.now() + "," + Object.values(x).join(",") + "\n");
       // logging is useful for debugging -yup
       console.log("next", x);
-      window.socket.emit('out_data', x);
+      socket.emit('out_data', x);
     },
     error(err) { console.log(err); },
     complete() { 
