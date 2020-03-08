@@ -33,6 +33,11 @@ const ssvep = translations.types.ssvep;
 const evoked = translations.types.evoked;
 const predict = translations.types.predict;
 
+const io = require('socket.io-client');
+  
+
+
+
 export function PageSwitcher() {
 
   // For auxEnable settings
@@ -78,7 +83,7 @@ export function PageSwitcher() {
   const [status, setStatus] = useState(generalTranslations.connect);
 
   // for picking a new module
-  const [selected, setSelected] = useState(intro);
+  const [selected, setSelected] = useState(spectra);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 
@@ -228,7 +233,10 @@ export function PageSwitcher() {
   }
 
   async function connect() {
+    window.socket = await io.connect('http://localhost:8080');
+
     try {
+
       if (window.debugWithMock) {
         // Debug with Mock EEG Data
         setStatus(generalTranslations.connectingMock);

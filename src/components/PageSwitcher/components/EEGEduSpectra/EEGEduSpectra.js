@@ -1,14 +1,12 @@
 import React from "react";
 import { catchError, multicast } from "rxjs/operators";
 
-import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal, Link } from "@shopify/polaris";
-import { saveAs } from 'file-saver';
+import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal } from "@shopify/polaris";
 import { take, takeUntil } from "rxjs/operators";
 import { Subject, timer } from "rxjs";
 
 import { channelNames } from "muse-js";
 import { Line } from "react-chartjs-2";
-import YouTube from 'react-youtube'
 
 import { zipSamples } from "muse-js";
 
@@ -35,7 +33,7 @@ export function getSettings() {
     duration: 1024,
     srate: 256,
     name: 'Spectra',
-    secondsToSave: 10
+    secondsToSave: 1000
 
   }
 };
@@ -72,6 +70,7 @@ export function buildPipe(Settings) {
 
 export function setup(setData, Settings) {
   console.log("Subscribing to " + Settings.name);
+  
 
   if (window.multicastSpectra$) {
     window.subscriptionSpectra = window.multicastSpectra$.subscribe(data => {
@@ -194,15 +193,6 @@ export function renderModule(channels) {
 
   }
 
-
-  const opts = {
-    height: '195',
-    width: '320',
-    playerVars: { // https://developers.google.com/youtube/player_parameters
-      autoplay: false
-    }
-  };
-
   return (
     <React.Fragment>
       <Card title={specificTranslations.title}>
@@ -217,88 +207,7 @@ export function renderModule(channels) {
           <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
         </Card.Section>
       </Card>
-      <Card title={'Fourier Transform'}>
-        <Card.Section>
-          <Stack>
-            <TextContainer>
-              <p> {[
-                "In module 3 we saw how we can use a mathematical technique called the fourier transform to estimate what frequency is present in the ECG data, to estimate heart rate. ",
-                "A fourier transform turns any series of numbers into a summed set of sine waves of different sizes. ",
-                "For review, the following animation shows how a single time-series of data can be thought of as the sum of different frequencies of sine waves, each of a different magnitude. ", 
-                "The blue bar chart at the end of the animation shows what is called the frequency spectra, and indicates the power at each frequency." 
-              ]} </p>
-            </TextContainer>
-            <br />
-            <img 
-              src={ require("./fft_animation.gif")} 
-              alt="FFT"
-              width="50%"
-              height="auto"
-            ></img> 
-            </Stack>
-            <Stack> 
-            <Link url="https://en.wikipedia.org/wiki/Electrocardiography#/media/File:Limb_leads_of_EKG.png"
-              external={true}>
-              Image Source - Wikipedia </Link>
-              <br />
-              <TextContainer>
-              <p> {[
-                "The Fourier transform is a mathematical technique originally developed in the early 1800s in order to mathematically model the movement of heat. ",
-                "A discrete fourier transform (DFT) is this mathematical technique applied to digital data (a function sampled at different time points), like EEG data. ",
-                "In order to compute this efficiently, a pair of psychologists and statisticians created the FAST fourier transform (FFT) in the 60's, during the cold war ",
-                "as a signal processing technique needed to triangulate possible Soviet nuclear launches from a hypothetical array of sensors around the Soviet Union. ",
-                "The FFT has gone on to be one of the most useful and used algorithms ever created, and is used in a wide array of digital tools. ", 
-                ]} 
-           <Link url="http://www.jezzamon.com/fourier/index.html"
-              external={true}>
-              Follow this link to an excellent interactive tutorial on the graphical understanding of the fourier transforms using sound, drawings, and images
-             </Link>
-                </p>
-             <p> {[
-                "We will not cover the mathematical formula or algorithm behind the DFT or FFT here. ",
-                "A fourier transform turns any series of numbers into a summed set of sine waves of different sizes. ",
-                "The following animation shows how a single time-series of data, can be thought of as the sum of different frequencies of sine waves, each of a different magnitude. ", 
-                "Amazingly, before digital computers in the late 1800's, in order to model details of light movement, a physical machine was constructed to perform these calculations by hand. ",
-                "This amazing Harmonic Analyzer still provides an excellent intuition into the mechanics behind decomposing a time series signal into a sum of sin waves. " 
-              ]} </p>
-            </TextContainer>
-
-            <YouTube 
-              videoId="NAsM30MAHLg"
-              opts={opts}
-            />
-             <p> {[
-                "Most computer programming languages now provide an easy way to compute the FFT on time series data. ",
-                "Other methods of converting time series data into the frequency domain also exist, such as wavelet analysis, in which the product of the data and a family of different frequency wavelets is used to esitmate the data decomposition. ",
-                "The resolution in frequency of the FFT depends on the NUMBER OF TIME POINTS. ",
-                "The range of frequencies provided by the FFT depends on the sampling rate of the data , in our case 256 Hz provides frequencies up to 128 Hz (half). " 
-              ]} </p>
-            <p> {[
-                "Importantly, the uncertainty principle applies to the FFT as well. ",
-                "It is impossible to know both exactly when something happens, and what frequency it happens at, at the same time. ",
-                "As an intuition, imagine that in order to estimate your heart rate you obviously need more than a single time point of data, you need multiple beats of the heart (at least one). ",
-                "Therefore, the resultant estimate of heart rate will not be precise in time, and will apply to the entire time window you put into the FFT. " 
-              ]} </p>
-
-          </Stack>
-        </Card.Section>
-      </Card>
-      <Card title={'Artifact Assignment'}>
-        <Card.Section>
-          <Stack>
-            <TextContainer>
-              <p> {[
-                "In module 4 we plotted the range of various artifacts that are common in EEG data. ",
-                "Obviously, these artifacts remain (if not filtered out) in the window of data that is used to compute the FFT. ",
-                "Therefore, NOT ALL THE DATA IN THE SPECTRA IS FROM THE BRAIN!!! ", 
-                "For instance, blinks show up as low frequencies, and you have already seen how heart artifacts in the data would show up as low frequency power as well, but these are not brain activity. ",
-                "For your assignment this module, for each type of artifact you observed in Module 4, now you will observe what the spectra looks like, take a screenshot of the result and save these in a google doc. ",
-                "To take a screenshot on a mac, press (⌘Command + ⇧Shift + 4) and select the area of the screen you want to save."
-              ]} </p>
-            </TextContainer>
-          </Stack>
-        </Card.Section>
-      </Card>
+     
     </React.Fragment>
   );
 }
@@ -394,27 +303,19 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
     setSettings(prevState => ({...prevState, secondsToSave: value}));
   }
  
-  const opts = {
-    height: '195',
-    width: '320',
-    playerVars: { // https://developers.google.com/youtube/player_parameters
-      autoplay: false
-    }
-  };
-
   return(
-    <Card title={'Record ' + Settings.name +' Data'} sectioned>
+    <Card title={'Stream ' + Settings.name +' Data'} sectioned>
       <Stack>
          <TextContainer>
           <p> {[
-            "Press the following button after adjusting the settings above in order to record the live spectra over time into a .csv file. "
+            "Press the following button after adjusting the settings above in order to stream data. "
           ]} </p>
         </TextContainer>
         <RangeSlider 
           disabled={status === generalTranslations.connect} 
           min={2}
           max={180}
-          label={'Recording Length: ' + Settings.secondsToSave + ' Seconds'} 
+          label={'Streaming Length: ' + Settings.secondsToSave + ' Seconds'} 
           value={Settings.secondsToSave} 
           onChange={handleSecondsToSaveRangeSliderChange} 
         />
@@ -427,53 +328,10 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
             primary={status !== generalTranslations.connect}
             disabled={status === generalTranslations.connect}
           > 
-            {'Save to CSV'}  
+            {'Stream to Socket'}  
           </Button>
         </ButtonGroup>
-   <TextContainer>
-          <p> {[
-            "A .csv file will be saved that can be opened in Google Sheets. ",
-            "Here is an example of what the data will look like once loaded. ",
-            "The first column shows the time in msec of each estimate of the spectra.",
-            "Each row therefore represents an estimate from the previous 8 seconds of data EEG data, and the windows used to compute each row are overlapping. ",
-            "Again, this is because you need a long segment of time to estimate frequency of rhythms over time. ",
-            "You can see the time values increase about 10000 ms during the recording, representing the 10 seconds of data. ",
-            "So 10000 milliseconds divided into ~400 ms shifts per row gives us the rough number of rows (~25). "
-          ]} </p>
-          <img 
-            src={ require("./exampleRecording.png")} 
-            alt="exampleOutput"
-            width="75%"
-            height="auto"
-          ></img>
-          <p> {[
-            "The spectra are then shown on each row. Each column represents the power at a different frequency. ",
-            "The first row shows the frequency and channel label for all the data in that column. ",
-            "So the first 30 columns after the timestamp are the 30 frequencies from the TP9 electrode ",
-            "(where 30 is the number of frequencies saved which can be adjusted with the FFT Slice Settings). ",
-            "After that, the next electrode starts, with another 30 frequencies.",
-            "After columns for all 30 frequencies from all four electrodes, another 30 columns show zeros, this is for an optional auxillary channel we are not using here. ",
-            "Finally columns are saved to record the exact frequencies of each bin of the FFT (redundant with the column names). "
-          ]} </p>
-        </TextContainer>
-   
-        <TextContainer>
-          <p> {[
-            "The second part of the assignment for this module involves parsing this output file to organize the data into a format that can be plotted like the live plot on the page. ",
-            "Data will be averaged over time, and then data for each electrode will be organized and used to make a chart of the spectra"
-            ]} 
-        <Link url="https://docs.google.com/spreadsheets/d/1Zdnmti-A0kb1ru3HUNMT9rMTbZYbkStSRNtiRPu3TVU/edit?usp=sharing"
-             external={true}>
-
-         Link to example google sheet from video. 
-        </Link>  
-        </p>
-        </TextContainer>
-        <br />
-        <YouTube 
-          videoId="YgEgi73e9OM"
-          opts={opts}
-        />
+  
 
 
 
@@ -540,19 +398,14 @@ function saveToCSV(Settings) {
   // now with header in place subscribe to each epoch and log it
   localObservable$.subscribe({
     next(x) { 
-      dataToSave.push(Date.now() + "," + Object.values(x).join(",") + "\n");
+      // dataToSave.push(Date.now() + "," + Object.values(x).join(",") + "\n");
       // logging is useful for debugging -yup
-      // console.log(x);
+      console.log("next", x);
+      window.socket.emit('out_data', x);
     },
     error(err) { console.log(err); },
     complete() { 
-      console.log('Trying to save')
-      var blob = new Blob(
-        dataToSave, 
-        {type: "text/plain;charset=utf-8"}
-      );
-      saveAs(blob, Settings.name + "_Recording_" + Date.now() + ".csv");
-      console.log('Completed');
+      console.log('Done publishing');
     }
   });
 }
