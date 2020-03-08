@@ -238,7 +238,11 @@ export function PageSwitcher() {
     localObservable$.subscribe({
       next(x) { 
         // console.log('Next packet socket emit eeg data: ', x)
-        socket.emit('incoming data', x)
+        
+        // The client webpage will emit the data to the 'incoming data' socket
+        // namespace. This should be handled by the server.
+        socket.emit('incoming data', 1017)
+        console.log('emit incoming data: ', 1017)
 
       },
       error(err) { console.log(err); },

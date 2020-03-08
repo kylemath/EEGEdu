@@ -19,17 +19,15 @@ io.on('connection', function(socket){
   
   //Here we listen on a new namespace called "incoming data"
   socket.on("incoming data", (data)=>{
-    //Here we broadcast it out to all other sockets EXCLUDING the 
+    // Here we broadcast it out to all other sockets EXCLUDING the 
     // socket which sent us the data
     // The broadcast flag is special because it allows us to emit data to every 
     // client EXCEPT the one that sent us the data. There's no point in sending 
     // data back to the producer so we broadcast on yet another namespace, 
     // outgoing data.
-    // socket.broadcast.emit("outgoing data", {num: data});
+    socket.broadcast.emit("outgoing data", {num: data});
+    console.log('broadcast outgoing data', data);
     
-    // No broadcast will show the example
-    socket.emit("outgoing data", {num: data});
-    console.log('outgoing data', data)
   });
   
   //A special namespace "disconnect" for when a client disconnects
