@@ -3,6 +3,7 @@
     "npm": "5.x",
     "node": "10.x"
   },
+  "proxy": "http://localhost:8080",
   "name": "eegedu",
   "version": "0.1.0",
   "private": true,
@@ -10,6 +11,7 @@
     "@neurosity/pipes": "^3.0.2",
     "@shopify/polaris": "^4.9.0",
     "chart.js": "^2.7.2",
+    "express": "4.15.2",
     "file-saver": "^2.0.2",
     "firebase": "^7.5.0",
     "firebase-tools": "^7.9.0",
@@ -29,7 +31,8 @@
     "socket.io": "^2.3.0"
   },
   "scripts": {
-    "start": "react-scripts --max_old_space_size=4096 start",
+    "dev": "react-scripts --max_old_space_size=4096 start",
+    "start": "node server.js",
     "build": "react-scripts --max_old_space_size=4096 build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"

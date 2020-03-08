@@ -12,11 +12,12 @@ import { timer } from "rxjs";
 
 import { RenderModule } from "./components/EEGEduSpectra/EEGEduSpectra";
 
-const io = require('socket.io-client');
-
-
 let showAux = true; // if it is even available to press (to prevent in some modules)
 let source = {};
+
+// ADDED ADDED ADDED
+let socket = require('socket.io-client')('http://127.0.0.1:3000');
+//
 
 
 //-----Setup Constants
@@ -220,7 +221,7 @@ export function PageSwitcher() {
   }
 
   async function saveToCSV(Settings) {
-    var socket = await io.connect('75.152.213.182:8080');
+    // var socket = await io.connect('75.152.213.182:8080');
 
     console.log('Streaming ' + Settings.secondsToSave + ' seconds...');
     var localObservable$ = null;
@@ -236,8 +237,8 @@ export function PageSwitcher() {
     // now with header in place subscribe to each epoch and log it
     localObservable$.subscribe({
       next(x) { 
-        // console.log('Next packet: ', x)
-        socket.emit('data', x)
+        // console.log('Next packet socket emit eeg data: ', x)
+        socket.emit('incoming data', x)
 
       },
       error(err) { console.log(err); },
