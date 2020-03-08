@@ -33,11 +33,6 @@ const ssvep = translations.types.ssvep;
 const evoked = translations.types.evoked;
 const predict = translations.types.predict;
 
-const io = require('socket.io-client');
-  
-
-
-
 export function PageSwitcher() {
 
   // For auxEnable settings
@@ -233,7 +228,6 @@ export function PageSwitcher() {
   }
 
   async function connect() {
-    window.socket = await io.connect('http://localhost:8080');
 
     try {
 
