@@ -26,7 +26,7 @@ io.on('connection', function(socket){
     // data back to the producer so we broadcast on yet another namespace, 
     // outgoing data.
     socket.broadcast.emit("outgoing data", {num: data});
-    console.log('broadcast outgoing data', data);
+    console.log('broadcast outgoing data', data.userName, data.info.startTime);
     
   });
   

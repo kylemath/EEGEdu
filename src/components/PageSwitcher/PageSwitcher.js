@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { MuseClient, zipSamples } from "muse-js";
-import { Card, Stack, Button, ButtonGroup, Checkbox , RangeSlider, Modal, TextContainer,} from "@shopify/polaris";
+import { Card, Stack, Button, ButtonGroup, Checkbox , RangeSlider, Modal, TextContainer, TextField} from "@shopify/polaris";
 import { mockMuseEEG } from "./utils/mockMuseEEG";
 import * as connectionText from "./utils/connectionText";
 import { emptyAuxChannelData } from "./utils/chartOptions";
@@ -60,6 +60,11 @@ export function PageSwitcher() {
   // For auxEnable settings
   const [checked, setChecked] = useState(false);
   const handleChange = useCallback((newChecked) => setChecked(newChecked), []);
+
+
+  const [userName, setUserName] = useState('RandomUser' + Math.floor(Math.random() * 101));
+  const userNameChange = useCallback((newValue) => setUserName(newValue), []);
+
       
   // ---- Manage Auxillary channel
 
@@ -198,6 +203,7 @@ export function PageSwitcher() {
             > 
               {'Stream to websocket'}  
             </Button>
+            <TextField label="Username" value={userName} onChange={userNameChange} />
           </ButtonGroup>
           <Modal
             open={recordPop}
@@ -241,8 +247,9 @@ export function PageSwitcher() {
         
         // The client webpage will emit the data to the 'incoming data' socket
         // namespace. This should be handled by the server.
-        socket.emit('incoming data', 1017)
-        console.log('emit incoming data: ', 1017)
+        x['userName'] = userName;
+        socket.emit('incoming data', x )
+        console.log('emit incoming data from user: ', x )
 
       },
       error(err) { console.log(err); },
