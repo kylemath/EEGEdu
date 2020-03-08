@@ -1,86 +1,13 @@
 import React from "react";
-import { TextContainer, Card, Stack, RangeSlider, Button, ButtonGroup, Modal,  } from "@shopify/polaris";
-import { multicast } from "rxjs/operators";
-import { take, takeUntil } from "rxjs/operators";
-import { Subject, timer } from "rxjs";
+import { TextContainer, Card, Stack, } from "@shopify/polaris";
 import { Line } from "react-chartjs-2";
-import { saveAs } from 'file-saver';
-import { channelNames, zipSamples } from "muse-js";
+import { channelNames } from "muse-js";
 import { chartStyles, generalOptions } from "../../utils/chartOptions";
-import * as connectionText from "../../utils/connectionText";
 import * as specificTranslations from "./translations/en";
 
-import { bandpassFilter, epoch, fft, sliceFFT} from "@neurosity/pipes";
-
-export function getSettings() {
-  return {
-    cutOffLow: 1,
-    cutOffHigh: 100,
-    interval: 100,
-    bins: 256,
-    sliceFFTLow: 1,
-    sliceFFTHigh: 100,
-    duration: 1024,
-    srate: 256,
-    name: 'Spectra',
-    secondsToSave: 10,
-    nchans: 4
-  }
-};
-
-export function buildPipe(source, Settings) {
-  if (window.subscriptions[Settings.name]) window.subscriptions[Settings.name].unsubscribe();
-
-  console.log("Building Multicast for " + Settings.name);
-  // Build Pipe 
-  window.multicasts[Settings.name] = zipSamples(source.eegReadings$).pipe(
-    bandpassFilter({ 
-      cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
-      nbChannels: Settings.nchans }),
-    epoch({
-      duration: Settings.duration,
-      interval: Settings.interval,
-      samplingRate: Settings.srate
-    }),
-    fft({ bins: Settings.bins }),
-    sliceFFT([Settings.sliceFFTLow, Settings.sliceFFTHigh])
-  ).pipe(multicast(() => new Subject()));
-}
-
-export function setup(setData, Settings, inData) {
-  console.log("Subscribing to " + Settings.name);
-
-  if (window.multicasts[Settings.name]) {
-    window.multicasts[Settings.name].connect();
-    window.subscriptions[Settings.name] = window.multicasts[Settings.name].subscribe(data => {
-      setData(inData => {
-        Object.values(inData).forEach((channel, index) => {
-          channel.datasets[0].data = data.psd[index];
-          channel.xLabels = data.freqs;
-        });
-
-        return {
-          ch0: inData.ch0,
-          ch1: inData.ch1,
-          ch2: inData.ch2,
-          ch3: inData.ch3,
-          ch4: inData.ch4
-        };
-      });
-    });
-
-    console.log("Subscribed to " + Settings.name);
-  }
-}
-
-export function renderModule(channels) {
+export function RenderModule(channels) {
   function renderCharts() {
-    let vertLim = Math.floor(Math.max(...[].concat.apply([], [channels.data.ch0.datasets[0].data,
-                channels.data.ch1.datasets[0].data,
-                channels.data.ch2.datasets[0].data,
-                channels.data.ch3.datasets[0].data,
-                channels.data.ch4.datasets[0].data])
-    ));    
+  
     const options = {
       ...generalOptions,
       scales: {
@@ -99,8 +26,8 @@ export function renderModule(channels) {
               labelString: specificTranslations.ylabel
             },
             ticks: {
-              max: vertLim,
-              min: vertLim * -1
+              max: 10,
+              min: 0
             }
           }
         ]
@@ -125,27 +52,27 @@ export function renderModule(channels) {
         datasets: [{
           label: channelNames[0],
           borderColor: 'rgba(217,95,2)',
-          data: channels.data.ch0.datasets[0].data.map(function(x) {return x * -1}),
+          data: channels.data.ch0.datasets[0].data,
           fill: false
         }, {
           label: channelNames[1],
           borderColor: 'rgba(27,158,119)',
-          data: channels.data.ch1.datasets[0].data.map(function(x) {return x * -1}),
+          data: channels.data.ch1.datasets[0].data,
           fill: false
         }, {
           label: channelNames[2],
           borderColor: 'rgba(117,112,179)',
-          data: channels.data.ch2.datasets[0].data.map(function(x) {return x + 0}),
+          data: channels.data.ch2.datasets[0].data,
           fill: false
         }, {
           label: channelNames[3],
           borderColor: 'rgba(231,41,138)',
-          data: channels.data.ch3.datasets[0].data.map(function(x) {return x + 0}),
+          data: channels.data.ch3.datasets[0].data,
           fill: false  
         }, {
           label: channelNames[4],
           borderColor: 'rgba(20,20,20)',
-          data: channels.data.ch4.datasets[0].data.map(function(x) {return x + 0}),
+          data: channels.data.ch4.datasets[0].data,
           fill: false  
         }],
         xLabels: channels.data.ch0.xLabels
@@ -176,196 +103,3 @@ export function renderModule(channels) {
   );
 }
 
-export function renderSliders(setData, setSettings, status, Settings, source) {
-
-  function resetPipeSetup(value) {
-    buildPipe(source, Settings);
-    setup(setData, Settings)
-  }
-
-  function handleIntervalRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, interval: value}));
-    resetPipeSetup();
-  }
-
-  function handleCutoffLowRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, cutOffLow: value}));
-    resetPipeSetup();
-  }
-
-  function handleCutoffHighRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, cutOffHigh: value}));
-    resetPipeSetup();
-  }
-
-  function handleSliceFFTLowRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, sliceFFTLow: value}));
-    resetPipeSetup();
-  }
-
-  function handleSliceFFTHighRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, sliceFFTHigh: value}));
-    resetPipeSetup();
-  }
-
-  function handleDurationRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, duration: value}));
-    resetPipeSetup();
-  }
-
-  return (
-    <Card title={Settings.name + ' Settings'} sectioned>
-      <RangeSlider 
-        disabled={status === connectionText.connect} 
-        min={128} step={128} max={4096}
-        label={'Epoch duration (Sampling Points): ' + Settings.duration} 
-        value={Settings.duration} 
-        onChange={handleDurationRangeSliderChange} 
-      />
-      <RangeSlider 
-        disabled={status === connectionText.connect} 
-        min={10} step={5} max={Settings.duration}
-        label={'Sampling points between epochs onsets: ' + Settings.interval} 
-        value={Settings.interval} 
-        onChange={handleIntervalRangeSliderChange} 
-      />
-      <RangeSlider 
-        disabled={status === connectionText.connect} 
-        min={.01} step={.5} max={Settings.cutOffHigh - .5}
-        label={'Cutoff Frequency Low: ' + Settings.cutOffLow + ' Hz'} 
-        value={Settings.cutOffLow} 
-        onChange={handleCutoffLowRangeSliderChange} 
-      />
-      <RangeSlider 
-        disabled={status === connectionText.connect} 
-        min={Settings.cutOffLow + .5} step={.5} max={Settings.srate/2}
-        label={'Cutoff Frequency High: ' + Settings.cutOffHigh + ' Hz'} 
-        value={Settings.cutOffHigh} 
-        onChange={handleCutoffHighRangeSliderChange} 
-      />
-      <RangeSlider 
-        disabled={status === connectionText.connect} 
-        min={1} max={Settings.sliceFFTHigh - 1}
-        label={'Slice FFT Lower limit: ' + Settings.sliceFFTLow + ' Hz'} 
-        value={Settings.sliceFFTLow} 
-        onChange={handleSliceFFTLowRangeSliderChange} 
-      />
-      <RangeSlider 
-        disabled={status === connectionText.connect} 
-        min={Settings.sliceFFTLow + 1}
-        label={'Slice FFT Upper limit: ' + Settings.sliceFFTHigh + ' Hz'} 
-        value={Settings.sliceFFTHigh} 
-        onChange={handleSliceFFTHighRangeSliderChange} 
-      />
-    </Card>
-  )
-}
-
-export function renderRecord(recordPopChange, recordPop, status, Settings, setSettings) {
-
-  function handleSecondsToSaveRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, secondsToSave: value}));
-  }
- 
-  return(
-    <Card title={'Record ' + Settings.name +' Data'} sectioned>
-      <Stack>
-        <RangeSlider 
-          disabled={status === connectionText.connect} 
-          min={2}
-          max={180}
-          label={'Recording Length: ' + Settings.secondsToSave + ' Seconds'} 
-          value={Settings.secondsToSave} 
-          onChange={handleSecondsToSaveRangeSliderChange} 
-        />
-        <ButtonGroup>
-          <Button 
-            onClick={() => {
-              saveToCSV(Settings);
-              recordPopChange();
-            }}
-            primary={status !== connectionText.connect}
-            disabled={status === connectionText.connect}
-          > 
-            {'Save to CSV'}  
-          </Button>
-        </ButtonGroup>
-        <Modal
-          open={recordPop}
-          onClose={recordPopChange}
-          title="Recording Data"
-        >
-          <Modal.Section>
-            <TextContainer>
-              <p>
-                Your data is currently recording, 
-                once complete it will be downloaded as a .csv file 
-                and can be opened with your favorite spreadsheet program. 
-                Close this window once the download completes.
-              </p>
-            </TextContainer>
-          </Modal.Section>
-        </Modal>
-      </Stack>
-    </Card>
-  )
-}
-
-
-function saveToCSV(Settings) {
-  console.log('Saving ' + Settings.secondsToSave + ' seconds...');
-  var localObservable$ = null;
-  const dataToSave = [];
-
-  console.log('making ' + Settings.name + ' headers')
-
-  // take one sample from selected observable object for headers
-  localObservable$ = window.multicastSpectra$.pipe(
-    take(1)
-  );
-
-  localObservable$.subscribe({ 
-    next(x) { 
-      let freqs = Object.values(x.freqs);
-      dataToSave.push(
-        "Timestamp (ms),",
-        freqs.map(function(f) {return "ch0_" + f + "Hz"}) + ",", 
-        freqs.map(function(f) {return "ch1_" + f + "Hz"}) + ",", 
-        freqs.map(function(f) {return "ch2_" + f + "Hz"}) + ",", 
-        freqs.map(function(f) {return "ch3_" + f + "Hz"}) + ",", 
-        freqs.map(function(f) {return "chAux_" + f + "Hz"}) + ",", 
-        freqs.map(function(f) {return "f_" + f + "Hz"}) + "," , 
-        "info", 
-        "\n"
-      );   
-    }
-  });
-
-  // Create timer 
-  const timer$ = timer(Settings.secondsToSave * 1000);
-
-  // put selected observable object into local and start taking samples
-  localObservable$ = window.multicastSpectra$.pipe(
-    takeUntil(timer$)
-  );   
-
-
-  // now with header in place subscribe to each epoch and log it
-  localObservable$.subscribe({
-    next(x) { 
-      dataToSave.push(Date.now() + "," + Object.values(x).join(",") + "\n");
-      // logging is useful for debugging -yup
-      // console.log(x);
-    },
-    error(err) { console.log(err); },
-    complete() { 
-      console.log('Trying to save')
-      var blob = new Blob(
-        dataToSave, 
-        {type: "text/plain;charset=utf-8"}
-      );
-      saveAs(blob, Settings.name + "_Recording_" + Date.now() + ".csv");
-      console.log('Completed');
-    }
-  });
-}
