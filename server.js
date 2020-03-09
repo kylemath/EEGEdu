@@ -12,6 +12,10 @@ app.get("/", function(req, res) {
   res.sendFile(path.join(__dirname, "build", "index.html"));
 });
 
+app.get("/together", function(req, res) {
+  res.sendFile(path.join(__dirname, "build", "together.html"));
+});
+
 // app.listen(process.env.PORT || 3000);
 
 io.on('connection', function(socket){
