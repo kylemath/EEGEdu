@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <title>EEGEdu</title>
-
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/@shopify/polaris@4.9.0/styles.min.css" />
   </head
   >
@@ -17,15 +17,22 @@
         Testing
       </h1>
       <p>One, two, three...</p>
+      <ul id="messages"></ul>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      var socket = io();
-      console.log(socket);
-      socket.on('outgoing data', function (data) {
-        console.log(data);
-        socket.emit('my other event', { my: 'data' });
+      $(function () {
+        var socket = io();
+        console.log('socket details', socket);
+        socket.on('outgoing data', function (data) {
+          var user = data['num']['userName'];
+          var reading = data['num']['psd'][0][10];
+          
+          $('#messages').prepend($('<li>').text(`${user}: ${reading}`));
+          console.log(data);
+          // socket.emit('graph response', { my: 'data' });
+        });
       });
     </script>
   </body>
