@@ -8,6 +8,8 @@
     <meta http-equiv="Expires" content="0" />
     <title>EEGEdu</title>
     <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/smoothie/1.34.0/smoothie.min.js" integrity="sha256-s4pCizM36ibu/qMLSJHZLwhA5sV0/Jn1J/1TrzryEKQ=" crossorigin="anonymous"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/@shopify/polaris@4.9.0/styles.min.css" />
   </head
   >
@@ -17,10 +19,27 @@
         Testing
       </h1>
       <p>One, two, three...</p>
+      <canvas id="mycanvas" width="400" height="100"></canvas>
       <ul id="messages"></ul>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      // Random data
+      var line1 = new TimeSeries();
+      var line2 = new TimeSeries();
+      
+      // setInterval(function() {
+      //   line1.append(new Date().getTime(), Math.random());
+      //   line2.append(new Date().getTime(), Math.random());
+      // }, 1000);
+
+      var smoothie = new SmoothieChart({ grid: { strokeStyle: 'rgb(125, 0, 0)', fillStyle: 'rgb(60, 0, 0)', lineWidth: 1, millisPerLine: 250, verticalSections: 6 } });
+      smoothie.addTimeSeries(line1, { strokeStyle: 'rgb(0, 255, 0)', fillStyle: 'rgba(0, 255, 0, 0.4)', lineWidth: 3 });
+      smoothie.addTimeSeries(line2, { strokeStyle: 'rgb(255, 0, 255)', fillStyle: 'rgba(255, 0, 255, 0.3)', lineWidth: 3 });
+
+      smoothie.streamTo(document.getElementById("mycanvas"), 1000);
+    </script>
+
     <script>
       $(function () {
         var socket = io();
@@ -28,8 +47,11 @@
         socket.on('outgoing data', function (data) {
           var user = data['num']['userName'];
           var reading = data['num']['psd'][0][10];
+
+          line1.append(new Date().getTime(), reading);
+          line2.append(new Date().getTime(), Math.random());
           
-          $('#messages').prepend($('<li>').text(`${user}: ${reading}`));
+          $('#messages').prepend($('<li>').text(`[${user}]: ${reading}`));
           console.log(data);
           // socket.emit('graph response', { my: 'data' });
         });
