@@ -24,9 +24,6 @@
     </div>
 
     <script>
-      // Random data
-      var line0 = new TimeSeries();
-      var line1 = new TimeSeries();
 
       var userMap = {};
 
@@ -51,7 +48,6 @@
 
           $('#messages').prepend($('<li>').text(`[${user}]: ${reading} `));
           console.log(data['num']['userName']);
-          // socket.emit('graph response', { my: 'data' });
         });
       });
     </script>
