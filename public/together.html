@@ -16,36 +16,48 @@
   <body>
     <div id="together">
       <h1>
-        Testing
+        Start streaming data from subscribers
       </h1>
-      <p>One, two, three...</p>
-      <canvas id="mycanvas" width="400" height="100"></canvas>
+      <p>Plots will appear for each user connected:</p>
+
+      <canvas id="mycanvas1" width="100" height="100"></canvas>
+      <canvas id="mycanvas2" width="100" height="100"></canvas>
+      <canvas id="mycanvas3" width="100" height="100"></canvas>
+      <canvas id="mycanvas4" width="100" height="100"></canvas>
+      <canvas id="mycanvas5" width="100" height="100"></canvas>
+      <canvas id="mycanvas6" width="100" height="100"></canvas>
+      <canvas id="mycanvas7" width="100" height="100"></canvas>
+      <canvas id="mycanvas8" width="100" height="100"></canvas>
+
       <ul id="messages"></ul>
     </div>
 
     <script>
-
-      var userMap = {};
-
-      var smoothie = new SmoothieChart({ grid: { strokeStyle: 'rgb(125, 0, 0)', fillStyle: 'rgb(60, 0, 0)', lineWidth: 1, millisPerLine: 250, verticalSections: 6 } });
-
-      smoothie.streamTo(document.getElementById("mycanvas"), 1000);
+      var allData = {};
+      var allCharts = {};
+      var userCount = 0;
     </script>
-
     <script>
       $(function () {
         var socket = io();
         console.log('socket details', socket);
         socket.on('outgoing data', function (data) {
+
           var user = data['num']['userName'];
           var reading = data['num']['psd'][0][10];
-          if (!userMap[user]) {
-            userMap[user] = new TimeSeries();
-            smoothie.addTimeSeries(userMap[user], {strokeStyle: 'hsl(' + Math.floor(Math.random() * 255) + ', 99%, 50%)', lineWidth: 3 });
+
+          if (!allData[user]) {
+            userCount++ 
+            allData[user] = new TimeSeries();
+
+            allCharts[user] = new SmoothieChart({ millisPerPixel: 88, minValue: 0, maxValue: 20, grid: { strokeStyle: 'rgb(125, 0, 0)', fillStyle: 'rgb(60, 0, 0)', lineWidth: 1, millisPerLine: 250, verticalSections: 6 } });
+            allCharts[user].streamTo(document.getElementById("mycanvas" + userCount), 1000);
+            thisColour = 'hsl(' + Math.floor(Math.random() * 255) + ', 99%, 50%)';
+            allCharts[user].addTimeSeries(allData[user], {strokeStyle: thisColour, fillStyle: thisColour});
             console.log('Welcome new user ' + user)
           }
-          userMap[user].append(new Date().getTime(), reading);
 
+          allData[user].append(new Date().getTime(), reading);
           $('#messages').prepend($('<li>').text(`[${user}]: ${reading} `));
           console.log(data['num']['userName']);
         });
