@@ -25,6 +25,58 @@
 <img src="logo.png" alt="Interactive Brain Playground Logo" width=500 />
 </p>
 
+# REMIX2 - server and client architecture
+
+To start, you will need to install [Homebrew](https://brew.sh) and [npm](https://nodejs.org/en/). These are easy to install with the following Terminal / `bash` commands:
+
+```sh
+## Install homebrew
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+## Install npm
+# NOTE: this will also install Node.js if it is not already installed.
+brew install node 
+
+# NOTE: Node.js must be version 10.x for Muse interaction
+
+# Thus, if you are getting version issues, install n, with the following command:
+sudo npm install -g n
+
+# Then, you can switch to version 10.x with the following command:
+sudo n 10.16.0
+```
+
+Then, in Terminal/`bash`, clone this Git repository and change directory into the newly cloned folder:
+
+```sh
+git clone https://github.com/kylemath/EEGEdu
+cd EEGEdu
+```
+
+Then, you can install the required `npm` packages for EEGEdu:
+
+```sh
+npm install
+```
+
+## Local Development Environment
+Then, you can run the *Local Development Environment* of EEGEdu:
+
+```sh
+npm start
+```
+
+Then go to https://localhost:3000 in the browser to start a client instance. In another browser window go to https://localhost:3000/together to see the server side, where all the clients data is streamed into.
+
+
+
+
+
+
+
+
+# OLD STUFF
+
 `EEGEdu` is an Interactive Brain Playground. 
 
 `EEGEdu` is served live at [https://eegedu.com/](https://eegedu.com). This website is served from the software in this repository. So, all you need to do to try the system out is head to [EEGEdu](https://eegedu.com/).
