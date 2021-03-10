@@ -70,7 +70,7 @@
     "This signal now has descrete time steps and descrete difference in voltage. ",
     "The hardware's sampling rate controls how many samples of voltage per second (in Hz) are recorded. For example Muse 2 records 256 samples per second. ",
     "The digitization's bit depth, or how many memory bits are used to represent each voltage value, influence the smallest change in voltage that a system can measure. ",
-    "Finally, since there are multiple electrode locations, these individual signals need to be digitized quickly one after another each recording cycle, this is called mulitplexing. "
+    "Finally, since there are multiple electrode locations, these individual signals need to be digitized quickly one after another each recording cycle, this is called multiplexing. "
   ],  
   "hardware5": [
     "One important consideration is the electrical conductivity between the head and the sensor. ",
