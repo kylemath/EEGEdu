@@ -38,7 +38,7 @@ export function getSettings() {
     duration: 1024,
     srate: 256,
     name: 'Ssvep',
-    secondsToSave: 10
+    secondsToSave: 60
   }
 };
 

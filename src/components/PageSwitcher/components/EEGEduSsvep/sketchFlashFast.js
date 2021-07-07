@@ -1,7 +1,7 @@
 export default function sketchFlash (p) {
 
 
-  const freq = 11; 
+  const freq = 15; 
   let x = 0;
   let startTime = 0;
   let newOnset = true;
