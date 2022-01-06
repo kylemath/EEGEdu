@@ -1,0 +1,11 @@
+{
+  "title": "Spectrogram (Spectra over time)",
+  "description": [
+    "Back to the full spectra, we can also look at how this changes over time in a single image. ",
+    "This image, with time on the horizontal x-axis and freqency on the vertical y-axis is like a heat map or topographic map. ",
+    "The most recent data is on the right side",
+    "Lighter regions are frequencies with larger power. ",
+    "Remember that on the frequency spectra power is the vertical dimension, here on the spectrogram the height of that line is shown as the lightness.",
+    "This plot is showing only data from the left frontal electrode AF7"
+  ]
+}

@@ -19,6 +19,9 @@ import * as funAlpha from "./components/EEGEduAlpha/EEGEduAlpha";
 import * as funSsvep from "./components/EEGEduSsvep/EEGEduSsvep";
 import * as funEvoked from "./components/EEGEduEvoked/EEGEduEvoked";
 import * as funPredict from "./components/EEGEduPredict/EEGEduPredict";
+import * as funPpg from "./components/EEGEduPpg/EEGEduPpg";
+
+
 
 const intro = translations.types.intro;
 const heartRaw = translations.types.heartRaw;
@@ -32,6 +35,7 @@ const alpha = translations.types.alpha;
 const ssvep = translations.types.ssvep;
 const evoked = translations.types.evoked;
 const predict = translations.types.predict;
+const ppg = translations.types.ppg;
 
 export function PageSwitcher() {
 
@@ -59,6 +63,7 @@ export function PageSwitcher() {
   const [ssvepData, setSsvepData] = useState(emptyAuxChannelData);
   const [evokedData, setEvokedData] = useState(emptyAuxChannelData);
   const [predictData, setPredictData] = useState(emptyAuxChannelData);
+  const [ppgData, setPpgData] = useState(emptyAuxChannelData);
 
   // pipe settings
   const [introSettings] = useState(funIntro.getSettings);
@@ -73,12 +78,13 @@ export function PageSwitcher() {
   const [ssvepSettings, setSsvepSettings] = useState(funSsvep.getSettings);
   const [evokedSettings, setEvokedSettings] = useState(funEvoked.getSettings);
   const [predictSettings, setPredictSettings] = useState(funPredict.getSettings);
+  const [ppgSettings, setPpgSettings] = useState(funPpg.getSettings);
 
   // connection status
   const [status, setStatus] = useState(generalTranslations.connect);
 
   // for picking a new module
-  const [selected, setSelected] = useState(intro);
+  const [selected, setSelected] = useState(ppg);
   const handleSelectChange = useCallback(value => {
     setSelected(value);
 
@@ -96,6 +102,7 @@ export function PageSwitcher() {
     if (window.subscriptionSsvep) window.subscriptionSsvep.unsubscribe();
     if (window.subscriptionEvoked) window.subscriptionEvoked.unsubscribe();
     if (window.subscriptionPredict) window.subscriptionPredict.unsubscribe();
+    if (window.subscriptionPpg) window.subscriptionPpg.unsubscribe();
 
     subscriptionSetup(value);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -146,6 +153,9 @@ export function PageSwitcher() {
     case predict:
       showAux = false;
       break
+    case ppg:
+      showAux = true;
+      break      
     default:
       console.log("Error on showAux");
   }
@@ -163,7 +173,8 @@ export function PageSwitcher() {
     { label: alpha, value: alpha },
     { label: ssvep, value: ssvep },
     { label: evoked, value: evoked },
-    { label: predict, value: predict }
+    { label: predict, value: predict },
+    { label: ppg, value: ppg }
 
   ];
 
@@ -180,6 +191,8 @@ export function PageSwitcher() {
     funSsvep.buildPipe(ssvepSettings);
     funEvoked.buildPipe(evokedSettings);
     funPredict.buildPipe(predictSettings);
+    funPpg.buildPipe(ppgSettings);
+
   }
 
   function subscriptionSetup(value) {
@@ -220,6 +233,9 @@ export function PageSwitcher() {
       case predict:
         funPredict.setup(setPredictData, predictSettings);
         break;
+      case ppg:
+        funPpg.setup(setPpgData, ppgSettings);
+        break;        
       default:
         console.log(
           "Error on handle Subscriptions. Couldn't switch to: " + value
@@ -306,6 +322,10 @@ export function PageSwitcher() {
         return (
           funPredict.renderSliders(setPredictData, setPredictSettings, status, predictSettings)
         );
+      case ppg: 
+        return (
+          funPpg.renderSliders(setPpgData, setPpgSettings, status, ppgSettings)
+        );        
       default: console.log('Error rendering settings display');
     }
   }
@@ -336,6 +356,8 @@ export function PageSwitcher() {
         return <funEvoked.renderModule data={evokedData} />;
       case predict:
         return <funPredict.renderModule data={predictData} />;
+      case ppg:
+        return <funPpg.renderModule data={ppgData} />;      
       default:
         console.log("Error on renderCharts switch.");
     }
@@ -385,6 +407,8 @@ export function PageSwitcher() {
         return (
           funPredict.renderRecord(recordPopChange, status)
         )
+      case predict:
+        return null
       default:   
         console.log("Error on renderRecord.");
     }
