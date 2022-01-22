@@ -5,16 +5,12 @@ import { zipSamples } from "muse-js";
 import { bandpassFilter, epoch, fft, powerByBand } from "@neurosity/pipes";
 import { catchError, multicast } from "rxjs/operators";
 import { Subject } from "rxjs";
-
-import { mockMuseEEG } from "../../utils/mockMuseEEG";
-
-import { chartStyles } from "../chartOptions";
-
 import Sketch from "react-p5";
-
 import styled from "styled-components";
 import { LiveProvider, LiveEditor, LiveError, LivePreview } from "react-live";
 
+import { mockMuseEEG } from "../../utils/mockMuseEEG";
+import { chartStyles } from "../chartOptions";
 import theme from "./p5Theme";
 
 const animateSettings = {
