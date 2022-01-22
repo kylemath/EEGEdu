@@ -1,7 +1,7 @@
 import React, {useState, useCallback}  from "react";
 import { catchError, multicast } from "rxjs/operators";
 
-import { Card, Stack, TextContainer, RangeSlider, Button, ButtonGroup} from "@shopify/polaris";
+import { Card, RangeSlider, Button, ButtonGroup} from "@shopify/polaris";
 import { Subject } from "rxjs";
 
 import { zipSamples } from "muse-js";
@@ -146,7 +146,7 @@ export function renderModule(channels) {
         const code =  
 `class MySketch extends React.Component {
   setup(p5, whereToPlot) {
-    p5.createCanvas(200, 200, p5.WEBGL).parent(whereToPlot)
+    p5.createCanvas(500, 500, p5.WEBGL).parent(whereToPlot)
   }
   draw(p5) {
     HEIGHT = p5.height
@@ -163,10 +163,10 @@ export function renderModule(channels) {
     //Change the code here:
 
     p5.background(255,200,200);
-    p5.fill(ALPHA*100,0,0);
+    p5.fill(0,0,0);
     p5.stroke(10,10,10); 
     // p5.noStroke();
-    p5.ellipse(MOUSEX,MOUSEY,10);
+    p5.ellipse(MOUSEX-250,MOUSEY-250,10);
     // p5.rect(40,120,120,40);
     // p5.triangle(30,10,32,10,31,8);
     // p5.translate();
@@ -239,11 +239,6 @@ render(
   return (
     <Card title={specificTranslations.title}>
       <Card.Section>
-        <Stack>
-          <TextContainer>
-            <p>{specificTranslations.description}</p>
-          </TextContainer>
-        </Stack>
       </Card.Section>
       <Card.Section>
         <div style={chartStyles.wrapperStyle.style}>{RenderCharts()}</div>
