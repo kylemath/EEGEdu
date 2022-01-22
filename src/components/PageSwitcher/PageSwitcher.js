@@ -10,6 +10,8 @@ import { emptyChannelData } from "./components/chartOptions";
 
 import * as funAnimate from "./components/EEGEduAnimate/EEGEduAnimate"
 
+import { messageService, subscriber } from './utils/messageService';
+
 const animate = translations.types.animate;
 
 export function PageSwitcher() {

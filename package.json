@@ -25,7 +25,7 @@
     "react-p5": "^1.1.8",
     "react-p5-wrapper": "^2.0.0",
     "react-scripts": "^3.2.0",
-    "rxjs": "^6.5.3",
+    "rxjs": "^6.6.7",
     "spectacle": "^5.7.2",
     "styled-components": "^4.4.1"
   },
