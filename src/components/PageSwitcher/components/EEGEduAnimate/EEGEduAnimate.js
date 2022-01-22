@@ -44,11 +44,6 @@ export function getSettings () {
 };
 
 export function buildPipe(Settings) {
-  if (window.subscriptionBands) window.subscriptionBands.unsubscribe();
-
-  window.pipeBands$ = null;
-  window.multicastBands$ = null;
-  window.subscriptionBands = null;
 
   // Build Pipe
   window.pipeBands$ = zipSamples(window.source.eegReadings$).pipe(
@@ -61,10 +56,7 @@ export function buildPipe(Settings) {
       samplingRate: Settings.srate
     }),
     fft({ bins: Settings.bins }),
-    powerByBand(),
-    catchError(err => {
-      console.log(err);
-    })
+    powerByBand()
   );
   window.multicastBands$ = window.pipeBands$.pipe(
     multicast(() => new Subject())
@@ -107,12 +99,9 @@ export function setup(setData, Settings) {
 export function renderModule(channels) {
   function RenderCharts() {
 
-        // for popup flag when recording
     const [sketchPop, setSketchPop] = useState(false);
     const sketchPopChange = useCallback(() => setSketchPop(!sketchPop), [sketchPop]);
 
-
-    // Default values for the headerProps
     window.headerProps = { 
       delta: 0,
       theta: 0,
@@ -166,7 +155,7 @@ export function renderModule(channels) {
     p5.fill(0,0,0);
     p5.stroke(10,10,10); 
     // p5.noStroke();
-    p5.ellipse(MOUSEX-250,MOUSEY-250,10);
+    p5.ellipse(MOUSEX-250,MOUSEY-250,DELTA*10);
     // p5.rect(40,120,120,40);
     // p5.triangle(30,10,32,10,31,8);
     // p5.translate();
