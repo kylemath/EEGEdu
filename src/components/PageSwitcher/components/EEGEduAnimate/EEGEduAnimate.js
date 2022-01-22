@@ -105,7 +105,7 @@ export function Animate(connection) {
         p5.fill(0,0,0);
         p5.stroke(10,10,10);
         // p5.noStroke();
-        p5.ellipse(MOUSEX-250,MOUSEY-250,DELTA);
+        p5.ellipse(MOUSEX-250,MOUSEY-250,20);
         // p5.rect(40,120,120,40);
         // p5.triangle(30,10,32,10,31,8);
         // p5.translate();
@@ -136,7 +136,15 @@ export function Animate(connection) {
   }
 
   return (
-    <Card>
+    <Card title="Animate your brain waves">
+      <Card.Section>
+        <p>
+          The code below is editable. Play around with the numbers and see what
+          happens. The Alpha, Beta, Gamma, Delta, Theta variables are only
+          available if there is a data source connected.
+        </p>
+      </Card.Section>
+
       <Card.Section>
         {console.log(brain)}
         <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
