@@ -1,23 +1,8 @@
 import React, {useState, useCallback}  from "react";
-import { catchError, multicast } from "rxjs/operators";
 
-import { Card, RangeSlider, Button, ButtonGroup} from "@shopify/polaris";
-import { Subject } from "rxjs";
-
-import { zipSamples } from "muse-js";
-
-import {
-  bandpassFilter,
-  epoch,
-  fft,
-  powerByBand
-} from "@neurosity/pipes";
+import { Card, Button, ButtonGroup} from "@shopify/polaris";
 
 import { chartStyles } from "../chartOptions";
-
-import * as generalTranslations from "../translations/en";
-import * as specificTranslations from "./translations/en";
-import { bandLabels } from "../../utils/chartUtils";
 
 import Sketch from 'react-p5'
 
@@ -42,59 +27,6 @@ export function getSettings () {
     srate: 256
   }
 };
-
-export function buildPipe(Settings) {
-
-  // Build Pipe
-  window.pipeBands$ = zipSamples(window.source.eegReadings$).pipe(
-    bandpassFilter({ 
-      cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
-      nbChannels: Settings.nbChannels }),
-    epoch({
-      duration: Settings.duration,
-      interval: Settings.interval,
-      samplingRate: Settings.srate
-    }),
-    fft({ bins: Settings.bins }),
-    powerByBand()
-  );
-  window.multicastBands$ = window.pipeBands$.pipe(
-    multicast(() => new Subject())
-  );
-}
-
-export function setup(setData, Settings) {
-  console.log("Subscribing to " + Settings.name);
-
-  if (window.multicastBands$) {
-    window.subscriptionBands = window.multicastBands$.subscribe(data => {
-      setData(bandsData => {
-        Object.values(bandsData).forEach((channel, index) => {
-          if (index < 4) {
-            channel.datasets[0].data = [
-              data.delta[index],
-              data.theta[index],
-              data.alpha[index],
-              data.beta[index],
-              data.gamma[index]
-            ];
-            channel.xLabels = bandLabels;
-          }
-        });
-
-        return {
-          ch0: bandsData.ch0,
-          ch1: bandsData.ch1,
-          ch2: bandsData.ch2,
-          ch3: bandsData.ch3
-        };
-      });
-    });
-
-    window.multicastBands$.connect();
-    console.log("Subscribed to " + Settings.name);
-  }
-}
 
 export function renderModule(channels) {
   function RenderCharts() {
@@ -226,7 +158,7 @@ render(
   }
 
   return (
-    <Card title={specificTranslations.title}>
+    <Card title={'title'}>
       <Card.Section>
       </Card.Section>
       <Card.Section>
@@ -236,64 +168,4 @@ render(
   );
 }
 
-export function renderSliders(setData, setSettings, status, Settings) {
-
-  function resetPipeSetup(value) {
-    buildPipe(Settings);
-    setup(setData, Settings);
-  }
-
-  function handleIntervalRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, interval: value}));
-    resetPipeSetup();
-  }
-
-  function handleCutoffLowRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, cutOffLow: value}));
-    resetPipeSetup();
-  }
-
-  function handleCutoffHighRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, cutOffHigh: value}));
-    resetPipeSetup();
-  }
-
-  function handleDurationRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, duration: value}));
-    resetPipeSetup();
-  }
-
-  return (
-    <React.Fragment>
-      <RangeSlider 
-        disabled={status === generalTranslations.connect}
-        min={128} step={128} max={4096} 
-        label={'Epoch duration (Sampling Points): ' + Settings.duration} 
-        value={Settings.duration} 
-        onChange={handleDurationRangeSliderChange} 
-      />
-      <RangeSlider 
-        disabled={status === generalTranslations.connect}
-        min={10} step={5} max={Settings.duration} 
-        label={'Sampling points between epochs onsets: ' + Settings.interval} 
-        value={Settings.interval} 
-        onChange={handleIntervalRangeSliderChange} 
-      />
-      <RangeSlider 
-        disabled={status === generalTranslations.connect}
-        min={.01} step={.5} max={Settings.cutOffHigh - .5} 
-        label={'Cutoff Frequency Low: ' + Settings.cutOffLow + ' Hz'} 
-        value={Settings.cutOffLow} 
-        onChange={handleCutoffLowRangeSliderChange} 
-      />
-      <RangeSlider 
-        disabled={status === generalTranslations.connect}
-        min={Settings.cutOffLow + .5} step={.5} max={Settings.srate/2} 
-        label={'Cutoff Frequency High: ' + Settings.cutOffHigh + ' Hz'} 
-        value={Settings.cutOffHigh} 
-        onChange={handleCutoffHighRangeSliderChange} 
-      />
-    </React.Fragment>
-  )
-}
 

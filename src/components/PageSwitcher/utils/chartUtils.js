@@ -16,8 +16,6 @@ function average(data){
   return avg;
 }
 
-export const bandLabels = ["Delta", "Theta", "Alpha", "Beta", "Gamma"];
-
 // Generate xTics
 export function generateXTics(srate, duration, reverse = true) {
   let tics = [];
