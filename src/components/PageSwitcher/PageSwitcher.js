@@ -7,7 +7,10 @@ import { mockMuseEEG } from "./utils/mockMuseEEG";
 import * as generalTranslations from "./components/translations/en";
 import { emptyChannelData } from "./components/chartOptions";
 
-import * as funAnimate from "./components/EEGEduAnimate/EEGEduAnimate"
+import {
+  settings as animateSettings,
+  Animate,
+} from "./components/EEGEduAnimate/EEGEduAnimate";
 
 // import { messageService, subscriber } from './utils/messageService';
 
@@ -16,97 +19,82 @@ import { zipSamples } from "muse-js";
 import { multicast } from "rxjs/operators";
 import { Subject } from "rxjs";
 
-import {
-  bandpassFilter,
-  epoch,
-  fft,
-  powerByBand
-} from "@neurosity/pipes";
+import { bandpassFilter, epoch, fft, powerByBand } from "@neurosity/pipes";
 
 export function PageSwitcher() {
-  
-  // data pulled out of multicast$
-  const [animateData, setAnimateData] = useState(emptyChannelData);
-  // pipe settings
-  const [animateSettings] = useState(funAnimate.getSettings);
-  // connection status
-  const [status, setStatus] = useState(generalTranslations.connect);
+  const [channelData, setChannelData] = useState(emptyChannelData);
+  const [connectionStatus, setConnectionStatus] = useState({
+    connected: false,
+    type: undefined,
+  });
 
-   //setup
+  async function connect(connectionType) {
+    let isConnected = false;
 
+    if (connectionType === "mock") {
+      window.source = {};
+      window.source.eegReadings$ = mockMuseEEG(256);
 
-  async function connect() {
-      if (window.debugWithMock) {
-        setStatus(generalTranslations.connectingMock);
-        window.source = {};
-        window.source.connectionStatus = {};
-        window.source.connectionStatus.value = true;
-        window.source.eegReadings$ = mockMuseEEG(256);
-        setStatus(generalTranslations.connectedMock);
-      } else {
-        setStatus(generalTranslations.connecting);
-        window.source = new MuseClient();
-        await window.source.connect();
-        await window.source.start();
-        window.source.eegReadings$ = window.source.eegReadings;
-        setStatus(generalTranslations.connected);
-      }
-      if (
-        window.source.connectionStatus.value === true &&
-        window.source.eegReadings$
-      ) {
+      isConnected = true;
+      setConnectionStatus({ connected: true, type: "mock" });
+    } else {
+      window.source = new MuseClient();
+      await window.source.connect();
+      await window.source.start();
+      window.source.eegReadings$ = window.source.eegReadings;
 
-        window.pipeBands$ = zipSamples(window.source.eegReadings$).pipe(
-          bandpassFilter({ 
-            cutoffFrequencies: [animateSettings.cutOffLow, animateSettings.cutOffHigh], 
-            nbChannels: animateSettings.nbChannels }),
-          epoch({
-            duration: animateSettings.duration,
-            interval: animateSettings.interval,
-            samplingRate: animateSettings.srate
-          }),
-          fft({ bins: animateSettings.bins }),
-          powerByBand()
-        );
-        window.multicastBands$ = window.pipeBands$.pipe(
-          multicast(() => new Subject())
-        );
+      isConnected = true;
+      setConnectionStatus({ connected: true, type: "muse" });
+    }
 
-        if (window.multicastBands$) {
-            window.multicastBands$.subscribe(data => {
-              setAnimateData(bandsData => {
-                Object.values(bandsData).forEach((channel, index) => {
-                  if (index < 4) {
-                    channel.datasets[0].data = [
-                      data.delta[index],
-                      data.theta[index],
-                      data.alpha[index],
-                      data.beta[index],
-                      data.gamma[index]
-                    ];
-                  }
-                });
+    if (isConnected && window.source.eegReadings$) {
+      window.pipeBands$ = zipSamples(window.source.eegReadings$).pipe(
+        bandpassFilter({
+          cutoffFrequencies: [
+            animateSettings.cutOffLow,
+            animateSettings.cutOffHigh,
+          ],
+          nbChannels: animateSettings.nbChannels,
+        }),
+        epoch({
+          duration: animateSettings.duration,
+          interval: animateSettings.interval,
+          samplingRate: animateSettings.srate,
+        }),
+        fft({ bins: animateSettings.bins }),
+        powerByBand()
+      );
+      window.multicastBands$ = window.pipeBands$.pipe(
+        multicast(() => new Subject())
+      );
 
-                return {
-                  ch0: bandsData.ch0,
-                  ch1: bandsData.ch1,
-                  ch2: bandsData.ch2,
-                  ch3: bandsData.ch3
-                };
-              });
+      if (window.multicastBands$) {
+        window.multicastBands$.subscribe((data) => {
+          setChannelData((bandsData) => {
+            Object.values(bandsData).forEach((channel, index) => {
+              if (index < 4) {
+                channel.datasets[0].data = [
+                  data.delta[index],
+                  data.theta[index],
+                  data.alpha[index],
+                  data.beta[index],
+                  data.gamma[index],
+                ];
+              }
             });
 
-            window.multicastBands$.connect();
-          }
+            return {
+              ch0: bandsData.ch0,
+              ch1: bandsData.ch1,
+              ch2: bandsData.ch2,
+              ch3: bandsData.ch3,
+            };
+          });
+        });
+
+        window.multicastBands$.connect();
       }
-  }
-
-  function refreshPage(){
-    window.location.reload();
-  }
-
-  function renderCharts() {
-    return <funAnimate.renderModule data={animateData} />;
+    }
   }
 
   return (
@@ -115,38 +103,40 @@ export function PageSwitcher() {
         <Stack>
           <ButtonGroup>
             <Button
-              primary={status === generalTranslations.connect}
-              disabled={status !== generalTranslations.connect}
+              primary
+              disabled={connectionStatus.connected}
               onClick={() => {
-                window.debugWithMock = false;
-                connect();
+                connect("muse");
               }}
             >
-              {status}
+              {connectionStatus.connected && connectionStatus.type === "muse"
+                ? "Connected"
+                : generalTranslations.connectMuse}
             </Button>
             <Button
-              disabled={status !== generalTranslations.connect}
+              primary
+              disabled={connectionStatus.connected}
               onClick={() => {
-                window.debugWithMock = true;
-                connect();
+                connect("mock");
               }}
             >
-              {status === generalTranslations.connect ? generalTranslations.connectMock : status}
+              {connectionStatus.connected && connectionStatus.type === "mock"
+                ? "Connected"
+                : generalTranslations.connectMock}
             </Button>
             <Button
               destructive
-              onClick={refreshPage}
-              primary={status !== generalTranslations.connect}
-              disabled={status === generalTranslations.connect}
+              onClick={() => window.location.reload()}
+              primary={!connectionStatus.connected}
+              disabled={!connectionStatus.connected}
             >
               {generalTranslations.disconnect}
-            </Button>     
+            </Button>
           </ButtonGroup>
         </Stack>
       </Card>
-    
-      {renderCharts()}
 
+      <Animate data={channelData} />
     </React.Fragment>
   );
 }
