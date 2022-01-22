@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useRef } from "react";
 
 import { Card } from "@shopify/polaris";
 import { zipSamples } from "muse-js";
@@ -146,7 +146,6 @@ export function Animate(connection) {
       </Card.Section>
 
       <Card.Section>
-        {console.log(brain)}
         <div style={chartStyles.wrapperStyle.style}>{renderCharts()}</div>
       </Card.Section>
     </Card>
