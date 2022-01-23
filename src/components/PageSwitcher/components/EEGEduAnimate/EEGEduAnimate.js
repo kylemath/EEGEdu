@@ -111,6 +111,7 @@ export function Animate(connection) {
         ALPHA = brain.current.alpha;
         BETA = brain.current.alpha;
         GAMMA = brain.current.gamma;
+
         //Change the code here:
         p5.background(255,200,200);
         p5.fill(0,0,0);
@@ -121,7 +122,8 @@ export function Animate(connection) {
         // p5.triangle(30,10,32,10,31,8);
         // p5.translate();
         // p5.rotate();
-        //Done change below here
+        //Don't change below here
+
       }
 
       render() {
