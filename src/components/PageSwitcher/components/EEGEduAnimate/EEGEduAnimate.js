@@ -65,11 +65,11 @@ export function Animate(connection) {
 
       multicastBands$.subscribe((data) => {
         brain.current = {
-          delta: 10 * data.alpha[0],
-          theta: 10 * data.alpha[1],
-          alpha: 10 * data.alpha[2],
-          beta: 10 * data.alpha[3],
-          gamma: 10 * data.alpha[4],
+          delta: 10 * data.delta[1],
+          theta: 10 * data.theta[1],
+          alpha: 10 * data.alpha[1],
+          beta: 10 * data.beta[1],
+          gamma: 10 * data.gamma[1],
           textMsg: "Data received",
         };
       });
