@@ -1,7 +1,6 @@
 import React, { useRef } from "react";
-
 import { Card } from "@shopify/polaris";
-import { zipSamples } from "muse-js";
+import { zipSamples, MuseClient } from "muse-js";
 import { bandpassFilter, epoch, fft, powerByBand } from "@neurosity/pipes";
 import { catchError, multicast } from "rxjs/operators";
 import { Subject } from "rxjs";
@@ -36,10 +35,24 @@ export function Animate(connection) {
   let channelData$;
   let pipeBands$;
   let multicastBands$;
+  let museClient;
 
-  if (connection.status.connected) {
-    if (connection.status.type === "mock") {
-      channelData$ = mockMuseEEG(256);
+  async function connectMuse() {
+    museClient = new MuseClient();
+    await museClient.connect();
+    await museClient.start();
+
+    return;
+  }
+
+  async function buildBrain() {
+    if (connection.status.connected) {
+      if (connection.status.type === "mock") {
+        channelData$ = mockMuseEEG(256);
+      } else {
+        await connectMuse();
+        channelData$ = museClient.eegReadings;
+      }
 
       pipeBands$ = zipSamples(channelData$).pipe(
         bandpassFilter({
@@ -77,6 +90,8 @@ export function Animate(connection) {
       multicastBands$.connect();
     }
   }
+
+  buildBrain();
 
   function renderCharts() {
     const scope = { styled, brain, React, Sketch };
