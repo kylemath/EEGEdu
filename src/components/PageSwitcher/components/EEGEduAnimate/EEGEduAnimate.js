@@ -126,11 +126,12 @@ export function Animate(connection) {
   function renderCharts() {
     const scope = { styled, brain, React, Sketch };
     const code = `
-    class MySketch extends React.Component {
+     class MySketch extends React.Component {
       setup(p5, whereToPlot) {
         p5.createCanvas(500, 500).parent(whereToPlot)
+        value = 0;
       }
-
+          
       draw(p5) {
         HEIGHT = p5.height
         WIDTH = p5.width;
@@ -140,21 +141,28 @@ export function Animate(connection) {
         LEFTALPHA = brain.current.RightFrontAlpha;
         RIGHTALPHA = brain.current.LeftFrontAlpha;
 
-        //Change the code here:
         p5.background(255,200,200);
-        p5.fill(255,255,255);
+        p5.fill(value);
         p5.stroke(10,10,10);
         p5.ellipse(MOUSEX-100,MOUSEY,LEFTALPHA*2);
         p5.ellipse(MOUSEX+100,MOUSEY,RIGHTALPHA*2);
-
- 
-        //Don't change below here
-
       }
 
+      mouseClicked(p5) {
+        if (value === 0) {
+          value = 255;
+          } else {
+          value = 0;
+          }
+      }
+      
       render() {
         return (
-           <Sketch setup={this.setup} draw={this.draw} />
+           <Sketch 
+             setup={this.setup} 
+             draw={this.draw} 
+             mouseClicked={this.mouseClicked}
+           />
         )
       }
 
