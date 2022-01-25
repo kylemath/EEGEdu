@@ -24,12 +24,27 @@ const animateSettings = {
 
 export function Animate(connection) {
   const brain = useRef({
-    delta: 0,
-    theta: 0,
-    alpha: 0,
-    beta: 0,
-    gamma: 0,
-    textMsg: "No data.",
+          LeftBackDelta: 0,
+          LeftBackTheta: 0, 
+          LeftBackAlpha: 0, 
+          LeftBackBeta: 0,
+          LeftBackGamma: 0,
+          LeftFrontDelta: 0,
+          LeftFrontTheta: 0,
+          LeftFrontAlpha: 0,
+          LeftFrontBeta: 0,
+          LeftFrontGamma: 0,
+          RightFrontDelta: 0,
+          RightFrontTheta: 0,
+          RightFrontAlpha: 0,
+          RightFrontBeta: 0, 
+          RightFrontGamma: 0,
+          RightBackDelta: 0,
+          RightBackTheta: 0,
+          RightBackAlpha: 0,
+          RightBackBeta: 0,
+          RightBackGamma: 0,                    
+          textMsg: "No data.",
   });
 
   let channelData$;
@@ -78,11 +93,26 @@ export function Animate(connection) {
 
       multicastBands$.subscribe((data) => {
         brain.current = {
-          delta: 10 * data.delta[1],
-          theta: 10 * data.theta[1],
-          alpha: 10 * data.alpha[1],
-          beta: 10 * data.beta[1],
-          gamma: 10 * data.gamma[1],
+          LeftBackDelta: 10 * data.delta[0],
+          LeftBackTheta: 10 * data.theta[0],
+          LeftBackAlpha: 10 * data.alpha[0],
+          LeftBackBeta: 10 * data.beta[0],
+          LeftBackGamma: 10 * data.gamma[0],
+          LeftFrontDelta: 10 * data.delta[1],
+          LeftFrontTheta: 10 * data.theta[1],
+          LeftFrontAlpha: 10 * data.alpha[1],
+          LeftFrontBeta: 10 * data.beta[1],
+          LeftFrontGamma: 10 * data.gamma[1],
+          RightFrontDelta: 10 * data.delta[2],
+          RightFrontTheta: 10 * data.theta[2],
+          RightFrontAlpha: 10 * data.alpha[2],
+          RightFrontBeta: 10 * data.beta[2],
+          RightFrontGamma: 10 * data.gamma[2],
+          RightBackDelta: 10 * data.delta[3],
+          RightBackTheta: 10 * data.theta[3],
+          RightBackAlpha: 10 * data.alpha[3],
+          RightBackBeta: 10 * data.beta[3],
+          RightBackGamma: 10 * data.gamma[3],                    
           textMsg: "Data received",
         };
       });
@@ -98,7 +128,7 @@ export function Animate(connection) {
     const code = `
     class MySketch extends React.Component {
       setup(p5, whereToPlot) {
-        p5.createCanvas(500, 500, p5.WEBGL).parent(whereToPlot)
+        p5.createCanvas(500, 500).parent(whereToPlot)
       }
 
       draw(p5) {
@@ -106,22 +136,18 @@ export function Animate(connection) {
         WIDTH = p5.width;
         MOUSEX = p5.mouseX;
         MOUSEY = p5.mouseY;
-        DELTA = brain.current.delta;
-        THETA = brain.current.theta;
-        ALPHA = brain.current.alpha;
-        BETA = brain.current.alpha;
-        GAMMA = brain.current.gamma;
+
+        LEFTALPHA = brain.current.RightFrontAlpha;
+        RIGHTALPHA = brain.current.LeftFrontAlpha;
 
         //Change the code here:
         p5.background(255,200,200);
-        p5.fill(0,0,0);
+        p5.fill(255,255,255);
         p5.stroke(10,10,10);
-        // p5.noStroke();
-        p5.ellipse(MOUSEX-250,MOUSEY-250,20);
-        // p5.rect(40,120,120,40);
-        // p5.triangle(30,10,32,10,31,8);
-        // p5.translate();
-        // p5.rotate();
+        p5.ellipse(MOUSEX-100,MOUSEY,LEFTALPHA*2);
+        p5.ellipse(MOUSEX+100,MOUSEY,RIGHTALPHA*2);
+
+ 
         //Don't change below here
 
       }
