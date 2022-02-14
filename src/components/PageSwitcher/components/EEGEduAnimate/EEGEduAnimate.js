@@ -133,21 +133,31 @@ export function Animate(connection) {
       }
           
       draw(p5) {
+        // You can set some useful variables
+        // to use more often like this:
+        // Notice how everything starts with p5.
         HEIGHT = p5.height
         WIDTH = p5.width;
         MOUSEX = p5.mouseX;
         MOUSEY = p5.mouseY;
 
+        // Availalable EEG Variables:
+        // Left, Right
+        // Front, Back
+        // Delta, Theta, Alpha, Beta, Gamma
+        // e.g.:
         LEFTALPHA = brain.current.RightFrontAlpha;
         RIGHTALPHA = brain.current.LeftFrontAlpha;
 
-        p5.background(255,200,200);
+        p5.background(255,200,value);
         p5.fill(value);
-        p5.stroke(10,10,10);
+        p5.stroke(255-value);
         p5.ellipse(MOUSEX-100,MOUSEY,LEFTALPHA*2);
         p5.ellipse(MOUSEX+100,MOUSEY,RIGHTALPHA*2);
       }
 
+      // other p5 functions can be created like this
+      // but must be included below in the return call
       mouseClicked(p5) {
         if (value === 0) {
           value = 255;
@@ -175,9 +185,9 @@ export function Animate(connection) {
 
     return (
       <LiveProvider code={code} scope={scope} noInline={true} theme={theme}>
+        <LivePreview />
         <LiveEditor />
         <LiveError />
-        <LivePreview />
       </LiveProvider>
     );
   }
@@ -186,9 +196,12 @@ export function Animate(connection) {
     <Card title="Animate your brain waves">
       <Card.Section>
         <p>
-          The code below is editable. Play around with the numbers and see what
-          happens. The Alpha, Beta, Gamma, Delta, Theta variables are only
+          The live animation is controlled by the P5.js code below. 
+          The code is editable. Play around with the numbers and see what
+          happens. The brain.current variables are only
           available if there is a data source connected.
+
+          EEG bands and locations are available by calling brain.current.RightFrontAlpha
         </p>
       </Card.Section>
 
