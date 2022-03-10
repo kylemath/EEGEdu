@@ -511,9 +511,9 @@ export function renderRecord(recordPopChange, recordPop, status, Settings, setSe
 
         <ol>
           <li>Open up the Module 2&amp;3 Anonymized Data Log and make a copy to work on:&nbsp;
-            <Link url="https://docs.google.com/spreadsheets/d/1Ip8Xitp548DVXikZhL55Ll-Vgg9UAFU0-N40_3-e8sw/edit?usp=sharing" 
+            <Link url="https://docs.google.com/spreadsheets/d/1_R4ViDw5VQv72F-lzi9BJyRPx1-BhQsj7XFckrvSW-Y/edit?usp=sharing" 
               external={true}>
-              https://docs.google.com/spreadsheets/d/1aGRmSr6b0nOYpkk-Gztni_vMv80IzCMGFdHagFYnt98/edit?usp=sharing
+              https://docs.google.com/spreadsheets/d/1_R4ViDw5VQv72F-lzi9BJyRPx1-BhQsj7XFckrvSW-Y/edit?usp=sharing
             </Link>
           </li>
           <li>This time your report will focus on comparing the results from module 2 to module 3. Start by explaining that in your report, and explain what the difference was between the two modules measurement.</li>
