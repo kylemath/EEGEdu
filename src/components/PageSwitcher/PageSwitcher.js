@@ -1,6 +1,13 @@
 import React, { useState, useCallback } from "react";
 import { MuseClient } from "muse-js";
-import { Select, Card, Stack, Button, ButtonGroup, Checkbox } from "@shopify/polaris";
+import {
+  Select,
+  Card,
+  Stack,
+  Button,
+  ButtonGroup,
+  Checkbox,
+} from "@shopify/polaris";
 import { mockMuseEEG } from "./utils/mockMuseEEG";
 import * as connectionText from "./utils/connectionText";
 import { emptyAuxChannelData } from "./utils/chartOptions";
@@ -9,51 +16,48 @@ import * as funRaw from "./components/EEGEduRaw/EEGEduRaw";
 import * as funSpectra from "./components/EEGEduSpectra/EEGEduSpectra";
 
 let modules = {
-  "raw": "1. Raw and Filtered Data",
-  "spectra": "2. Frequency Spectra"
+  raw: "1. Raw and Filtered Data",
+  spectra: "2. Frequency Spectra",
 };
 const raw = modules.raw;
 const spectra = modules.spectra;
 
 const chartTypes = [
   { label: raw, value: raw },
-  { label: spectra, value: spectra }
+  { label: spectra, value: spectra },
 ];
 
 let showAux = true; // if it is even available to press (to prevent in some modules)
 let source = {};
-window.multicasts = {}
+window.multicasts = {};
 window.subscriptions = {};
 
 //-----Setup Constants
-window.multicasts['Raw'] = null;
-window.multicasts['Spectra'] = null;
+window.multicasts["Raw"] = null;
+window.multicasts["Spectra"] = null;
 
-window.subscriptions['Raw'] = null;
-window.subscriptions['Spectra'] = null;
-
+window.subscriptions["Raw"] = null;
+window.subscriptions["Spectra"] = null;
 
 export function PageSwitcher() {
-
-
-
-
   // connection status
   const [status, setStatus] = useState(connectionText.connect);
 
   // data pulled out of multicast$
   const [rawData, setRawData] = useState(emptyAuxChannelData);
-  const [spectraData, setSpectraData] = useState(emptyAuxChannelData); 
+  const [spectraData, setSpectraData] = useState(emptyAuxChannelData);
 
   // for picking a new module
   const [selected, setSelected] = useState(raw);
 
   // pipe settings
-  const [rawSettings, setRawSettings] = useState(funRaw.getSettings); 
-  const [spectraSettings, setSpectraSettings] = useState(funSpectra.getSettings); 
+  const [rawSettings, setRawSettings] = useState(funRaw.getSettings);
+  const [spectraSettings, setSpectraSettings] = useState(
+    funSpectra.getSettings
+  );
 
   // Whenever settings changed
-  const handleSelectChange = useCallback(value => {
+  const handleSelectChange = useCallback((value) => {
     setSelected(value);
 
     console.log("Switching to: " + value);
@@ -68,19 +72,21 @@ export function PageSwitcher() {
 
   // for popup flag when recording
   const [recordPop, setRecordPop] = useState(false);
-  const recordPopChange = useCallback(() => setRecordPop(!recordPop), [recordPop]);
+  const recordPopChange = useCallback(() => setRecordPop(!recordPop), [
+    recordPop,
+  ]);
 
   // For auxEnable settings
   const [checked, setChecked] = useState(false);
   const handleChange = useCallback((newChecked) => setChecked(newChecked), []);
-      
-      // const [pipeRaw] = useState();
-      // const [multicastRaw] = useState('0');
-      // const [subscriptionRaw] = useState(); 
-      
-      // const [pipeSpectra] = useState();
-      // const [multicastSpectra] = useState();
-      // const [subscriptionSpectra] = useState(); 
+
+  // const [pipeRaw] = useState();
+  // const [multicastRaw] = useState('0');
+  // const [subscriptionRaw] = useState();
+
+  // const [pipeSpectra] = useState();
+  // const [multicastSpectra] = useState();
+  // const [subscriptionSpectra] = useState();
 
   // ---- Manage Auxillary channel
 
@@ -95,10 +101,10 @@ export function PageSwitcher() {
     case raw:
       showAux = true;
 
-      break
+      break;
     case spectra:
       showAux = true;
-      break
+      break;
     default:
       console.log("Error on showAux");
   }
@@ -137,7 +143,6 @@ export function PageSwitcher() {
         source.connectionStatus.value = true;
         source.eegReadings$ = mockMuseEEG(256);
         setStatus(connectionText.connectedMock);
-
       } else {
         // Connect with the Muse EEG Client
         setStatus(connectionText.connecting);
@@ -148,17 +153,22 @@ export function PageSwitcher() {
         source.eegReadings$ = source.eegReadings;
         setStatus(connectionText.connected);
 
+        // Add event listener for 'disconnect' event
+        if (source) {
+          console.log("source", source);
+          source.addEventListener("gattserverdisconnected", () => {
+            console.log("Device disconnected");
+            // Here you can add your reconnect logic
+          });
+        } else {
+          console.log("source is undefined");
+        }
       }
-      if (
-        source.connectionStatus.value === true &&
-        source.eegReadings$
-      ) {
-
+      if (source.connectionStatus.value === true && source.eegReadings$) {
         //Build and Setup
         buildPipes(selected);
         subscriptionSetup(selected);
       }
-
     } catch (err) {
       setStatus(connectionText.connect);
       console.log("Connection error: " + err);
@@ -166,22 +176,31 @@ export function PageSwitcher() {
   }
 
   // For disconnect button
-  function refreshPage(){
+  function refreshPage() {
     window.location.reload();
   }
 
   // Display settings sliders
   function pipeSettingsDisplay() {
-    switch(selected) {
+    switch (selected) {
       case raw:
-        return (
-          funRaw.renderSliders(setRawData, setRawSettings, status, rawSettings, source)
+        return funRaw.renderSliders(
+          setRawData,
+          setRawSettings,
+          status,
+          rawSettings,
+          source
         );
       case spectra:
-        return (
-          funSpectra.renderSliders(setSpectraData, setSpectraSettings, status, spectraSettings, source)
+        return funSpectra.renderSliders(
+          setSpectraData,
+          setSpectraSettings,
+          status,
+          spectraSettings,
+          source
         );
-      default: console.log('Error rendering settings display');
+      default:
+        console.log("Error rendering settings display");
     }
   }
 
@@ -196,19 +215,27 @@ export function PageSwitcher() {
         console.log("Error on renderCharts switch.");
     }
   }
- 
+
   // Show the record button
   function renderRecord() {
     switch (selected) {
-      case raw: 
-        return (
-          funRaw.renderRecord(recordPopChange, recordPop, status, rawSettings, setRawSettings)
-        )    
+      case raw:
+        return funRaw.renderRecord(
+          recordPopChange,
+          recordPop,
+          status,
+          rawSettings,
+          setRawSettings
+        );
       case spectra:
-        return (
-          funSpectra.renderRecord(recordPopChange, recordPop, status, spectraSettings, setSpectraSettings)
-        )      
-      default:   
+        return funSpectra.renderRecord(
+          recordPopChange,
+          recordPop,
+          status,
+          spectraSettings,
+          setSpectraSettings
+        );
+      default:
         console.log("Error on renderRecord.");
     }
   }
@@ -236,7 +263,9 @@ export function PageSwitcher() {
                 connect();
               }}
             >
-              {status === connectionText.connect ? connectionText.connectMock : status}
+              {status === connectionText.connect
+                ? connectionText.connectMock
+                : status}
             </Button>
             <Button
               destructive
@@ -245,7 +274,7 @@ export function PageSwitcher() {
               disabled={status === connectionText.connect}
             >
               {connectionText.disconnect}
-            </Button>     
+            </Button>
           </ButtonGroup>
           <Checkbox
             label="Enable Muse Auxillary Channel"
@@ -255,7 +284,7 @@ export function PageSwitcher() {
           />
         </Stack>
       </Card>
-      <Card title={'Choose your Module'} sectioned>
+      <Card title={"Choose your Module"} sectioned>
         <Select
           label={""}
           options={chartTypes}
