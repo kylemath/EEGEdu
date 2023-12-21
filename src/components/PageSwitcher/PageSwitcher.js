@@ -88,6 +88,8 @@ export function PageSwitcher() {
   // const [multicastSpectra] = useState();
   // const [subscriptionSpectra] = useState();
 
+  const [isDisconnected, setIsDisconnected] = useState(false);
+
   // ---- Manage Auxillary channel
 
   window.enableAux = checked;
@@ -132,6 +134,8 @@ export function PageSwitcher() {
   }
 
   // --- Once connect button pressed
+  let reconnectAttempts = 0;
+  const maxReconnectAttempts = 20;
 
   async function connect() {
     try {
@@ -156,9 +160,11 @@ export function PageSwitcher() {
         // Add event listener for 'disconnect' event
         if (source) {
           console.log("source", source);
-          source.addEventListener("gattserverdisconnected", () => {
-            console.log("Device disconnected");
-            // Here you can add your reconnect logic
+          source.connectionStatus.subscribe(async (status) => {
+            if (!status) {
+              console.log("Device disconnected");
+              setIsDisconnected(true);
+            }
           });
         } else {
           console.log("source is undefined");
@@ -172,6 +178,47 @@ export function PageSwitcher() {
     } catch (err) {
       setStatus(connectionText.connect);
       console.log("Connection error: " + err);
+    }
+  }
+
+  async function onDisconnected() {
+    console.log("Attempting to reconnect...");
+    while (reconnectAttempts < maxReconnectAttempts) {
+      try {
+        await delay(reconnectAttempts * 1000);
+        await tryReconnect();
+        setIsDisconnected(false);
+        console.log("Reconnected");
+        break;
+      } catch (err) {
+        console.log("Reconnection attempt failed: ", err);
+      }
+    }
+    console.log("Max reconnect attempts reached");
+  }
+
+  function delay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  async function tryReconnect() {
+    console.log("Attempt #", reconnectAttempts);
+    reconnectAttempts++;
+    try {
+      // Reinitialize the source object
+      source = new MuseClient();
+      source.enableAux = window.enableAux;
+      await source.connect();
+      await source.start();
+      source.eegReadings$ = source.eegReadings;
+      console.log("Reconnected");
+
+      // Rebuild pipes and setup subscriptions
+      buildPipes(selected);
+      subscriptionSetup(selected);
+    } catch (err) {
+      console.log("Reconnection failed: ", err);
+      throw err;
     }
   }
 
@@ -274,6 +321,9 @@ export function PageSwitcher() {
               disabled={status === connectionText.connect}
             >
               {connectionText.disconnect}
+            </Button>
+            <Button onClick={onDisconnected} disabled={!isDisconnected}>
+              Reconnect
             </Button>
           </ButtonGroup>
           <Checkbox

@@ -15,7 +15,7 @@
     "firebase-tools": "^7.9.0",
     "handlebars": "^4.3.0",
     "ml5": "^0.4.3",
-    "muse-js": "https://github.com/kylemath/muse-js#reconnect",
+    "muse-js": "3.0.1",
     "p5": "^0.10.2",
     "p5.js-widget": "https://github.com/toolness/p5.js-widget.git",
     "prettier": "^1.19.1",
