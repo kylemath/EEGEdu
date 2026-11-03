@@ -44,7 +44,8 @@ export function buildPipe(Settings) {
   window.pipeHeartRaw$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
-      nbChannels: window.nchans }),
+      nbChannels: window.nchans,
+      samplingRate: Settings.srate }),
     epoch({
       duration: Settings.duration,
       interval: Settings.interval,

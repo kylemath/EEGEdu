@@ -31,7 +31,7 @@ export function getSettings () {
 };
 
 export function buildPipe(Settings) {
-  if (window.subscriptionIntro$) window.subscriptionIntro$.unsubscribe();
+  if (window.subscriptionIntro) window.subscriptionIntro.unsubscribe();
 
   window.pipeIntro$ = null;
   window.multicastIntro$ = null;
@@ -41,7 +41,8 @@ export function buildPipe(Settings) {
  window.pipeIntro$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
-      nbChannels: window.nchans }),
+      nbChannels: window.nchans,
+      samplingRate: Settings.srate }),
     epoch({
       duration: Settings.duration,
       interval: Settings.interval,

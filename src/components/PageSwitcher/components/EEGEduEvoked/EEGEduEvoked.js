@@ -47,7 +47,8 @@ export function buildPipe(Settings) {
   window.pipeEvoked$ = zipSamples(window.source.eegReadings$).pipe(
     bandpassFilter({ 
       cutoffFrequencies: [Settings.cutOffLow, Settings.cutOffHigh], 
-      nbChannels: window.nchans }),
+      nbChannels: window.nchans,
+      samplingRate: Settings.srate }),
     epoch({
       duration: Settings.duration,
       interval: Settings.interval,
@@ -113,29 +114,33 @@ export function renderModule(channels) {
   
 export function renderSliders(setData, setSettings, status, Settings) {
 
-  function resetPipeSetup(value) {
-    buildPipe(Settings);
-    setup(setData, Settings)
+  function resetPipeSetup(nextSettings = Settings) {
+    buildPipe(nextSettings);
+    setup(setData, nextSettings);
   }
   
   function handleIntervalRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, interval: value}));
-    resetPipeSetup();
+    const nextSettings = {...Settings, interval: value};
+    setSettings(nextSettings);
+    resetPipeSetup(nextSettings);
   }
 
   function handleCutoffLowRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, cutOffLow: value}));
-    resetPipeSetup();
+    const nextSettings = {...Settings, cutOffLow: value};
+    setSettings(nextSettings);
+    resetPipeSetup(nextSettings);
   }
 
   function handleCutoffHighRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, cutOffHigh: value}));
-    resetPipeSetup();
+    const nextSettings = {...Settings, cutOffHigh: value};
+    setSettings(nextSettings);
+    resetPipeSetup(nextSettings);
  }
 
   function handleDurationRangeSliderChange(value) {
-    setSettings(prevState => ({...prevState, duration: value}));
-    resetPipeSetup();
+    const nextSettings = {...Settings, duration: value};
+    setSettings(nextSettings);
+    resetPipeSetup(nextSettings);
  }
 
   return (
@@ -293,9 +298,11 @@ function saveToCSV(Settings) {
   // now with header in place subscribe to each epoch and log it
   localObservable$.subscribe({
     next(x) { 
+      const currentMarker = window.marker || 0;
+      window.marker = 0;
       dataToSave.push(
         Date.now() + "," + 
-        window.marker + "," + 
+        currentMarker + "," + 
         window.responseMarker + "," +
         window.touchMarker + "," +
         Object.values(x).join(",") + "\n");

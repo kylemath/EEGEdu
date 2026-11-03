@@ -24,14 +24,14 @@ export default function sketchFlash (p) {
   p.draw = function () {
     p.background(255);
     x = x+1;
-    if ((p.millis() - startTime) > delay) {
+    if ((p.millis() - startTime) >= delay) {
       newOnset = true;
     } else {
       newOnset = false;
     }
     if (newOnset) {
       p.fill(0, 0, 0);
-      startTime = p.millis();  
+      startTime = startTime === 0 ? p.millis() : startTime + delay;  
     } else {
       p.fill(255, 255, 255);
     }

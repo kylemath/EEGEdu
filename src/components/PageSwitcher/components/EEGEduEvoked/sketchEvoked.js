@@ -69,7 +69,6 @@ export default function sketchEvoked (p) {
 
     } else { // during time between targets 
       p.fill(255, 255, 255);
-      window.marker = 0;
     }
     p.ellipse(p.width/2, p.height/2, 300);
     p.fill(255,0,0);
