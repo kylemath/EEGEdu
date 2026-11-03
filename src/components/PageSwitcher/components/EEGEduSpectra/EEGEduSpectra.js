@@ -92,19 +92,24 @@ export function setup(setData, Settings) {
       });
     });
 
-    window.multicastSpectra$.connect();
+    window.subscriptionSpectra.add(window.multicastSpectra$.connect());
     console.log("Subscribed to " + Settings.name);
   }
 }
 
 export function renderModule(channels) {
   function renderCharts() {
-    let vertLim = Math.floor(Math.max(...[].concat.apply([], [channels.data.ch0.datasets[0].data,
-                channels.data.ch1.datasets[0].data,
-                channels.data.ch2.datasets[0].data,
-                channels.data.ch3.datasets[0].data,
-                channels.data.ch4.datasets[0].data])
-    ));    
+    const allVals = [].concat.apply(
+      [],
+      [
+        channels.data.ch0.datasets[0].data || [],
+        channels.data.ch1.datasets[0].data || [],
+        channels.data.ch2.datasets[0].data || [],
+        channels.data.ch3.datasets[0].data || [],
+        channels.data.ch4.datasets[0].data || []
+      ]
+    );
+    let vertLim = allVals.length > 0 ? Math.max(1, Math.ceil(Math.max(...allVals))) : 25;
     const options = {
       ...generalOptions,
       scales: {
@@ -124,7 +129,7 @@ export function renderModule(channels) {
             },
             ticks: {
               max: vertLim,
-              min: vertLim * -1
+              min: 0
             }
           }
         ]

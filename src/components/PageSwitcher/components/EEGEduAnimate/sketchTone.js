@@ -26,14 +26,27 @@ export default function sketchTone (p) {
     osc.start();
     fft = new p5.FFT();
     p.noStroke();
+
+    const origRemove = p.remove.bind(p);
+    p.remove = function () {
+      if (osc) {
+        try {
+          osc.amp(0);
+          osc.stop();
+          if (osc.dispose) osc.dispose();
+        } catch (e) {}
+      }
+      origRemove();
+    };
   };
 
   p.myCustomRedrawAccordingToNewPropsHandler = function (props) {
-    delta = Math.floor(props.delta);
-    theta = Math.floor(props.theta);
-    alpha = Math.floor(props.alpha);
-    beta = Math.floor(props.beta);
-    gamma = Math.floor(props.gamma);
+    delta = Math.floor(props.delta) || 0;
+    theta = Math.floor(props.theta) || 0;
+    alpha = Math.floor(props.alpha) || 0;
+    beta = Math.floor(props.beta) || 0;
+    gamma = Math.floor(props.gamma) || 0;
+    scaleArray = [delta + 30, theta + 50, beta + 60, gamma * 10 + 70];
   };
 
   p.windowResized = function() {
@@ -43,7 +56,8 @@ export default function sketchTone (p) {
   p.draw = function () {
     p.background(20);
 
-    if (p.frameCount % alpha === 0 || p.frameCount === 1) {
+    const step = Math.max(1, alpha);
+    if (p.frameCount % step === 0 || p.frameCount === 1) {
       let midiValue = scaleArray[note];
       let freqValue = p.midiToFreq(midiValue);
       osc.freq(freqValue);

@@ -14,6 +14,18 @@ import "p5/lib/addons/p5.sound";
     p.background(255);
     osc = new p5.Oscillator();
     osc.setType('sine');
+
+    const origRemove = p.remove.bind(p);
+    p.remove = function () {
+      if (osc) {
+        try {
+          osc.amp(0);
+          osc.stop();
+          if (osc.dispose) osc.dispose();
+        } catch (e) {}
+      }
+      origRemove();
+    };
   };
 
   p.startSound = function () {

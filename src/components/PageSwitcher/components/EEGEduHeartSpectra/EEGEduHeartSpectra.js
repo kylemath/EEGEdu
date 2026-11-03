@@ -87,7 +87,7 @@ export function setup(setData, Settings) {
       });
     });
 
-    window.multicastHeartSpectra$.connect();
+    window.subscriptionHeartSpectra.add(window.multicastHeartSpectra$.connect());
     console.log("Subscribed to " + Settings.name);
   }
 }

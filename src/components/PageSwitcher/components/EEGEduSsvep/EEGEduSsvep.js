@@ -94,7 +94,7 @@ export function setup(setData, Settings) {
       });
     });
 
-    window.multicastSsvep$.connect();
+    window.subscriptionSsvep.add(window.multicastSsvep$.connect());
     console.log("Subscribed to " + Settings.name);
   }
 }

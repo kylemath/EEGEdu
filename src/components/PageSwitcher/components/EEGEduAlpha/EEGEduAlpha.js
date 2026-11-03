@@ -98,7 +98,7 @@ export function setup(setData, Settings) {
       });
     });
 
-    window.multicastAlpha$.connect();
+    window.subscriptionAlpha.add(window.multicastAlpha$.connect());
     console.log("Subscribed to " + Settings.name);
   }
 }

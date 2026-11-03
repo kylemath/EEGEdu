@@ -77,7 +77,7 @@ export function setup(setData, Settings) {
       });
     });
 
-    window.multicastIntro$.connect();
+    window.subscriptionIntro.add(window.multicastIntro$.connect());
     console.log("Subscribed to " + Settings.name);
   }
 }

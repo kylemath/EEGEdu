@@ -85,7 +85,7 @@ export function setup(setData, Settings) {
       });
     });
 
-    window.multicastRaw$.connect();
+    window.subscriptionRaw.add(window.multicastRaw$.connect());
     console.log("Subscribed to Raw");
   }
 }

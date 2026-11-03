@@ -21,20 +21,16 @@ export default function sketchEvoked (p) {
   }
 
   p.touchStarted = function() {
-  if (window.touchMarker === 0) {
     window.touchMarker = 255;
-  } else {
-    window.touchMarker = 0;
-  }
-}
- 
+  };
+
+  p.keyPressed = function() {
+    window.responseMarker = p.keyCode;
+  };
+
   p.draw = function () {
-
-
     if (p.keyIsPressed === true) {
       window.responseMarker = p.keyCode;
-    } else {
-      window.responseMarker = 0;
     }
     p.background(255);
     x = x+1;

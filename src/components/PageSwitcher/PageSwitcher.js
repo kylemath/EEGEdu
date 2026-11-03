@@ -5,7 +5,7 @@ import { Select, Card, Stack, Button, ButtonGroup, Checkbox } from "@shopify/pol
 import { mockMuseEEG } from "./utils/mockMuseEEG";
 import * as translations from "./translations/en.json";
 import * as generalTranslations from "./components/translations/en";
-import { emptyAuxChannelData } from "./components/chartOptions";
+import { createEmptyAuxChannelData } from "./components/chartOptions";
 
 import * as funIntro from "./components/EEGEduIntro/EEGEduIntro"
 import * as funHeartRaw from "./components/EEGEduHeartRaw/EEGEduHeartRaw"
@@ -46,19 +46,19 @@ export function PageSwitcher() {
   }
   let showAux = true; // if it is even available to press (to prevent in some modules)
 
-  // data pulled out of multicast$
-  const [introData, setIntroData] = useState(emptyAuxChannelData)
-  const [heartRawData, setHeartRawData] = useState(emptyAuxChannelData);
-  const [heartSpectraData, setHeartSpectraData] = useState(emptyAuxChannelData);
-  const [rawData, setRawData] = useState(emptyAuxChannelData);
-  const [spectraData, setSpectraData] = useState(emptyAuxChannelData); 
-  const [bandsData, setBandsData] = useState(emptyAuxChannelData);
-  const [animateData, setAnimateData] = useState(emptyAuxChannelData);
-  const [spectroData, setSpectroData] = useState(emptyAuxChannelData);
-  const [alphaData, setAlphaData] = useState(emptyAuxChannelData);
-  const [ssvepData, setSsvepData] = useState(emptyAuxChannelData);
-  const [evokedData, setEvokedData] = useState(emptyAuxChannelData);
-  const [predictData, setPredictData] = useState(emptyAuxChannelData);
+  // data pulled out of multicast$ (fresh clone per module to avoid shared object mutation)
+  const [introData, setIntroData] = useState(createEmptyAuxChannelData);
+  const [heartRawData, setHeartRawData] = useState(createEmptyAuxChannelData);
+  const [heartSpectraData, setHeartSpectraData] = useState(createEmptyAuxChannelData);
+  const [rawData, setRawData] = useState(createEmptyAuxChannelData);
+  const [spectraData, setSpectraData] = useState(createEmptyAuxChannelData); 
+  const [bandsData, setBandsData] = useState(createEmptyAuxChannelData);
+  const [animateData, setAnimateData] = useState(createEmptyAuxChannelData);
+  const [spectroData, setSpectroData] = useState(createEmptyAuxChannelData);
+  const [alphaData, setAlphaData] = useState(createEmptyAuxChannelData);
+  const [ssvepData, setSsvepData] = useState(createEmptyAuxChannelData);
+  const [evokedData, setEvokedData] = useState(createEmptyAuxChannelData);
+  const [predictData, setPredictData] = useState(createEmptyAuxChannelData);
 
   // pipe settings
   const [introSettings] = useState(funIntro.getSettings);
@@ -77,13 +77,9 @@ export function PageSwitcher() {
   // connection status
   const [status, setStatus] = useState(generalTranslations.connect);
 
-  // for picking a new module
-  const [selected, setSelected] = useState(intro);
-  const handleSelectChange = useCallback(value => {
-    setSelected(value);
-
-    console.log("Switching to: " + value);
-
+  // Unsubscribe all active module subscriptions cleanly
+  function unsubscribeAll() {
+    window.isPredicting = false;
     if (window.subscriptionIntro) window.subscriptionIntro.unsubscribe();
     if (window.subscriptionHeartRaw) window.subscriptionHeartRaw.unsubscribe();
     if (window.subscriptionHeartSpectra) window.subscriptionHeartSpectra.unsubscribe();
@@ -96,10 +92,25 @@ export function PageSwitcher() {
     if (window.subscriptionSsvep) window.subscriptionSsvep.unsubscribe();
     if (window.subscriptionEvoked) window.subscriptionEvoked.unsubscribe();
     if (window.subscriptionPredict) window.subscriptionPredict.unsubscribe();
+  }
 
-    subscriptionSetup(value);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // for picking a new module
+  const [selected, setSelected] = useState(intro);
+  const handleSelectChange = value => {
+    setSelected(value);
+    console.log("Switching to: " + value);
+    unsubscribeAll();
+
+    if (
+      window.source &&
+      window.source.connectionStatus &&
+      window.source.connectionStatus.value === true &&
+      window.source.eegReadings$
+    ) {
+      buildPipes(value);
+      subscriptionSetup(value);
+    }
+  };
 
   // for popup flag when recording
   const [recordPop, setRecordPop] = useState(false);
@@ -168,18 +179,46 @@ export function PageSwitcher() {
   ];
 
   function buildPipes(value) {
-    funIntro.buildPipe(introSettings);
-    funHeartRaw.buildPipe(heartRawSettings);
-    funHeartSpectra.buildPipe(heartSpectraSettings);
-    funRaw.buildPipe(rawSettings);
-    funSpectra.buildPipe(spectraSettings);
-    funBands.buildPipe(bandsSettings);
-    funAnimate.buildPipe(animateSettings);
-    funSpectro.buildPipe(spectroSettings);
-    funAlpha.buildPipe(alphaSettings);
-    funSsvep.buildPipe(ssvepSettings);
-    funEvoked.buildPipe(evokedSettings);
-    funPredict.buildPipe(predictSettings);
+    switch (value) {
+      case intro:
+        funIntro.buildPipe(introSettings);
+        break;
+      case heartRaw:
+        funHeartRaw.buildPipe(heartRawSettings);
+        break;
+      case heartSpectra:
+        funHeartSpectra.buildPipe(heartSpectraSettings);
+        break;
+      case raw:
+        funRaw.buildPipe(rawSettings);
+        break;
+      case spectra:
+        funSpectra.buildPipe(spectraSettings);
+        break;
+      case bands:
+        funBands.buildPipe(bandsSettings);
+        break;
+      case animate:
+        funAnimate.buildPipe(animateSettings);
+        break;
+      case spectro:
+        funSpectro.buildPipe(spectroSettings);
+        break;
+      case alpha:
+        funAlpha.buildPipe(alphaSettings);
+        break;
+      case ssvep:
+        funSsvep.buildPipe(ssvepSettings);
+        break;
+      case evoked:
+        funEvoked.buildPipe(evokedSettings);
+        break;
+      case predict:
+        funPredict.buildPipe(predictSettings);
+        break;
+      default:
+        console.log("Error on buildPipes: " + value);
+    }
   }
 
   function subscriptionSetup(value) {
@@ -229,6 +268,17 @@ export function PageSwitcher() {
 
   async function connect() {
     try {
+      unsubscribeAll();
+      if (window.connectionStatusSub) {
+        window.connectionStatusSub.unsubscribe();
+        window.connectionStatusSub = null;
+      }
+      if (window.source && typeof window.source.disconnect === "function") {
+        try {
+          window.source.disconnect();
+        } catch (e) {}
+      }
+
       if (window.debugWithMock) {
         // Debug with Mock EEG Data
         setStatus(generalTranslations.connectingMock);
@@ -246,6 +296,16 @@ export function PageSwitcher() {
         await window.source.start();
         window.source.eegReadings$ = window.source.eegReadings;
         setStatus(generalTranslations.connected);
+
+        if (window.source.connectionStatus && typeof window.source.connectionStatus.subscribe === "function") {
+          window.connectionStatusSub = window.source.connectionStatus.subscribe(isConnected => {
+            if (!isConnected) {
+              console.log("Muse Bluetooth connection lost; cleaning up active streams.");
+              unsubscribeAll();
+              setStatus(generalTranslations.connect);
+            }
+          });
+        }
       }
       if (
         window.source.connectionStatus.value === true &&
@@ -255,12 +315,23 @@ export function PageSwitcher() {
         subscriptionSetup(selected);
       }
     } catch (err) {
+      unsubscribeAll();
       setStatus(generalTranslations.connect);
       console.log("Connection error: " + err);
     }
   }
 
   function refreshPage(){
+    unsubscribeAll();
+    if (window.connectionStatusSub) {
+      window.connectionStatusSub.unsubscribe();
+      window.connectionStatusSub = null;
+    }
+    if (window.source && typeof window.source.disconnect === "function") {
+      try {
+        window.source.disconnect();
+      } catch (e) {}
+    }
     window.location.reload();
   }
 

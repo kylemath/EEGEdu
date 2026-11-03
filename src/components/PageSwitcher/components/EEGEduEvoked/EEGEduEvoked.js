@@ -86,7 +86,7 @@ export function setup(setData, Settings) {
       });
     });
 
-    window.multicastEvoked$.connect();
+    window.subscriptionEvoked.add(window.multicastEvoked$.connect());
     console.log("Subscribed to Evoked");
   }
 }
@@ -299,12 +299,16 @@ function saveToCSV(Settings) {
   localObservable$.subscribe({
     next(x) { 
       const currentMarker = window.marker || 0;
+      const currentResponse = window.responseMarker || 0;
+      const currentTouch = window.touchMarker || 0;
       window.marker = 0;
+      window.responseMarker = 0;
+      window.touchMarker = 0;
       dataToSave.push(
         Date.now() + "," + 
         currentMarker + "," + 
-        window.responseMarker + "," +
-        window.touchMarker + "," +
+        currentResponse + "," +
+        currentTouch + "," +
         Object.values(x).join(",") + "\n");
       // logging is useful for debugging -yup
       // console.log(x);

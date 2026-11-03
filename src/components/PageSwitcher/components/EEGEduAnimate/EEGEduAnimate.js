@@ -96,7 +96,7 @@ export function setup(setData, Settings) {
       });
     });
 
-    window.multicastAnimate$.connect();
+    window.subscriptionAnimate.add(window.multicastAnimate$.connect());
     console.log("Subscribed to " + Settings.name);
   }
 }

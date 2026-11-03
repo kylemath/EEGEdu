@@ -41,6 +41,16 @@ export const emptyAuxChannelData = {
   }
 };
 
+export function createEmptyAuxChannelData() {
+  return {
+    ch0: { datasets: [{}] },
+    ch1: { datasets: [{}] },
+    ch2: { datasets: [{}] },
+    ch3: { datasets: [{}] },
+    ch4: { datasets: [{}] }
+  };
+}
+
 export const emptySingleChannelData = {
   ch1: {
     datasets: [{}]

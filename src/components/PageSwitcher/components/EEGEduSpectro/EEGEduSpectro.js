@@ -86,7 +86,7 @@ export function setup(setData, Settings) {
       });
     });
 
-    window.multicastSpectro$.connect();
+    window.subscriptionSpectro.add(window.multicastSpectro$.connect());
     console.log("Subscribed to " + Settings.name);
   }
 }

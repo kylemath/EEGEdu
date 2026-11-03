@@ -78,7 +78,7 @@ export function setup(setData, Settings) {
       });
     });
 
-    window.multicastHeartRaw$.connect();
+    window.subscriptionHeartRaw.add(window.multicastHeartRaw$.connect());
     console.log("Subscribed to HeartRaw");
   }
 }

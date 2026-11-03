@@ -93,7 +93,7 @@ export function setup(setData, Settings) {
       });
     });
 
-    window.multicastBands$.connect();
+    window.subscriptionBands.add(window.multicastBands$.connect());
     console.log("Subscribed to " + Settings.name);
   }
 }

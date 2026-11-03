@@ -42,6 +42,7 @@ export function getSettings() {
 
 export function buildPipe(Settings) {
   if (window.subscriptionPredict) window.subscriptionPredict.unsubscribe();
+  window.isPredicting = false;
 
   window.pipePredict$ = null;
   window.multicastPredict$ = null;
@@ -70,11 +71,28 @@ export function buildPipe(Settings) {
   );
 }
 
+function classifyCurrentPsd(psd, onUpdate) {
+  if (!psd || !window.enoughLabels) return;
+  knnClassifier.classify(psd, (err, result) => {
+    if (err || !result) return;
+    if (result.confidencesByLabel) {
+      window.confidences = result.confidencesByLabel;
+      if (result.label === 'A' || result.label === 'B' || result.label === 'C') {
+        window.thisLabel = result.label;
+      }
+    }
+    if (onUpdate) onUpdate();
+  });
+}
+
 export function setup(setData, Settings) {
   console.log("Subscribing to " + Settings.name);
 
   if (window.multicastPredict$) {
     window.subscriptionPredict = window.multicastPredict$.subscribe(data => {
+      if (window.isPredicting && data.psd && data.psd[0]) {
+        classifyCurrentPsd(data.psd[0]);
+      }
       setData(predictData => {
         Object.values(predictData).forEach((channel, index) => {
           channel.datasets[0].data = data.psd[index];
@@ -91,7 +109,7 @@ export function setup(setData, Settings) {
       });
     });
 
-    window.multicastPredict$.connect();
+    window.subscriptionPredict.add(window.multicastPredict$.connect());
     console.log("Subscribed to " + Settings.name);
   }
 }
@@ -156,33 +174,10 @@ export function renderRecord(recordPopChange, status) {
     }
   }
 
-  // Classifies current incoming psd and outputs results 
+  // Classifies current incoming psd and enables epoch-driven classification
   function classify () {
     window.isPredicting = true;
-    knnClassifier.classify(window.psd, gotResults)
-  }
-
-  // callback from classify to assign results to window and recurse
-  function gotResults(err, result) {
-    if (result.confidencesByLabel) {
-      window.confidences = result.confidencesByLabel;
-      if (result.label) {
-        switch (result.label) {
-          case 'A':
-            window.thisLabel = 'A';
-            break;
-          case 'B':
-            window.thisLabel = 'B';
-            break;
-          case 'C':
-            window.thisLabel = 'C';
-            break;
-          default: 
-            console.log('error with prediction label');
-        }
-      }
-    }
-    classify(); //recursive so it continues to run 
+    classifyCurrentPsd(window.psd);
   }
 
   //buttons for training at prediction
