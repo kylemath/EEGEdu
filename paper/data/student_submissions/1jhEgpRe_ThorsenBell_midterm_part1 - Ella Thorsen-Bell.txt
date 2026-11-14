@@ -1,0 +1,140 @@
+// Wave animation controlled by brain
+
+let waveOffset = 0;
+let alphaOscillator;
+let betaOscillator;
+let thetaOscillator;
+let reverb, delay;  // Reverb and delay effects
+let alphaFilter, betaFilter;
+
+let angle = 0;  // Initial angle for wave movement
+let waveLayers = 5;  // Number of layers of waves to display
+let waveAmplitude = 30;  // Base amplitude
+
+function setup() {
+ colorMode(HSB, 360, 100, 100);
+   frameRate(60);
+
+   // Create the oscillators (sine wave for alpha, square wave for beta)
+ alphaOscillator = new p5.Oscillator('sine');
+ betaOscillator = new p5.Oscillator('square');
+ thetaOscillator = new p5.Oscillator('sine');
+
+
+ // Start the oscillators
+ alphaOscillator.start();
+ betaOscillator.start();
+ thetaOscillator.start();
+
+ // --- Pulse oscillator for audible rhythmic feedback ---
+  pulseOscillator = new p5.Oscillator('sine');
+  pulseOscillator.start();
+  pulseOscillator.freq(1);       // ~1 Hz for gentle pulse
+  pulseOscillator.amp(0.05);     // Start quiet
+
+// --- Filters ---
+  alphaFilter = new p5.LowPass();
+  betaFilter = new p5.LowPass();
+
+  alphaFilter.process(alphaOscillator, 400); // smooth highs
+  betaFilter.process(betaOscillator, 600);
+
+ // Set initial frequencies and amplitudes
+ alphaOscillator.freq(200);  // Alpha (relaxed) -> low frequency
+ betaOscillator.freq(400);   // Beta (focused) -> higher frequency
+ thetaOscillator.freq(100);  // Theta (relaxed/drowsy) -> deep bass
+
+
+ alphaOscillator.amp(0);  // Start with low amplitude (no sound)
+ betaOscillator.amp(0);
+ thetaOscillator.amp(0);
+
+
+ // Set initial volume for a smoother start
+ alphaOscillator.amp(0.2, 0.1);
+ betaOscillator.amp(0.2, 0.1);
+ thetaOscillator.amp(0.2, 0.1);
+
+// Set up reverb and delay
+  reverb = new p5.Reverb();
+  delay = new p5.Delay();
+
+  // Apply reverb and delay to the oscillators
+  reverb.process(alphaOscillator, 3, 2);  // Reverb for alpha
+  reverb.process(betaOscillator, 2, 1.5); // Reverb for beta
+  delay.process(thetaOscillator, 0.2, 0.5); // Delay for theta
+}
+
+
+function draw() {
+ background(0);
+
+ // If EEG data is available, use it to update sound parameters
+ if (typeof eegData !== "undefined" && eegData.connected) {
+   // Map EEG values (alpha, beta, theta) to sound parameters
+   let alpha = eegData.alpha;
+   let beta = eegData.beta;
+   let theta = eegData.theta;
+   let meditation = eegData.meditation;
+
+  let speed = 0.02 + eegData.beta * 0.08;
+ waveOffset += speed;
+
+ // Alpha (low pitched sound)
+   let alphaFreq = map(alpha, 0, 1, 200, 350);  // Lower range for alpha (relaxed)
+   let alphaAmp = map(alpha, 0, 1, 0.1, 0.2);  // Adjust volume based on alpha amplitude
+   alphaOscillator.freq(alphaFreq, 0.2);
+   alphaOscillator.amp(alphaAmp, 0.1);
+
+    // Beta (higher pitched sound)
+   let betaFreq = map(beta, 0, 1, 400, 550);  // Higher range for beta (focused)
+   let betaAmp = map(beta, 0, 1, 0.05, 0.3);   // Adjust volume based on beta amplitude
+   betaOscillator.freq(betaFreq, 0.2);
+   betaOscillator.amp(betaAmp, 0.1);
+
+
+   // Theta (deep ambient sound)
+   let thetaFreq = map(theta, 0, 1, 40, 100); 
+   let thetaAmp = map(theta, 0, 1, 0.02, 0.3);  
+   thetaOscillator.freq(thetaFreq, 0.2);
+   thetaOscillator.amp(thetaAmp, 0.1);
+
+// --- Pulse oscillator linked to alpha/beta ---
+    let pulseAmp = map(alpha + beta, 0, 2, 0.02, 0.2);  // Louder when alpha/beta high
+    let pulseFreq = map(beta, 0, 2, 0.01, 0.1); // Faster pulse when focused
+    pulseOscillator.amp(pulseAmp, 0.05);
+    pulseOscillator.freq(pulseFreq, 0.1);
+
+
+  // Draw multiple wave layers
+ for (let layer = 0; layer < 5; layer++) {
+   let waveAmplitude = 30 + eegData.alpha * 50;
+   let waveFrequency = 0.01 + layer * 0.005;
+   let yBase = (layer + 1) * height / (waveLayers + 1);
+  
+   let hue = (layer * 60 + eegData.theta * 120) % 360;
+   fill(hue, 70, 90, 0.5);
+   noStroke();
+  
+   beginShape();
+   vertex(0, height);
+   for (let x = 0; x <= width; x += 5) {
+     let y = yBase + sin((x * waveFrequency) + waveOffset + layer) * waveAmplitude;
+     vertex(x, y);
+   }
+   vertex(width, height);
+   endShape(CLOSE);
+ }
+  // Draw wave on top showing meditation
+ stroke(0, 0, 100);
+ strokeWeight(2);
+ noFill();
+  beginShape();
+ for (let x = 0; x <= width; x += 5) {
+   let y = height/2 + sin((x * 0.02) + waveOffset) *
+           (50 + eegData.meditation * 100);
+   vertex(x, y);
+ }
+ endShape();
+}
+}

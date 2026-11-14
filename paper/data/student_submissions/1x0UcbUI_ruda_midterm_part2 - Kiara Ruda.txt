@@ -1,0 +1,269 @@
+// === 4-Channel ERP — HAPPY vs ANGRY Faces (Emotional Oddball, With Labels + Difference Wave) ===
+// Condition A: 😊 Happy (Standard, 80%)
+// Condition B: 😠 Angry (Rare, 20%)
+// Adds: on-screen stimulus label + white dashed difference wave (Angry−Happy)
+
+// ---- CONFIG ----
+let PRE_MS=200, POST_MS=800, ITI_MS=1000, KEEP_LAST=20, RARE_P=0.20, sr=256;
+const AMP_PX = 14;
+const P3_WIN = [300,600];
+
+// ---- DERIVED ----
+let epochLen=0, samplesPre=0;
+
+// ---- STATE ----
+let phase="ITI", trialOnsetMs=0, nextTrialDueMs=0, isRare=false;
+
+// ---- DATA ----
+let rareBuf=[], stdBuf=[];
+let totalRare=0, totalStd=0;
+
+// ---- Channels ----
+const CH = [
+  { name:"TP9",  idx:0, hue:300 },
+  { name:"AF7",  idx:1, hue:180 },
+  { name:"AF8",  idx:2, hue: 55 },
+  { name:"TP10", idx:3, hue:120 }
+];
+
+function setup(){
+  colorMode(HSB,360,100,100);
+  sr = (eegData && eegData.sampleRate) ? eegData.sampleRate : 256;
+  samplesPre = Math.round(PRE_MS*sr/1000);
+  epochLen   = Math.round((PRE_MS+POST_MS)*sr/1000);
+  nextTrialDueMs = millis()+800;
+}
+
+function draw(){
+  background(0,0,8);
+  drawERPPanel();
+  drawStimPanel();
+
+  const now = millis();
+  if (phase==="ITI" && now>=nextTrialDueMs){ isRare = random()<RARE_P; trialOnsetMs=now; phase="STIM"; }
+  if (phase==="STIM" && now-trialOnsetMs>=120) phase="WAIT";
+  if (phase==="WAIT" && now-trialOnsetMs>=POST_MS) phase="COLLECT";
+
+  if (phase==="COLLECT"){
+    collectEpoch(isRare);
+    nextTrialDueMs = trialOnsetMs + ITI_MS;
+    phase="ITI";
+  }
+}
+
+// -------- EEG collection --------
+function collectEpoch(wasRare){
+  let ep=[];
+  if(eegData && eegData.connected && eegData.getRecentEpoch)
+    ep = eegData.getRecentEpoch(epochLen);
+  if(!ep || ep.length<epochLen || !Array.isArray(ep[0])) ep = simulateEpoch(wasRare);
+
+  const base=[0,0,0,0];
+  for(let i=0;i<samplesPre;i++) for(let ch=0;ch<4;ch++) base[ch]+=ep[i][ch]||0;
+  for(let ch=0;ch<4;ch++) base[ch]/=Math.max(1,samplesPre);
+  for(let i=0;i<ep.length;i++)  for(let ch=0;ch<4;ch++) ep[i][ch]=(ep[i][ch]||0)-base[ch];
+
+  if(wasRare){ rareBuf.push(ep); if(rareBuf.length>KEEP_LAST) rareBuf.shift(); totalRare++; }
+  else       { stdBuf.push(ep);  if(stdBuf.length >KEEP_LAST) stdBuf.shift();  totalStd++;  }
+}
+
+// -------- ERP Panel --------
+function drawERPPanel(){
+  push();
+  const PAD=18;
+  const panelH=Math.min(380, height*0.62);
+  translate(PAD,PAD);
+
+  stroke(0,0,35); noFill(); rect(0,0,width-2*PAD,panelH);
+  noStroke(); fill(255); textAlign(LEFT,TOP); textSize(14);
+  text(`Averaged ERP (😊 Happy vs 😠 Angry)`, 8, 6);
+  fill(180,12,85); textSize(12);
+  text(`Happy: ${totalStd}   Angry: ${totalRare}`, 8, 24);
+
+  const plotW=width-2*PAD, plotH=panelH-2*PAD-30;
+  translate(0,30+PAD);
+
+  for(let t=-PRE_MS;t<=POST_MS;t+=100){
+    const x=map(t,-PRE_MS,POST_MS,0,plotW);
+    stroke(0,0,22); line(x,0,x,plotH);
+    noStroke(); fill(140,30,90); textAlign(CENTER,TOP); textSize(10);
+    text(`${t}ms`, x, plotH+2);
+  }
+  const x0=map(0,-PRE_MS,POST_MS,0,plotW); stroke(0,100,100); line(x0,0,x0,plotH);
+
+  const avgR = smooth2D(avgPerChannel(rareBuf),5);
+  const avgS = smooth2D(avgPerChannel(stdBuf),5);
+  const avgAll = smooth2D(avgPerChannel(rareBuf.concat(stdBuf)),5);
+  const diff = subtract2D(avgR, avgS);
+
+  const rowH = plotH/CH.length;
+  for(let r=0;r<CH.length;r++){
+    const {name, idx, hue} = CH[r];
+    const yBase = (r+0.5)*rowH;
+
+    stroke(0,0,22); line(0,yBase,plotW,yBase);
+
+    let sw=2, bri=90;
+    if(name==="TP9" || name==="TP10"){
+      const sP3 = meanAbsInWindow(diff, idx, P3_WIN[0], P3_WIN[1]);
+      sw  = constrain(map(sP3, 0, 0.35, 2, 4.5), 2, 4.5);
+      bri = constrain(map(sP3, 0, 0.35, 75, 100), 75, 100);
+    }
+
+    const chMax = maxAbsChannel(avgAll, idx) || 1e-6;
+    stroke(hue,80,bri); strokeWeight(sw); noFill();
+    beginShape();
+    for(let i=0;i<avgAll.length;i++){
+      const t = map(i,0,avgAll.length-1,-PRE_MS,POST_MS);
+      const x = map(t,-PRE_MS,POST_MS,0,plotW);
+      const norm = constrain((avgAll[i][idx]||0)/chMax, -1, 1);
+      const y = yBase - norm * AMP_PX;
+      vertex(x,y);
+    }
+    endShape();
+
+    noStroke(); fill(hue,80,90); textAlign(LEFT,BOTTOM); textSize(12);
+    text(name, 6, yBase-6);
+  }
+
+  // ---- Difference wave overlay (TP9 & TP10 averaged) ----
+  const diffAvg = [];
+  if(diff.length){
+    for(let i=0;i<diff.length;i++){
+      const mean = (diff[i][0] + diff[i][3]) / 2; // TP9 + TP10
+      diffAvg.push(mean);
+    }
+    stroke(0,0,100); strokeWeight(2); drawingContext.setLineDash([6,6]);
+    noFill();
+    beginShape();
+    const yMid = plotH/2; // centered overlay
+    const maxDiff = maxAbsChannel(diffAvg.map(v=>[v]), 0) || 1e-6;
+    for(let i=0;i<diffAvg.length;i++){
+      const t = map(i,0,diffAvg.length-1,-PRE_MS,POST_MS);
+      const x = map(t,-PRE_MS,POST_MS,0,plotW);
+      const y = yMid - constrain(diffAvg[i]/maxDiff, -1, 1)*AMP_PX;
+      vertex(x,y);
+    }
+    endShape();
+    drawingContext.setLineDash([]);
+    noStroke(); fill(0,0,95); textAlign(RIGHT,TOP); textSize(10);
+    text("Angry − Happy (TP9+TP10)", plotW-10, 6);
+  }
+
+  pop();
+}
+
+// -------- Stimulus Panel --------
+function drawStimPanel(){
+  push();
+  const PAD=18;
+  const topH=Math.min(380, height*0.62)+PAD;
+  translate(PAD, topH+PAD);
+  const h = height - (topH + 2*PAD);
+  const w = width - 2*PAD;
+  stroke(0,0,35); noFill(); rect(0,0,w,h);
+
+  const cx=w/2, cy=h/2;
+  const R=48;
+
+  if(phase==="STIM"){
+    if(isRare){
+      drawAngryFace(cx, cy, R, color(0,100,100));
+      drawStimLabel("ANGRY FACE", cx, cy - R - 40, color(0,100,100));
+    } else {
+      drawSmiley(cx, cy, R, color(220,80,100));
+      drawStimLabel("HAPPY FACE", cx, cy - R - 40, color(220,80,100));
+    }
+  } else {
+    stroke(0,0,50); line(cx-10,cy,cx+10,cy); line(cx,cy-10,cx,cy+10);
+  }
+
+  noStroke(); fill(255); textAlign(CENTER,BOTTOM); textSize(12);
+  const label = (phase==="STIM") ? (isRare?"Angry Face (20%)":"Happy Face (80%)") : "ITI / WAIT";
+  text(label, cx, h-8);
+  pop();
+}
+
+function drawStimLabel(txt, x, y, col){
+  noStroke(); fill(col); textAlign(CENTER,BOTTOM); textSize(18);
+  text(txt, x, y);
+}
+
+// -------- Face Drawings --------
+function drawSmiley(x, y, r, col){
+  noStroke(); fill(col); ellipse(x, y, r*2, r*2);
+  fill(0,0,10);
+  ellipse(x - r*0.35, y - r*0.25, r*0.25, r*0.25);
+  ellipse(x + r*0.35, y - r*0.25, r*0.25, r*0.25);
+  noFill(); stroke(0,0,10); strokeWeight(3);
+  arc(x, y + r*0.1, r*1.2, r*0.9, 0, PI);
+}
+
+function drawAngryFace(x, y, r, col){
+  noStroke(); fill(col); ellipse(x, y, r*2, r*2);
+  stroke(0,0,10); strokeWeight(4);
+  line(x - r*0.55, y - r*0.45, x - r*0.25, y - r*0.3);
+  line(x + r*0.55, y - r*0.45, x + r*0.25, y - r*0.3);
+  noStroke(); fill(0,0,10);
+  ellipse(x - r*0.35, y - r*0.2, r*0.25, r*0.25);
+  ellipse(x + r*0.35, y - r*0.2, r*0.25, r*0.25);
+  noFill(); stroke(0,0,10); strokeWeight(3);
+  arc(x, y + r*0.4, r*1.2, r*0.9, PI, TWO_PI);
+}
+
+// -------- Helpers --------
+function avgPerChannel(list){
+  const chN=4;
+  if(!list.length) return Array.from({length:epochLen},()=>Array(chN).fill(0));
+  const out=Array.from({length:epochLen},()=>Array(chN).fill(0));
+  for(const ep of list)
+    for(let i=0;i<epochLen;i++)
+      for(let ch=0;ch<chN;ch++) out[i][ch]+=ep[i][ch]||0;
+  for(let i=0;i<epochLen;i++)
+    for(let ch=0;ch<chN;ch++) out[i][ch]/=list.length;
+  return out;
+}
+function smooth2D(a,n=5){
+  if(!a.length) return a;
+  const L=a.length, C=a[0].length, h=Math.floor(n/2);
+  const o=Array.from({length:L},()=>Array(C).fill(0));
+  for(let i=0;i<L;i++) for(let ch=0;ch<C;ch++){
+    let s=0,c=0; for(let k=-h;k<=h;k++){ const j=i+k; if(j>=0&&j<L){ s+=a[j][ch]; c++; } }
+    o[i][ch]=s/Math.max(1,c);
+  } return o;
+}
+function subtract2D(a,b){
+  const L=Math.max(a.length,b.length), C=(a[0]?.length||b[0]?.length||0);
+  const o=Array.from({length:L},()=>Array(C).fill(0));
+  for(let i=0;i<L;i++) for(let ch=0;ch<C;ch++){
+    const av=a[i]?.[ch]??0, bv=b[i]?.[ch]??0; o[i][ch]=av-bv;
+  } return o;
+}
+function meanAbsInWindow(arr2d, ch, ms1, ms2){
+  if(!arr2d.length) return 0;
+  const i1=Math.max(0, ms2i(ms1)), i2=Math.min(arr2d.length-1, ms2i(ms2));
+  let s=0,c=0; for(let i=i1;i<=i2;i++){ s+=Math.abs(arr2d[i][ch]||0); c++; }
+  return c? s/c : 0;
+}
+function maxAbsChannel(a, ch){
+  let m=0; for(let i=0;i<a.length;i++) m=Math.max(m, Math.abs(a[i][ch]||0)); return m;
+}
+function ms2i(ms){ return Math.round(ms*sr/1000); }
+
+// -------- Simulation (P300 stronger for Angry) --------
+function simulateEpoch(wasRare){
+  const ep=new Array(epochLen);
+  for(let i=0;i<epochLen;i++){ ep[i]=[0,0,0,0]; for(let ch=0;ch<4;ch++) ep[i][ch]=randomGaussian(0,0.04); }
+  stamp(ep, ms2i(110),18,[ +0.04,+0.03,+0.03,+0.04 ]);
+  stamp(ep, ms2i(170),24,[ -0.03,-0.02,-0.02,-0.03 ]);
+  const tpAmp=wasRare?0.18:0.05, afAmp=wasRare?0.03:0.01;
+  stamp(ep, ms2i(420),70,[ tpAmp, afAmp, afAmp, tpAmp ]);
+  return ep;
+}
+function stamp(ep, idx, width, amps){
+  for(let i=-3*width;i<=3*width;i++){
+    const j=idx+i; if(j<0||j>=ep.length) continue;
+    const g=Math.exp(-(i*i)/(2*width*width));
+    for(let ch=0;ch<4;ch++) ep[j][ch]+= (amps[ch]||0)*g;
+  }
+}

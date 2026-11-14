@@ -1,0 +1,223 @@
+// === Part 1 — Adaptive Flow Neurofeedback (extends your Assignment 2) ===
+// Simulated EEG controls: Attention=beta, Meditation=alpha
+// Adds: flow "window" training, adaptive difficulty, smoothing,
+// score/streak/best, ~60s history HUD, tiny chime, title & state cues.
+
+let particles = [];
+let alphaEMA = 0, betaEMA = 0;
+let lastMillis = 0;
+
+// ----- Flow target (adaptive difficulty) -----
+let flowTarget = 0.06;          // target engagement: beta - alpha
+let tolerance = 0.08;           // starts lenient; tightens with success
+const tolMin = 0.03, tolMax = 0.20;
+
+let inFlow = false;
+let streak = 0;                 // seconds continuously in flow
+let bestStreak = 0;
+let score = 0;                  // total time-in-flow * 10 pts/sec
+
+// History for last ~60s (10 samples/sec)
+const hist = [];
+const histMaxLen = 600;
+
+// Overlay toggle
+let showHUD = true;
+
+// --- tiny chime (WebAudio, safe fallback) ---
+let audioCtx = null;
+function chime() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = "sine";
+    o.frequency.value = 880; // A5
+    g.gain.value = 0.0001;   // subtle
+    o.connect(g).connect(audioCtx.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(1e-6, audioCtx.currentTime + 0.12);
+    o.stop(audioCtx.currentTime + 0.13);
+  } catch (_) {}
+}
+
+// Utility: exponential moving average (anti-flicker)
+function ema(prev, x, k) { return prev + k * (x - prev); }
+
+function setup() {
+  colorMode(HSB, 1, 1, 1);
+
+  // particle system (kept & slightly tuned)
+  for (let i = 0; i < 120; i++) {
+    particles.push({
+      x: random(width),
+      y: random(height),
+      vx: random(-10, 10),
+      vy: random(-10, 10),
+      life: 1.0,
+      seed: random(1) // per-particle hue for rainbow
+    });
+  }
+  lastMillis = millis();
+}
+
+function draw() {
+  // dt
+  const now = millis();
+  const dt = (now - lastMillis) / 1000;
+  lastMillis = now;
+
+  // --- BrainImation inputs (Simulate Data sliders work) ---
+  const alphaRaw = (eegData?.meditation ?? eegData?.alpha ?? 0);
+  const betaRaw  = (eegData?.attention  ?? eegData?.beta  ?? 0);
+
+  // Smooth for stability
+  alphaEMA = ema(alphaEMA, alphaRaw, 0.15);
+  betaEMA  = ema(betaEMA,  betaRaw,  0.15);
+
+  // Engagement metric: beta - alpha
+  const engage = betaEMA - alphaEMA;
+
+  // Distance from flow window center (0 when perfect)
+  const dist = Math.abs(engage - flowTarget);
+
+  // Enter/exit hysteresis to prevent flicker
+  const enterTol = tolerance;
+  const exitTol  = tolerance + 0.01;
+
+  const wasInFlow = inFlow;
+  if (!inFlow && dist <= enterTol) {
+    inFlow = true;
+    if (!wasInFlow) chime(); // tiny chime when entering flow
+  } else if (inFlow && dist > exitTol) {
+    inFlow = false;
+  }
+
+  // --- Scoring & adaptive difficulty ---
+  if (inFlow) {
+    score += dt * 10;     // 10 pts per sec in flow
+    streak += dt;
+    bestStreak = Math.max(bestStreak, streak);
+    // make it slightly harder the longer you hold flow
+    if (streak > 3) tolerance = Math.max(tolMin, tolerance - 0.002);
+  } else {
+    // out of flow → gradually ease difficulty
+    streak = 0;
+    tolerance = Math.min(tolMax, tolerance + 0.0008);
+  }
+
+  // --- Visuals (preserve your vibe: calm rainbow vs stressed red) ---
+  const stressed = betaEMA > alphaEMA + 0.02;
+
+  if (stressed) background(0, 0, 1, 0.12);    // white-ish when stressed
+  else          background(0, 0, 0.06, 0.10); // dark when calm
+
+  // Speed & turbulence respond to distance from flow:
+  // farther from flow → more stormy/fast; in flow → glide.
+  const turbulence = constrain(dist * 20, 0, 2.5);   // 0..2.5
+  const baseSpeed  = stressed ? 1.0 : 0.25;
+  const speed      = baseSpeed + (stressed ? dist * 1.0 : dist * 0.3);
+
+  for (let p of particles) {
+    // brain-influenced jitter, stabilized
+    p.vx += random(-1, 1) * alphaEMA * (0.4 + turbulence * 0.3);
+    p.vy += random(-1, 1) * betaEMA  * (0.4 + turbulence * 0.3);
+
+    // Apply speed scaling (glide vs storm)
+    p.x += p.vx * speed * 0.6;
+    p.y += p.vy * speed * 0.6;
+
+    // Wrap
+    if (p.x < 0) p.x = width;
+    if (p.x > width) p.x = 0;
+    if (p.y < 0) p.y = height;
+    if (p.y > height) p.y = 0;
+
+    // Color: stressed = red, calm = rainbow
+    const hue = stressed ? 0.0 : (p.seed + frameCount * 0.002) % 1.0;
+    // In-flow adds subtle neon glow (higher brightness)
+    const brightBoost = inFlow ? 0.18 : 0.0;
+    fill(hue, 0.9, Math.min(1, 0.75 + brightBoost), p.life);
+    noStroke();
+    ellipse(p.x, p.y, 5 + (eegData?.gamma ?? 0) * 10);
+
+    // life fade
+    p.life *= 0.995;
+    if (p.life < 0.1) p.life = 1.0;
+  }
+
+  // --- History strip (last ~60s of dist, lower = better) ---
+  hist.push(dist);
+  if (hist.length > histMaxLen) hist.shift();
+
+  if (showHUD) drawHUD(engage, dist);
+
+  // --- Concept title label (top center) ---
+  push();
+  textAlign(CENTER, TOP);
+  // cyan-ish HSB (colorMode is HSB 0..1)
+  fill(0.56, 1, 1);
+  textSize(20);
+  text("Adaptive Flow Neurofeedback — Beyond Basic Control", width / 2, 20);
+  pop();
+
+  // --- State cues (center) ---
+  push();
+  textAlign(CENTER, CENTER);
+  textSize(18);
+  if (inFlow) {
+    // calm green cue for focus stability
+    fill(0.33, 1, 0.85);
+    text("Focus Stabilized ✓", width / 2, height / 2);
+  } else {
+    // soft amber cue for loss of stability
+    fill(0.08, 0.9, 1);
+    text("Attention Fluctuating — Recenter", width / 2, height / 2);
+  }
+  pop();
+}
+
+function drawHUD(engage, dist) {
+  push();
+  noStroke();
+
+  // History graph background
+  fill(0, 0, 0, 0.5);
+  rect(10, height - 90, 220, 80, 8);
+
+  // History line (dist)
+  const x0 = 14, y0 = height - 86, w = 212, h = 60;
+  stroke(0.6, 0.8, 1, 1); // cyan-ish
+  noFill();
+  beginShape();
+  for (let i = 0; i < hist.length; i++) {
+    const x = x0 + (i / Math.max(1, histMaxLen - 1)) * w;
+    const y = y0 + h - constrain(hist[i] * 60, 0, h);
+    vertex(x, y);
+  }
+  endShape();
+
+  // Flow window band
+  noStroke();
+  fill(0.6, 0.4, 1, 0.15); // translucent cyan band
+  const bandTop = y0 + h - constrain((tolerance) * 60, 0, h);
+  const bandBot = y0 + h - constrain((-tolerance) * 60, -h, h);
+  rect(x0, Math.min(bandTop, bandBot), w, Math.abs(bandBot - bandTop));
+
+  // Readouts
+  fill(0, 0, 1, 0.75);
+  rect(240, 10, 170, 84, 10);
+  fill(0, 0, 0.1);
+  textSize(12);
+  text(`Flow target: ${(flowTarget).toFixed(2)} (β-α)`, 248, 28);
+  text(`Tolerance:   ±${tolerance.toFixed(2)}`,        248, 44);
+  text(`Engage now:   ${engage.toFixed(2)}`,           248, 60);
+  text(`Score: ${Math.floor(score)}  Streak: ${streak.toFixed(1)}s`, 248, 76);
+  text(`Best: ${bestStreak.toFixed(1)}s   (H toggles HUD)`,          248, 92);
+
+  pop();
+}
+
+function keyPressed() {
+  if (key === 'H' || key === 'h') showHUD = !showHUD;
+}

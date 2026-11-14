@@ -1,0 +1,179 @@
+P5.js oddball concept graphic
+// --- Simplified ERP Simulator with P300 Oddball ---
+// Top: ERP waveform (average of simulated trials)
+// Bottom: P300 stimulus (blue standard / red rare with hazard overlay)
+
+let trialStart = 0;
+let trialDuration = 1500;
+let isRare = false;
+let trial = 0;
+
+let standardERPs = [];
+let rareERPs = [];
+let avgStandard = [];
+let avgRare = [];
+
+let epochLength = 384;  // ~1500ms at 256Hz
+let samplingRate = 256; // Hz
+
+function setup() {
+  createCanvas(800, 600);
+  colorMode(HSB, 360, 100, 100);
+  textFont('Helvetica');
+  frameRate(60);
+  trialStart = millis();
+}
+
+function draw() {
+  background(0, 0, 10);
+
+  let now = millis();
+  let elapsed = now - trialStart;
+
+  // --- When a trial finishes, simulate a new ERP ---
+  if (elapsed > trialDuration) {
+    trial++;
+    isRare = random() < 0.2; // 20% rare
+    trialStart = now;
+
+    let epoch = simulateERP(isRare);
+    if (isRare) {
+      rareERPs.push(epoch);
+      if (rareERPs.length > 30) rareERPs.shift();
+    } else {
+      standardERPs.push(epoch);
+      if (standardERPs.length > 30) standardERPs.shift();
+    }
+
+    avgStandard = averageEpochs(standardERPs);
+    avgRare = averageEpochs(rareERPs);
+  }
+
+  // --- Top window: ERP visualization ---
+  push();
+  drawERP(avgStandard, avgRare);
+  pop();
+
+  // --- Bottom window: stimulus display ---
+  push();
+  translate(0, height / 2);
+  drawStimulus(elapsed);
+  pop();
+}
+
+// --------------------------------------------------
+// Simulate one ERP epoch (0–10Hz band + N200/P300)
+function simulateERP(isRare) {
+  let epoch = [];
+  for (let i = 0; i < epochLength; i++) {
+    let t = (i / samplingRate) * 1000; // ms
+    let noise = sin(TWO_PI * random(1, 10) * i / samplingRate) * 1.5;
+    let n200 = -2.5 * exp(-pow((t - 200) / 40, 2));
+    let p300 = (isRare ? 7 : 2) * exp(-pow((t - 320) / 90, 2));
+    epoch.push(noise + n200 + p300 + random(-0.3, 0.3));
+  }
+  return epoch;
+}
+
+// --------------------------------------------------
+// Draw ERP waveforms
+function drawERP(std, rare) {
+  fill(0, 0, 100);
+  textAlign(CENTER);
+  textSize(16);
+  text("Simulated Event-Related Potentials (ERP)", width / 2, 25);
+
+  // Axes
+  stroke(0, 0, 40);
+  line(60, height / 2 - 80, width - 60, height / 2 - 80);
+  line(60, height / 4 - 100, 60, height / 2 - 40);
+
+  // Standard
+  if (std.length > 0) {
+    stroke(210, 80, 100);
+    noFill();
+    beginShape();
+    for (let i = 0; i < std.length; i++) {
+      let x = map(i, 0, std.length - 1, 60, width - 60);
+      let y = map(std[i], -8, 8, height / 2 - 50, height / 4 - 100);
+      vertex(x, y);
+    }
+    endShape();
+  }
+
+  // Rare
+  if (rare.length > 0) {
+    stroke(0, 80, 100);
+    noFill();
+    beginShape();
+    for (let i = 0; i < rare.length; i++) {
+      let x = map(i, 0, rare.length - 1, 60, width - 60);
+      let y = map(rare[i], -8, 8, height / 2 - 50, height / 4 - 100);
+      vertex(x, y);
+    }
+    endShape();
+  }
+
+  noStroke();
+  fill(0, 0, 90);
+  textSize(12);
+  textAlign(LEFT);
+  text("Standard (Blue)", 70, height / 4 - 120);
+  text("Rare (Red)", 70, height / 4 - 140);
+}
+
+// --------------------------------------------------
+// Draw stimulus in bottom window
+function drawStimulus(elapsed) {
+  background(0, 0, 15);
+  noStroke();
+
+  if (isRare) {
+    // Red stimulus for 200ms, then hazard
+    if (elapsed < 200) {
+      fill(0, 80, 100);
+      ellipse(width / 2, height / 4, 100);
+    } else {
+      drawHazard(width / 2, height / 4, 100);
+    }
+  } else {
+    // Blue stimulus for 500ms
+    if (elapsed < 500) {
+      fill(210, 80, 100);
+      ellipse(width / 2, height / 4, 100);
+    }
+  }
+
+  fill(0, 0, 90);
+  textAlign(CENTER);
+  textSize(14);
+  text(isRare ? "RARE (Red)" : "STANDARD (Blue)", width / 2, height / 2 - 20);
+  text(`Trial ${trial}`, width / 2, height / 2);
+  text(`${(elapsed / 1000).toFixed(2)} s`, width / 2, height / 2 + 20);
+}
+
+// --------------------------------------------------
+// Utility: average epochs
+function averageEpochs(epochs) {
+  if (epochs.length === 0) return [];
+  let len = epochs[0].length;
+  let avg = Array(len).fill(0);
+  for (let e of epochs) for (let i = 0; i < len; i++) avg[i] += e[i];
+  for (let i = 0; i < len; i++) avg[i] /= epochs.length;
+  return avg;
+}
+
+// --------------------------------------------------
+// Hazard indicator
+function drawHazard(x, y, size) {
+  push();
+  translate(x, y);
+  fill(30, 100, 100);
+  stroke(30, 80, 80);
+  strokeWeight(2);
+  triangle(0, -size / 2, -size / 2, size / 2, size / 2, size / 2);
+  fill(0, 0, 100);
+  noStroke();
+  triangle(0, -size * 0.35, -size * 0.35, size * 0.35, size * 0.35, size * 0.35);
+  pop();
+}

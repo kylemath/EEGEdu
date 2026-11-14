@@ -1,0 +1,289 @@
+// 🧠 BrainImation — 4 states + Flow game with EEG-speed control
+// States: calm (circles), focused (network), stressed (triangles), drowsy (squares)
+
+
+let pts = [];
+const N0 = 160;
+
+
+// smoothed inputs
+const S = { A:0, M:0, connected:false };
+const EMA = 0.18;
+
+
+// mode with hysteresis
+let mode = "neutral"; // calm | focused | stressed | drowsy | neutral
+const TH = {
+ // ENTER thresholds (from sliders only)
+ CALM_IN:    {A:0.50, M:0.65},  // low A, high M
+ FOCUSED_IN: {A:0.72, M:0.20},  // high A, any M >= ~0.20
+ STRESS_IN:  {A:0.78, M:0.25},  // very high A + low M
+ DROWSY_IN:  {A:0.35, M:0.55},  // low A + low-mid M
+ // EXIT margins
+ CALM_OUT:    {A:0.56, M:0.58},
+ FOCUSED_OUT: {A:0.64, M:0.18},
+ STRESS_OUT:  {A:0.70, M:0.30},
+ DROWSY_OUT:  {A:0.42, M:0.62},
+};
+
+
+function setup(){
+ colorMode(HSB,360,100,100,1);
+ noStroke();
+ for (let i=0;i<N0;i++) pts.push(makeP());
+}
+
+
+function draw(){
+ // 1) read sim/headset safely
+ const e = (typeof eegData!=='undefined') ? eegData : {};
+ const aIn = norm(e.attention);
+ const mIn = norm(e.meditation);
+
+
+ // 2) smooth
+ S.A = lerp(S.A, clamp01(aIn), EMA);
+ S.M = lerp(S.M, clamp01(mIn), EMA);
+ S.connected = !!e.connected;
+
+
+ // 3) classify using only A & M
+ updateMode(S.A, S.M);
+
+
+ // 4) render per-mode (distinct looks)
+ if (mode==="calm"){
+   renderCalm(S.A, S.M);
+ } else if (mode==="focused"){
+   renderFocused(S.A, S.M);
+ } else if (mode==="stressed"){
+   renderStressed(S.A, S.M);
+ } else if (mode==="drowsy"){
+   renderDrowsy(S.A, S.M);
+ } else {
+   renderNeutral(S.A, S.M);
+ }
+
+
+ // 5) Flow Game overlay (target speed tied to EEG/state)
+ runFlowGame();
+
+
+ // HUD
+ fill(0,0,100,0.95); textAlign(LEFT,TOP); textSize(12);
+ text(`Mode: ${mode}   A:${S.A.toFixed(2)}  M:${S.M.toFixed(2)}`, 10, 10);
+
+
+ if (!S.connected){
+   fill(0,0,100,0.9); textAlign(CENTER, BOTTOM); textSize(12);
+   text("Simulation active — connect headset for live EEG", width/2, height-10);
+ }
+}
+
+
+/* ---------- Classification (A/M only) ---------- */
+function updateMode(A,M){
+ const canCalm    = (A<=TH.CALM_IN.A   && M>=TH.CALM_IN.M);
+ const canFocused = (A>=TH.FOCUSED_IN.A&& M>=TH.FOCUSED_IN.M);
+ const canStress  = (A>=TH.STRESS_IN.A && M<=TH.STRESS_IN.M);
+ const canDrowsy  = (A<=TH.DROWSY_IN.A && M<=TH.DROWSY_IN.M);
+
+
+ if (canStress)       mode="stressed";
+ else if (canFocused) mode="focused";
+ else if (canCalm)    mode="calm";
+ else if (canDrowsy)  mode="drowsy";
+
+
+ if (mode==="calm"     && !(A<=TH.CALM_OUT.A    && M>=TH.CALM_OUT.M))    mode="neutral";
+ if (mode==="focused"  && !(A>=TH.FOCUSED_OUT.A && M>=TH.FOCUSED_OUT.M)) mode="neutral";
+ if (mode==="stressed" && !(A>=TH.STRESS_OUT.A  && M<=TH.STRESS_OUT.M))  mode="neutral";
+ if (mode==="drowsy"   && !(A<=TH.DROWSY_OUT.A  && M<=TH.DROWSY_OUT.M))  mode="neutral";
+}
+
+
+/* ---------- Mode renderers (distinct shapes) ---------- */
+
+
+// Calm = soft circles, heavy trails, cool hues
+function renderCalm(A,M){
+ const calm = mix(M, 1-A, 0.5);
+ background(205, 25, 12, lerp(0.18, 0.36, calm));
+ for (const p of pts){
+   step(p, 0.006 + 0.012*(1-M), 0.996);
+   const hue = (200 + p.h) % 360;
+   const size = 6 + 10*M;
+   fill(hue, 55, 70 + 25*M, 0.92);
+   ellipse(p.x, p.y, size, size);
+ }
+ linkSome(120, 0.9);
+}
+
+
+// Focused = dots + dense network, warm/bright
+function renderFocused(A,M){
+ background(220, 28, 12, 0.10);
+ for (const p of pts){
+   step(p, 0.010 + 0.028*A, 0.992);
+   const hue = (45 + p.h) % 360;
+   fill(hue, 75, 78 + 20*A, 0.95);
+   ellipse(p.x, p.y, 3.5, 3.5);
+ }
+ linkSome( lerp(110, 180, A), 1.0 );
+}
+
+
+// Stressed = spiky triangles, fragment links, hot hues
+function renderStressed(A,M){
+ background(5, 40, 18, 0.06);
+ for (const p of pts){
+   step(p, 0.016 + 0.040*A, 0.988);
+   const s = 6 + 10*A + 6*(1-M);
+   fill((0 + p.h)%360, 80, 70 + 25*A, 0.95);
+   tri(p.x, p.y, s);
+ }
+ linkSome( 70 + 40*A, 0.5 );
+}
+
+
+// Drowsy = squares, dim/slow, cool-muted
+function renderDrowsy(A,M){
+ background(230, 12, 8, 0.22);
+ for (const p of pts){
+   step(p, 0.007 + 0.010*(1-A), 0.995);
+   const s = 6 + 16*(1-A);
+   fill((260 + p.h)%360, 35, 50, 0.9);
+   rect(p.x, p.y, s, s);
+ }
+ linkSome( 90, 0.6 );
+}
+
+
+// Neutral = safe fallback (light network)
+function renderNeutral(A,M){
+ background(220, 30, 10, 0.16);
+ for (const p of pts){
+   step(p, 0.008 + 0.020*(A*(1-M)+0.15), 0.993);
+   fill((180+p.h)%360, 65, 70, 0.9);
+   ellipse(p.x, p.y, 4, 4);
+ }
+ linkSome(120, 0.7);
+}
+
+
+/* ---------- Shared drawing helpers ---------- */
+function step(p, jitter, damp){
+ p.vx = (p.vx + random(-jitter, jitter)) * damp;
+ p.vy = (p.vy + random(-jitter, jitter)) * damp;
+ p.x = (p.x + p.vx + width ) % width;
+ p.y = (p.y + p.vy + height) % height;
+}
+function linkSome(maxD, opScale){
+ const maxD2 = maxD*maxD;
+ strokeWeight(1.4);
+ for (let i=0;i<pts.length;i++){
+   let links=0; const a=pts[i];
+   for (let j=i+3;j<pts.length && links<6;j+=3){
+     const b=pts[j], dx=a.x-b.x, dy=a.y-b.y, d2=dx*dx+dy*dy;
+     if (d2<maxD2){
+       const d=sqrt(d2), apha=map(d,0,maxD,0.65,0)*opScale;
+       stroke((frameCount*2)%360, 50, 78, apha);
+       line(a.x,a.y,b.x,b.y); links++;
+     }
+   }
+ }
+ noStroke();
+}
+
+
+/* ---------- Utils ---------- */
+function makeP(){ return {x:random(width), y:random(height), vx:random(-.6,.6), vy:random(-.6,.6), h:random(360)}; }
+function norm(v){ return (typeof v==='number') ? (v>1 ? v/100 : v) : 0; }
+function clamp01(x){ return x<0?0:x>1?1:x; }
+function mix(a,b,t){ return a*(1-t)+b*t; }
+function tri(x,y,s){ const r=s/2; push(); translate(x,y); rotate(frameCount*0.03+(x+y)*0.0005); triangle(-r, r, 0, -r, r, r); pop(); }
+
+
+/* ===================== FLOW GAME (EEG speed policy) ===================== */
+// Target slows down (easier) for HIGH attention or STRESSED.
+// Target speeds up (harder) for LOW attention or CALM/DROWSY.
+
+
+let D = 0.5; // kept for size/TTL shaping if you want later
+
+
+const tgt = {
+ x:0, y:0, vx:0, vy:0, r:24,
+ alive:false, bornMs:0, ttlMs:1500,
+ baseSpeed:3.0
+};
+
+
+function runFlowGame(){
+ if (!tgt.alive) spawnTarget();
+
+
+ // --- EEG/state speed multiplier ---
+ const att = clamp01(S.A);
+ // map attention: low A → 1.40x (faster/harder), high A → 0.60x (slower/easier)
+ let m = map(att, 0, 1, 1.40, 0.60);
+
+
+ // state nudges:
+ if (mode === "stressed")      m *= 0.70;  // stressed → slower
+ else if (mode === "focused")  m *= 0.85;  // high A focus → a bit slower
+ else if (mode === "calm")     m *= 1.20;  // relaxed → faster
+ else if (mode === "drowsy")   m *= 1.30;  // drowsy → fastest
+
+
+ m = constrain(m, 0.40, 1.80);
+
+
+ // move & bounce
+ tgt.x += tgt.vx * m;
+ tgt.y += tgt.vy * m;
+ if (tgt.x < tgt.r || tgt.x > width - tgt.r) tgt.vx *= -1;
+ if (tgt.y < tgt.r || tgt.y > height - tgt.r) tgt.vy *= -1;
+
+
+ // draw
+ const age = millis() - tgt.bornMs;
+ const t = clamp01(1 - age / tgt.ttlMs);
+
+
+ // shadow + body
+ noStroke(); fill(0,0,0,0.25); ellipse(tgt.x+2, tgt.y+2, tgt.r*2.1, tgt.r*2.1);
+ fill(0,0,100,0.95); ellipse(tgt.x, tgt.y, tgt.r*2, tgt.r*2);
+
+
+ // timer arc
+ stroke(200,80,80,0.9); strokeWeight(3); noFill();
+ push(); translate(tgt.x, tgt.y); rotate(-HALF_PI);
+ arc(0,0, tgt.r*2.6, tgt.r*2.6, 0, TWO_PI * t);
+ pop(); noStroke();
+
+
+ // timeout → respawn
+ if (age >= tgt.ttlMs) tgt.alive = false;
+
+
+ // small HUD line for speed multiplier
+ fill(0,0,100,0.9); textAlign(RIGHT,TOP); textSize(12);
+ text(`Speed x${m.toFixed(2)}`, width-10, 10);
+}
+
+
+function spawnTarget(){
+ tgt.r = 24;
+ tgt.ttlMs = 1500;
+ tgt.baseSpeed = 3.0; // underlying speed; EEG/state only scales it
+ tgt.x = random(tgt.r, width - tgt.r);
+ tgt.y = random(tgt.r, height - tgt.r);
+ const ang = random(TWO_PI), s = tgt.baseSpeed;
+ tgt.vx = cos(ang) * s;
+ tgt.vy = sin(ang) * s;
+ tgt.bornMs = millis();
+ tgt.alive = true;
+}
+
+

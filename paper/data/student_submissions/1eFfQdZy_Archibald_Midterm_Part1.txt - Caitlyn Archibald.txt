@@ -1,0 +1,190 @@
+let orb = { x: 0, y: 0, size: 50, glow: 0 };
+let targetAlphaThetaRatio = 2;
+let rewardActive = false;
+let rewardTimer = 0;
+let rewardDuration = 60;
+let rewardParticles = [];
+let score = 0;
+let maxScorePerFrame = 0.05;
+let rotation = 0;
+
+function setup() {
+  orb.x = width / 2;
+  orb.y = height / 2;
+  colorMode(HSB, 360, 100, 100, 1);
+}
+
+// ----------------------------------------------------
+// 🧠 Brainwave progress calculation
+// ----------------------------------------------------
+function getProgress() {
+  let currentRatio = eegData.alpha / (eegData.theta + 0.01);
+  let diff = abs(targetAlphaThetaRatio - currentRatio);
+  let progress = constrain(1 - diff / targetAlphaThetaRatio, 0, 1);
+  return progress;
+}
+
+// ----------------------------------------------------
+// ✨ Calm Celebration Effect (Glitter Particles Only)
+// ----------------------------------------------------
+function triggerReward() {
+  rewardActive = true;
+  rewardTimer = rewardDuration * 2; // lasts longer
+
+  // Create a batch of drifting lavender-white particles
+  for (let i = 0; i < 60; i++) {
+    rewardParticles.push({
+      x: orb.x,
+      y: orb.y,
+      vx: random(-0.8, 0.8),
+      vy: random(-1.5, -0.2),
+      size: random(4, 8),
+      hue: random(220, 280), // cool white–lavender range
+      life: 120
+    });
+  }
+}
+
+function drawReward() {
+  if (!rewardActive) return;
+
+  // Drifting glow particles only
+  for (let p of rewardParticles) {
+    fill(p.hue, 20, 100, p.life / 120); // low saturation = soft glow
+    noStroke();
+    ellipse(p.x, p.y, p.size);
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
+  }
+  rewardParticles = rewardParticles.filter(p => p.life > 0);
+
+  rewardTimer--;
+  if (rewardTimer <= 0 && rewardParticles.length === 0) rewardActive = false;
+}
+
+// ----------------------------------------------------
+// 🌅 Gradient Background (Top → Bottom, Vibrant)
+// ----------------------------------------------------
+function drawBackground() {
+  let topColor = color(180, 50, 90);    // vibrant soft violet-blue
+  let bottomColor = color(220, 50, 90); // bright pink-magenta
+  for (let y = 0; y < height; y++) {
+    let inter = map(y, 0, height, 0, 1);
+    let c = lerpColor(topColor, bottomColor, inter);
+    stroke(c);
+    line(0, y, width, y);
+  }
+}
+
+// ----------------------------------------------------
+// 🌻 Sunflower (Soft, Subtle Petal Motion, Harmonized Colors)
+// ----------------------------------------------------
+function drawSunflower(x, y, baseLength, petalWidth, progress, meditation, colorProgress) {
+  push();
+  translate(x, y);
+  rotation += map(meditation, 0, 1, 0, 0.02);
+  rotate(rotation);
+
+  // Harmonized purple → pink for petals
+  let startHue = 180; // brighter purple
+  let endHue = 200;   // pink-magenta
+  let hueValue = lerp(startHue, endHue, colorProgress);
+
+  let petalSat = 90;
+  let petalBright = 90;
+  let petalCount = 15;
+
+  // 🌬 Gentle ambient "breathing"
+  let softWave = sin(frameCount * 0.01) * 0.05;
+
+  for (let i = 0; i < petalCount; i++) {
+    let angle = TWO_PI / petalCount * i;
+    let length = baseLength * (0.9 + 0.15 * progress + softWave);
+    let width = 80;
+
+    push();
+    rotate(angle);
+    fill(hueValue, petalSat, petalBright);
+    noStroke();
+    beginShape();
+    vertex(0, 0);
+    bezierVertex(width/4, -length/3, width/4, -2*length/3, 0, -length);
+    bezierVertex(-width/4, -2*length/3, -width/4, -length/3, 0, 0);
+    endShape(CLOSE);
+    pop();
+  }
+
+  // Second offset layer
+  for (let i = 0; i < petalCount; i++) {
+    let angle = TWO_PI / petalCount * i + PI/petalCount;
+    let length = baseLength * (0.85 + 0.1 * progress + softWave);
+    let width = petalWidth * 0.9;
+
+    push();
+    rotate(angle);
+    fill(hueValue, petalSat, petalBright * 0.95);
+    noStroke();
+    beginShape();
+    vertex(0, 0);
+    bezierVertex(width/4, -length/3, width/4, -2*length/3, 0, -length);
+    bezierVertex(-width/4, -2*length/3, -width/4, -length/3, 0, 0);
+    endShape(CLOSE);
+    pop();
+  }
+
+  // Core
+  let coreSize = petalWidth * 1.5 + progress * 10;
+  fill((hueValue + 30) % 360, 80, 50 + progress * 20);
+  ellipse(0, 0, coreSize);
+  pop();
+}
+
+// ----------------------------------------------------
+// 🌟 Main Draw Loop
+// ----------------------------------------------------
+function draw() {
+  drawBackground();
+
+  let progress = getProgress();
+
+  // 🌬 Calm-state Orb Behaviour
+  let baseSize = 50;
+  let pulseAmplitude = map(progress, 0, 1, 0, 20);
+  let pulseSpeed = map(progress, 0, 1, 0, 0.08);
+  let pulse = sin(frameCount * pulseSpeed) * pulseAmplitude;
+  orb.size = baseSize + progress * 50 + pulse;
+
+  // 🩵 Orb hue: bright purple → pink
+  let colorProgress = eegData.attention;
+  let lowHue = 260;   // brighter purple at low attention
+  let highHue = 330;  // pink at high attention
+  orb.hue = lerp(lowHue, highHue, colorProgress);
+
+  // 🌫 Soft glow layers
+  noStroke();
+  for (let i = 5; i > 0; i--) {
+    fill(orb.hue, 70, 100, progress * 0.2 / i);
+    ellipse(orb.x, orb.y, orb.size + i * 15);
+  }
+
+  // 🌻 Draw sunflower
+  drawSunflower(orb.x, orb.y, orb.size * 2, orb.size * 0.25, progress, eegData.meditation, colorProgress);
+
+  // 🎁 Rewards
+  if (progress > 0.8 && !rewardActive) triggerReward();
+  if (rewardActive) {
+    orb.size += sin(frameCount * 0.3) * 5;  // gentle bloom during celebration
+  }
+  drawReward();
+
+  // 🧾 Long-term Score
+  score += progress * maxScorePerFrame;
+  score -= (1 - progress) * 0.01;
+  score = max(score, 0);
+
+  fill(0, 0, 100);
+  textSize(20);
+  textAlign(RIGHT, TOP);
+  text("Score: " + floor(score), width - 20, 20);
+}

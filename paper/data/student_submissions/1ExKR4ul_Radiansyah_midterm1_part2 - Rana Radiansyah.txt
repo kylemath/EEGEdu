@@ -1,0 +1,191 @@
+// === N170 Face vs Object ERP Simulation (Multi-channel version) ===
+
+// Stimulus control
+let showStim = true;
+let showFace = true;
+let trial = 0;
+let itiFrames = 30; // ~1s ITI
+let stimFrames = 10; // ~300 ms stimulus
+let frameCounter = 0;
+
+// EEG epoch collection
+let faceEpochs = [];
+let objEpochs = [];
+let epochLength = 256; // 1s window
+let baselineSamples = 50; // ~200ms baseline
+
+let channelNames = ['TP9', 'AF7', 'AF8', 'TP10'];
+let channelColors = [ // Face vs Object pairs
+  {face: [330, 80, 90], obj: [330, 40, 50]}, // TP9 pink
+  {face: [60, 80, 90],  obj: [60, 40, 50]},  // AF7 yellow
+  {face: [180, 80, 90], obj: [180, 40, 50]}, // AF8 cyan
+  {face: [300, 80, 90], obj: [300, 40, 50]}  // TP10 purple
+];
+
+function setup() {
+  frameRate(30);
+  colorMode(HSB, 360, 100, 100);
+  textFont('monospace');
+}
+
+function draw() {
+  background(10);
+  let midY = height * 0.55;
+
+  // --- 1. ERP panel ---
+  drawERPPanel(0, 0, width, midY);
+
+  // --- 2. Stimulus panel ---
+  drawStimulusPanel(0, midY, width, height - midY);
+
+  // --- Stimulus timing ---
+  frameCounter++;
+  if (showStim && frameCounter > stimFrames) {
+    // Stimulus offset
+    showStim = false;
+    frameCounter = 0;
+
+    let epoch = eegData.getRecentEpoch(epochLength);
+    if (epoch.length === epochLength) {
+      if (showFace) {
+        faceEpochs.push(epoch);
+        if (faceEpochs.length > 20) faceEpochs.shift();
+      } else {
+        objEpochs.push(epoch);
+        if (objEpochs.length > 20) objEpochs.shift();
+      }
+    }
+
+  } else if (!showStim && frameCounter > itiFrames) {
+    // Start next trial
+    showStim = true;
+    showFace = random() > 0.5;
+    trial++;
+    frameCounter = 0;
+  }
+}
+
+// === ERP panel ===
+function drawERPPanel(x, y, w, h) {
+  push();
+  translate(x, y);
+
+  fill(255);
+  textAlign(CENTER);
+  textSize(16);
+  text("ERP Averaging (Face vs Object)", w/2, 25);
+
+  let left = 60;
+  let right = w - 40;
+  let top = 50;
+  let bottom = h - 40;
+
+  // Stimulus onset (0 ms)
+  stroke(0, 0, 70);
+  strokeWeight(1);
+  let onsetX = map(baselineSamples, 0, epochLength, left, right);
+  line(onsetX, top, onsetX, bottom);
+
+  // Time ticks
+  noStroke();
+  fill(200);
+  textSize(10);
+  for (let ms = -200; ms <= 800; ms += 200) {
+    let sample = baselineSamples + (ms * 0.256);
+    let xPos = map(sample, 0, epochLength, left, right);
+    line(xPos, bottom - 5, xPos, bottom);
+    text(ms + "ms", xPos, bottom + 12);
+  }
+
+  // Draw each channel
+  for (let ch = 0; ch < 4; ch++) {
+    let offsetY = map(ch, 0, 3, top + 30, bottom - 30);
+    stroke(0, 0, 30);
+    line(left, offsetY, right, offsetY); // zero line
+
+    if (faceEpochs.length > 0) drawAverageTrace(faceEpochs, ch, left, right, offsetY, channelColors[ch].face);
+    if (objEpochs.length > 0) drawAverageTrace(objEpochs, ch, left, right, offsetY, channelColors[ch].obj);
+
+    fill(255);
+    noStroke();
+    textAlign(LEFT, CENTER);
+    textSize(12);
+    text(channelNames[ch], 10, offsetY);
+  }
+
+  // Counters
+  fill(255);
+  textAlign(LEFT);
+  textSize(12);
+  text("Face trials: " + faceEpochs.length, left, top - 20);
+  text("Object trials: " + objEpochs.length, left + 150, top - 20);
+  pop();
+}
+
+// === Draw average for one channel ===
+function drawAverageTrace(epochs, ch, left, right, baselineY, c) {
+  let avg = new Array(epochLength).fill(0);
+  for (let e = 0; e < epochs.length; e++) {
+    for (let i = 0; i < epochLength; i++) {
+      avg[i] += epochs[e][i][ch] || 0;
+    }
+  }
+  for (let i = 0; i < avg.length; i++) avg[i] /= epochs.length;
+
+  // Baseline correction (-200 to 0 ms)
+  let base = 0;
+  for (let i = 0; i < baselineSamples; i++) base += avg[i];
+  base /= baselineSamples;
+  for (let i = 0; i < avg.length; i++) avg[i] -= base;
+
+  noFill();
+  stroke(c[0], c[1], c[2]);
+  strokeWeight(2);
+  beginShape();
+  for (let i = 0; i < avg.length; i++) {
+    let x = map(i, 0, epochLength, left, right);
+    let y = baselineY + map(avg[i], -50, 50, 40, -40);
+    vertex(x, y);
+  }
+  endShape();
+}
+
+// === Stimulus panel ===
+function drawStimulusPanel(x, y, w, h) {
+  push();
+  translate(x, y);
+  fill(255);
+  textAlign(CENTER);
+  textSize(14);
+  text("Stimulus Display", w/2, 20);
+
+  if (showStim) {
+    if (showFace) {
+      fill(255);
+      ellipse(w/2, h/2 + 20, 80, 100);
+      fill(20);
+      ellipse(w/2 - 20, h/2, 12, 12);
+      ellipse(w/2 + 20, h/2, 12, 12);
+      arc(w/2, h/2 + 25, 40, 25, 0, PI);
+      fill(255);
+      textSize(12);
+      text("FACE", w/2, h - 20);
+    } else {
+      fill(255);
+      rectMode(CENTER);
+      rect(w/2, h/2 + 20, 80, 80);
+      fill(255);
+      textSize(12);
+      text("OBJECT", w/2, h - 20);
+    }
+  } else {
+    fill(150);
+    textSize(12);
+    text("Inter-trial Interval", w/2, h/2);
+  }
+
+  fill(255);
+  textSize(10);
+  text("Trial " + trial, w/2, h - 5);
+  pop();
+}

@@ -1,0 +1,166 @@
+// Brain particle system
+let particles = [];
+let stressLevel = 0;
+let pulseRadius = 0;
+let pulseGrowing = true;
+
+// === NEW: BCI adaptive task globals ===
+let target = null;
+
+function setup() {
+  colorMode(HSB, 250, 10, 100);
+
+  for (let i = 0; i < 100; i++) {
+    particles.push({
+      x: random(width),
+      y: random(height),
+      vx: random(-9, -10),
+      vy: random(-9, -10),
+      life: 1.0
+    });
+  }
+
+  // === NEW: spawn adaptive target ===
+  spawnTarget();
+}
+
+function draw() {
+  background(0, 0, 0, 0.1);
+
+  // --- detect "stressed" state (beta > alpha) ---
+  let stressTarget = constrain(map(eegData.beta - eegData.alpha, -0.1, 0.4, 0, 1), 0, 1);
+  stressLevel = lerp(stressLevel, stressTarget, 0.05);
+
+  // --- STRESS-BASED BEHAVIOR ---
+  let stressed = eegData.beta > eegData.alpha;
+
+  if (stressed) {
+    // screen shake when stressed
+    push();
+    translate(random(-5, 5) * stressLevel, random(-5, 5) * stressLevel);
+  }
+
+  for (let p of particles) {
+    // Normal movement when calm
+    if (!stressed) {
+      p.vx += (random(-1, 1) * eegData.alpha * 0.1);
+      p.vy += (random(-1, 1) * eegData.beta * 0.1);
+      p.x += p.vx * (1 + eegData.alpha);
+      p.y += p.vy * (1 + eegData.alpha);
+    } 
+    // Erratic, fast movement when stressed
+    else {
+      p.vx += (random(-2, 2) * eegData.beta * 0.5);
+      p.vy += (random(-2, 2) * eegData.beta * 0.5);
+      p.x += p.vx * (1 + eegData.beta * 2.5);
+      p.y += p.vy * (1 + eegData.beta * 2.5);
+    }
+
+    // Wrap around
+    if (p.x < 0) p.x = width;
+    if (p.x > width) p.x = 0;
+    if (p.y < 0) p.y = height;
+    if (p.y > height) p.y = 0;
+
+    // Draw particle
+    let hue;
+    if (eegData.alpha > 0.7) {
+      hue = 60;
+    } else {
+      hue = map(eegData.theta, 0, 1, 180, 300);
+    }
+
+    // Shift toward red hue only when stressed
+    if (stressed) hue = lerp(hue, 0, stressLevel);
+
+    fill(hue, 80, 90, p.life);
+    noStroke();
+    ellipse(p.x, p.y, 5 + eegData.gamma * 35);
+
+    p.life *= 0.995;
+    if (p.life < 0.1) p.life = 1.0;
+  }
+
+  if (stressed) pop();
+
+  // --- pulse effect when stressed ---
+  if (stressed && stressLevel > 0.2) {
+    noFill();
+    stroke(0, 10, 100, stressLevel * 0.4);
+    strokeWeight(3);
+
+    if (pulseGrowing) pulseRadius += 10 * stressLevel;
+    else pulseRadius -= 10 * stressLevel;
+
+    if (pulseRadius > width / 1.5) pulseGrowing = false;
+    if (pulseRadius < 50) pulseGrowing = true;
+
+    ellipse(width / 2, height / 2, pulseRadius);
+  }
+
+  // --- micro-explosions only when stressed ---
+  if (stressed && stressLevel > 0.6 && random() < 0.05) {
+    for (let i = 0; i < 3; i++) {
+      particles.push({
+        x: random(width),
+        y: random(height),
+        vx: random(-15, 15),
+        vy: random(-15, 15),
+        life: 1.0
+      });
+    }
+    if (particles.length > 150) particles.splice(0, 3);
+  }
+
+  // =========================
+  // === BCI ADAPTIVE TASK ===
+  // =========================
+  // High attention/stress -> easier (bigger, slower)
+  const a = (typeof eegData.alpha === 'number') ? eegData.alpha : 0;
+  const b = (typeof eegData.beta  === 'number') ? eegData.beta  : 0;
+  const att = (typeof eegData.attention === 'number') ? eegData.attention : 0;
+
+  const ratio = b / (a + 0.001);
+  const stressForDiff = constrain(map(ratio, 0.8, 1.6, 0, 1), 0, 1); // smoother than binary
+  const engagement = max(att, stressForDiff); // 0..1
+
+  // Map engagement to difficulty
+  const size = lerp(18, 80, engagement); // bigger when engaged (easier)
+  const speed = lerp(8, 2, engagement);  // slower when engaged (easier)
+
+  if (!target) spawnTarget();
+  target.size = size;
+
+  // Move + bounce
+  target.x += target.vx * speed;
+  target.y += target.vy * speed;
+  if (target.x < size/2 || target.x > width - size/2) target.vx *= -1;
+  if (target.y < size/2 || target.y > height - size/2) target.vy *= -1;
+
+  // Draw target (ring + faint fill when stressed)
+  noFill();
+  stroke(60, 8, 100, 0.9);
+  strokeWeight(3);
+  ellipse(target.x, target.y, size);
+  if (stressForDiff > 0.3) {
+    noStroke();
+    fill(0, 10, 100, 0.06 + stressForDiff * 0.06);
+    ellipse(target.x, target.y, size * (1.0 + 0.1 * sin(frameCount * (0.05 + stressForDiff * 0.3))));
+  }
+
+  // Minimal HUD (optional)
+  noStroke(); fill(0, 0, 100);
+  textSize(12);
+  text(`Attn: ${att.toFixed(2)}  β/α: ${ratio.toFixed(2)}  Diff(easier↑): ${engagement.toFixed(2)}`, 12, 18);
+}
+
+// === NEW: helper ===
+function spawnTarget() {
+  target = {
+    x: random(80, width - 80),
+    y: random(80, height - 80),
+    vx: random([-1, 1]),
+    vy: random([-1, 1]),
+    size: 50
+  };
+}

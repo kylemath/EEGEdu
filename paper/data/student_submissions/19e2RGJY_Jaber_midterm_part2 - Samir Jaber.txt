@@ -1,0 +1,354 @@
+// PART 2, P300 Oddball ERP, with beep only on rare trials
+// Keys: S start or pause, R reset, M toggle simulation, +/- change y scale, A test beep
+
+// ---------- config ----------
+const CHANNELS = ["TP9", "AF7", "AF8", "TP10"];
+const COLORS = [
+  [210, 80, 95],  // TP9
+  [120, 80, 95],  // AF7
+  [300, 80, 95],  // AF8
+  [ 30, 90, 95],  // TP10
+];
+
+let sr = 256;
+const PRE_MS = 200;
+const POST_MS = 800;
+const ITI_MS = 1000;
+let RARE_P = 0.20;
+const MAX_TRIALS = 20;
+let YMAX = 100;
+
+// ---------- state ----------
+let running = true;
+let nextOnsetMs = 0;
+let lastOnsetMs = -1e9;
+let isRare = false;
+
+// rolling buffers, per channel
+let chanBuf = {};
+let trialsStd = {}, trialsRare = {};
+let meanStd = {}, meanRare = {};
+let gridMs = [], gridN = 0;
+
+// layout
+let topH = 0, botH = 0;
+
+// simulation
+let sim = false;
+let simPhase = 0;
+
+function setup() {
+  colorMode(HSB, 360, 100, 100, 100);
+  background(0, 0, 12);
+
+  CHANNELS.forEach(ch => {
+    chanBuf[ch] = [];
+    trialsStd[ch] = [];
+    trialsRare[ch] = [];
+    meanStd[ch] = null;
+    meanRare[ch] = null;
+  });
+
+  if (typeof eegData !== "undefined" && eegData.sampleRate) sr = eegData.sampleRate;
+
+  const totalMs = PRE_MS + POST_MS;
+  gridN = Math.floor((totalMs / 1000) * sr) + 1;
+  gridMs = new Array(gridN);
+  for (let i = 0; i < gridN; i++) gridMs[i] = -PRE_MS + (i * 1000) / sr;
+
+  nextOnsetMs = millis();
+  topH = height * 0.62;
+  botH = height - topH;
+
+  window.addEventListener("keydown", handleKey);
+}
+
+function draw() {
+  background(0, 0, 12);
+
+  pullRecentSamples();
+
+  if (running) stepTrials(millis());
+
+  drawERPPanel(0, 0, width, topH);
+  drawStimPanel(0, topH, width, botH);
+}
+
+// ---------- input ----------
+function handleKey(e) {
+  const a = document.activeElement;
+  if (a && ["INPUT", "TEXTAREA", "SELECT"].includes(a.tagName)) return;
+  const k = e.key;
+  if (k === "s" || k === "S") { running = !running; if (running) nextOnsetMs = millis(); return; }
+  if (k === "r" || k === "R") { resetERPs(); return; }
+  if (k === "m" || k === "M") { sim = !sim; return; }
+  if (k === "+") { YMAX = Math.max(10, YMAX - 10); return; }
+  if (k === "-") { YMAX = YMAX + 10; return; }
+  if (k === "]") { RARE_P = Math.min(0.9, RARE_P + 0.05); return; }
+  if (k === "[") { RARE_P = Math.max(0.05, RARE_P - 0.05); return; }
+  if (k === "a" || k === "A") { playRareBeep(); return; } // test beep
+}
+
+// ---------- audio, one shot beep only on rare ----------
+function playRareBeep() {
+  // safe if p5.sound is missing
+  if (typeof p5 === "undefined" || typeof p5.Oscillator === "undefined") return;
+  try { userStartAudio && userStartAudio(); } catch (e) {}
+
+  // create a fresh osc and gain, envelope, then stop and dispose
+  const osc = new p5.Oscillator("sine");
+  const gain = new p5.Gain();
+  osc.disconnect();
+  osc.connect(gain);
+  gain.connect();
+
+  gain.amp(0, 0);
+  osc.freq(880);
+  osc.start();
+
+  // simple attack and release in real time
+  gain.amp(0.25, 0.01);
+  setTimeout(() => gain.amp(0.0, 0.08), 70);
+  setTimeout(() => {
+    try { osc.stop(); } catch (e) {}
+    try { osc.dispose && osc.dispose(); } catch (e) {}
+    try { gain.dispose && gain.dispose(); } catch (e) {}
+  }, 150);
+}
+
+// ---------- data ingest ----------
+function pullRecentSamples() {
+  const now = millis();
+
+  if (sim) {
+    const dt = 1.0 / sr;
+    const n = 32;
+    for (let i = 0; i < n; i++) {
+      simPhase += dt;
+      const tStamp = now - (n - 1 - i) * (1000 / sr);
+      CHANNELS.forEach(ch => {
+        const val = simSample(simPhase, ch);
+        chanBuf[ch].push({ t: tStamp, v: val });
+      });
+    }
+  } else {
+    if (typeof eegData === "undefined" || !eegData.connected) return;
+    const batch = 32;
+    let got = {};
+    if (typeof eegData.getAllChannels === "function") {
+      got = eegData.getAllChannels(batch);
+    }
+    CHANNELS.forEach(ch => {
+      let arr = null;
+      if (got && Array.isArray(got[ch])) arr = got[ch];
+      else if (typeof eegData.getRawChannel === "function") arr = eegData.getRawChannel(ch, batch);
+      if (!arr || !arr.length) return;
+
+      const dt = 1000 / sr;
+      const n = arr.length;
+      for (let i = 0; i < n; i++) {
+        const t = now - (n - 1 - i) * dt;
+        chanBuf[ch].push({ t, v: arr[i] });
+      }
+    });
+  }
+
+  const keepMs = ITI_MS + PRE_MS + POST_MS + 300;
+  const cutoff = now - keepMs;
+  CHANNELS.forEach(ch => {
+    const buf = chanBuf[ch];
+    while (buf.length && buf[0].t < cutoff) buf.shift();
+  });
+}
+
+// simulation generator
+function simSample(sec, ch) {
+  const alphaHz = 10, thetaHz = 6;
+  const chPhase = (ch === "TP9" ? 0.0 : ch === "AF7" ? 0.3 : ch === "AF8" ? 0.6 : 0.9);
+  const alpha = 15 * Math.sin(2 * Math.PI * alphaHz * sec + chPhase);
+  const theta = 10 * Math.sin(2 * Math.PI * thetaHz * sec + chPhase);
+  let p300 = 0;
+  if (isRare) {
+    const tRel = (millis() - lastOnsetMs) / 1000.0;
+    const mu = 0.300, sigma = 0.060;
+    p300 = 70 * Math.exp(-0.5 * Math.pow((tRel - mu) / sigma, 2));
+  }
+  const noise = 12 * (Math.random() - 0.5);
+  return alpha + theta + p300 + noise;
+}
+
+// ---------- trials ----------
+let pendingOnsets = [];
+function stepTrials(now) {
+  if (now >= nextOnsetMs) {
+    lastOnsetMs = now;
+    isRare = Math.random() < RARE_P;
+    nextOnsetMs = now + ITI_MS;
+    pendingOnsets.push({ t0: now, rare: isRare });
+    if (isRare) playRareBeep(); // beep only at rare onset
+  }
+
+  for (let i = pendingOnsets.length - 1; i >= 0; i--) {
+    const { t0, rare } = pendingOnsets[i];
+    const ready = CHANNELS.every(ch => {
+      const buf = chanBuf[ch];
+      return buf.length && buf[buf.length - 1].t >= t0 + POST_MS;
+    });
+    if (!ready) continue;
+
+    CHANNELS.forEach(ch => {
+      const epoch = extractEpoch(chanBuf[ch], t0);
+      if (!epoch) return;
+      const store = rare ? trialsRare[ch] : trialsStd[ch];
+      if (store.length >= MAX_TRIALS) store.shift();
+      store.push(epoch);
+      if (rare) meanRare[ch] = computeMean(store, gridN);
+      else meanStd[ch] = computeMean(store, gridN);
+    });
+
+    pendingOnsets.splice(i, 1);
+  }
+}
+
+// extract baseline corrected epoch around t0
+function extractEpoch(buf, t0) {
+  if (!buf.length) return null;
+  const end = t0 + POST_MS;
+  if (buf[buf.length - 1].t < end) return null;
+
+  const out = new Float32Array(gridN);
+  const start = t0 - PRE_MS;
+  for (let i = 0; i < gridN; i++) {
+    const targetT = start + gridMs[i];
+    let best = buf[0], bestD = Math.abs(best.t - targetT);
+    for (let k = 1; k < buf.length; k++) {
+      const d = Math.abs(buf[k].t - targetT);
+      if (d < bestD) { best = buf[k]; bestD = d; }
+    }
+    out[i] = best.v;
+  }
+  let sum = 0, n = 0;
+  for (let i = 0; i < gridN; i++) if (gridMs[i] < 0) { sum += out[i]; n++; }
+  const base = n ? sum / n : 0;
+  for (let i = 0; i < gridN; i++) out[i] -= base;
+
+  return out;
+}
+
+function computeMean(list, len) {
+  if (!list.length) return null;
+  const mean = new Float32Array(len);
+  for (let i = 0; i < len; i++) {
+    let s = 0;
+    for (let k = 0; k < list.length; k++) s += list[k][i];
+    mean[i] = s / list.length;
+  }
+  return mean;
+}
+
+// ---------- drawing ----------
+function drawERPPanel(x, y, w, h) {
+  push();
+  translate(x, y);
+  noFill(); stroke(0, 0, 35); rect(0, 0, w, h);
+
+  const leftPad = 70, rightPad = 20, topPad = 24, botPad = 36;
+  const plotW = w - leftPad - rightPad;
+  const plotH = h - topPad - botPad;
+
+  const x0 = map(0, gridMs[0], gridMs[gridMs.length - 1], 0, plotW);
+  stroke(0, 0, 30);
+  line(leftPad + x0, topPad, leftPad + x0, topPad + plotH);
+
+  textAlign(CENTER, TOP);
+  textSize(10);
+  noStroke(); fill(0, 0, 80);
+  for (let t = Math.ceil(gridMs[0] / 100) * 100; t <= gridMs[gridMs.length - 1]; t += 100) {
+    const tx = map(t, gridMs[0], gridMs[gridMs.length - 1], 0, plotW);
+    stroke(0, 0, 25);
+    line(leftPad + tx, topPad + plotH, leftPad + tx, topPad + plotH + 6);
+    noStroke(); text(t + " ms", leftPad + tx, topPad + plotH + 8);
+  }
+
+  textAlign(LEFT, CENTER); noStroke(); fill(0, 0, 70);
+  text("+" + YMAX, 6, topPad + 10);
+  text("0", 6, topPad + plotH / 2);
+  text("−" + YMAX, 6, topPad + plotH - 10);
+
+  CHANNELS.forEach((ch, idx) => {
+    const col = COLORS[idx];
+    noStroke(); fill(0, 0, 85);
+    textAlign(LEFT, TOP);
+    text(ch + "  Std n=" + trialsStd[ch].length + "  Rare n=" + trialsRare[ch].length, leftPad + 8, topPad + 4 + idx * 14);
+
+    if (meanStd[ch]) {
+      noFill(); stroke(col[0], col[1], col[2], 60);
+      beginShape();
+      for (let i = 0; i < meanStd[ch].length; i++) {
+        const tx = map(gridMs[i], gridMs[0], gridMs[gridMs.length - 1], 0, plotW);
+        const ty = map(meanStd[ch][i], YMAX, -YMAX, 0, plotH);
+        vertex(leftPad + tx, topPad + ty);
+      }
+      endShape();
+    }
+    if (meanRare[ch]) {
+      noFill(); stroke(col[0], col[1], col[2]); strokeWeight(2);
+      beginShape();
+      for (let i = 0; i < meanRare[ch].length; i++) {
+        const tx = map(gridMs[i], gridMs[0], gridMs[gridMs.length - 1], 0, plotW);
+        const ty = map(meanRare[ch][i], YMAX, -YMAX, 0, plotH);
+        vertex(leftPad + tx, topPad + ty);
+      }
+      endShape();
+      strokeWeight(1);
+    }
+  });
+
+  noStroke(); fill(0, 0, 90); textAlign(LEFT, TOP);
+  textSize(14);
+  text("P300 oddball, averaged EEG, last " + MAX_TRIALS + " trials", leftPad, 4);
+
+  textSize(12); fill(0, 0, 80);
+  text("Sim " + (sim ? "on" : "off") + "   rare p=" + RARE_P.toFixed(2) + "   y±" + YMAX, w - 260, 4);
+
+  pop();
+}
+
+function drawStimPanel(x, y, w, h) {
+  push();
+  translate(x, y);
+  noFill(); stroke(0, 0, 35); rect(0, 0, w, h);
+
+  const cx = 90;
+  const cy = h * 0.55;
+  noStroke();
+  fill(isRare ? color(355, 80, 95) : color(210, 80, 95));
+  ellipse(cx, cy, 60, 60);
+
+  noStroke(); fill(0, 0, 85); textSize(12);
+  textAlign(LEFT, TOP);
+  text("Stimulus, " + (running ? "running" : "paused"), 12, 8);
+  text(isRare ? "RARE" : "STANDARD", 12, 26);
+  text("ITI " + ITI_MS + " ms", 12, 44);
+  text("Beep on rare trials", 12, 62);
+
+  const tlX = 160, tlY = h - 30, tlW = w - tlX - 20;
+  stroke(0, 0, 35); line(tlX, tlY, tlX + tlW, tlY);
+  const zeroX = tlX + map(0, -PRE_MS, POST_MS, 0, tlW);
+  stroke(0, 0, 20); line(zeroX, tlY - 10, zeroX, tlY + 10);
+  noStroke(); fill(0, 0, 75); textAlign(CENTER, TOP); text("0 ms", zeroX, tlY + 12);
+
+  for (let t = -PRE_MS; t <= POST_MS; t += 100) {
+    const tx = tlX + map(t, -PRE_MS, POST_MS, 0, tlW);
+    stroke(0, 0, 25); line(tx, tlY - 5, tx, tlY + 5);
+    noStroke(); text(t, tx, tlY + 12);
+  }
+
+  pop();
+}
+
+// ---------- utils ----------
+function resetERPs() {
+  CHANNELS.forEach(ch => { trialsStd[ch] = []; trialsRare[ch] = []; meanStd[ch] = null; meanRare[ch] = null; });
+  pendingOnsets = [];
+}

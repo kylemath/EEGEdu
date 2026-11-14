@@ -1,0 +1,61 @@
+// === BrainImation EEG Par// === BrainImation EEG Particles (Blue-to-Red Calmness Spectrum) ===
+// Particles expand in size and shift from blue (low alpha) to red (high alpha)
+
+let particles = [];
+
+function setup() {
+  // BrainImation manages the canvas
+  colorMode(RGB, 255);
+
+  for (let i = 0; i < 100; i++) {
+    particles.push({
+      x: random(width),
+      y: random(height),
+      vx: random(-2, 2),
+      vy: random(-2, 2),
+      life: 1.0
+    });
+  }
+}
+
+function draw() {
+  // Slightly translucent background for smooth trails
+  background(0, 0, 0, 25);
+
+  // Read EEG data (simulated if not connected)
+  let alpha = eegData?.alpha ?? 0.5;
+  let beta  = eegData?.beta  ?? 0.3;
+  let theta = eegData?.theta ?? 0.4;
+  let gamma = eegData?.gamma ?? 0.2;
+
+  for (let p of particles) {
+    // Motion based on brainwave activity
+    p.vx += (random(-1, 1) * beta * 0.1);
+    p.vy += (random(-1, 1) * alpha * 0.1);
+    p.x += p.vx;
+    p.y += p.vy;
+
+    // Wrap-around
+    if (p.x < 0) p.x = width;
+    if (p.x > width) p.x = 0;
+    if (p.y < 0) p.y = height;
+    if (p.y > height) p.y = 0;
+
+    // --- Visual Mapping ---
+    // Color smoothly shifts from blue (low alpha) → red (high alpha)
+    let r = map(alpha, 0, 2, 50, 255);   // more red with higher alpha
+    let g = map(alpha, 0, 2, 80, 20);    // less green as alpha rises
+    let b = map(alpha, 0, 2, 255, 40);   // fade blue as alpha rises
+
+    // Increased size by 50%
+    let size = map(alpha, 0, 2, 12, 75);
+
+    noStroke();
+    fill(r, g, b, 180 * p.life);
+    ellipse(p.x, p.y, size + gamma * 10);
+
+    // Fading + reset
+    p.life *= 0.995;
+    if (p.life < 0.1) p.life = 1.0;
+  }
+}

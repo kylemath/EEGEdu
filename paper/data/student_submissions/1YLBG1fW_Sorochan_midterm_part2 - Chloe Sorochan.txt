@@ -1,0 +1,280 @@
+﻿let trial = 0;
+let isRare = false; 
+let showStim = true;
+let words = ["RED","GREEN","BLUE","YELLOW"];
+let colors = {};
+
+
+const CANVAS_W = 600, CANVAS_H = 300;
+const STIM_W = 400, ERP_W = 200;
+const ERP_X = STIM_W, ERP_Y = 0;
+
+
+const FS = 256;                     
+const T_PRE = -200;              
+const T_POST = 800;           
+const EPOCH_MS = 1000;    
+const N_SAMPLES = FS * 1;  
+const PRE_SAMPLES = Math.floor(FS * 0.2); 
+
+
+let simulate = true;
+
+
+let avgStd = new Array(N_SAMPLES).fill(0);
+let avgTgt = new Array(N_SAMPLES).fill(0);
+let nStd = 0;
+let nTgt = 0;
+
+
+let cStandard, cTarget;
+
+
+function setup() {
+  createCanvas(CANVAS_W, CANVAS_H);
+  frameRate(2); 
+
+
+  colors = {
+    RED:    color(255, 50,  50),
+    GREEN:  color( 60,200, 60),
+    BLUE:   color( 80,150,255),
+    YELLOW: color(240,200, 40)
+  };
+  cStandard = color(80, 150, 255); 
+  cTarget   = color(255, 80, 120);
+}
+
+
+function draw() {
+  background(0);
+
+
+  push();
+  clipRect(0, 0, STIM_W, CANVAS_H);
+
+
+  if (showStim) {
+    isRare = random() < 0.2;
+
+
+    let w = random(words);
+    let inkName = w;
+    if (isRare) {
+      do { inkName = random(words); } while (inkName === w);
+    }
+
+
+    noStroke();
+    fill(20);
+    const cardW = 160, cardH = 70;
+    rect(STIM_W/2 - cardW/2, CANVAS_H/2 - cardH/2, cardW, cardH, 8);
+
+
+    fill(colors[inkName]);
+    textAlign(CENTER, CENTER);
+    textSize(18);
+    text(w, STIM_W/2, CANVAS_H/2);
+
+
+    fill(255);
+    textSize(8);
+    text(isRare ? "RARE" : "STANDARD", STIM_W/2, CANVAS_H - 24);
+    text("Trial " + (trial++), STIM_W/2, 16);
+    
+    if (simulate) {
+      const ep = simulatedERP(isRare);
+      addEpoch(ep, isRare);
+    } else {
+    }
+
+
+  } else {
+  }
+  pop();
+
+
+  drawERPPanel();
+
+
+  showStim = !showStim;
+}
+
+
+function addEpoch(epochArray, isTarget) {
+  if (!epochArray || epochArray.length !== N_SAMPLES) return;
+  
+  let baseline = 0;
+  for (let i = 0; i < PRE_SAMPLES; i++) baseline += epochArray[i];
+  baseline /= PRE_SAMPLES;
+
+
+  if (isTarget) {
+    nTgt++;
+    for (let i = 0; i < N_SAMPLES; i++) {
+      const samp = epochArray[i] - baseline;
+      avgTgt[i] += (samp - avgTgt[i]) / nTgt;
+    }
+  } else {
+    nStd++;
+    for (let i = 0; i < N_SAMPLES; i++) {
+      const samp = epochArray[i] - baseline;
+      avgStd[i] += (samp - avgStd[i]) / nStd;
+    }
+  }
+}
+
+
+function simulatedERP(isTarget) {
+  const arr = new Array(N_SAMPLES);
+  for (let i = 0; i < N_SAMPLES; i++) {
+    arr[i] = 0.6*randn() + 0.3*randn() + 0.1*randn();
+  }
+
+
+  const dt = 1 / FS; 
+  for (let i = 0; i < N_SAMPLES; i++) {
+    const t = (i - PRE_SAMPLES) * dt; 
+    arr[i] += -1.5 * gauss(t, 0.15, 0.03);
+  }
+
+
+  const p3Amp = isTarget ? 6.0 : 1.5;  
+  const p3Lat = isTarget ? 0.40 : 0.42;
+  const p3Wid = 0.08;                   // width (s)
+  for (let i = 0; i < N_SAMPLES; i++) {
+    const t = (i - PRE_SAMPLES) * dt;
+    arr[i] += p3Amp * gauss(t, p3Lat, p3Wid);
+  }
+  return arr;
+}
+
+
+function gauss(t, mu, sigma) {
+  const z = (t - mu) / sigma;
+  return Math.exp(-0.5 * z * z);
+}
+function randn() {
+  // Box-Muller
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+}
+
+
+function drawERPPanel() {
+  push();
+  noStroke();
+  fill(12);
+  rect(ERP_X, ERP_Y, ERP_W, CANVAS_H);
+
+
+  const marginL = 28, marginR = 8, marginT = 24, marginB = 28;
+  const plotX = ERP_X + marginL;
+  const plotY = ERP_Y + marginT;
+  const plotW = ERP_W - marginL - marginR;
+  const plotH = CANVAS_H - marginT - marginB;
+
+
+  fill(18);
+  rect(plotX, plotY, plotW, plotH, 6);
+
+
+  stroke(90);
+  strokeWeight(1);
+  line(plotX, plotY + plotH, plotX + plotW, plotY + plotH); 
+  const yMid = plotY + plotH / 2; 
+  stroke(60);
+  line(plotX, yMid, plotX + plotW, yMid);
+
+
+  const T_TOTAL = T_POST - T_PRE; 
+  const pxPerMs = plotW / T_TOTAL; 
+  textAlign(CENTER, TOP);
+  textSize(8);
+  noStroke();
+  fill(200);
+  for (let t = T_PRE; t <= T_POST; t += 100) {
+    const x = plotX + (t - T_PRE) * pxPerMs;
+    stroke(80);
+    line(x, plotY + plotH, x, plotY + plotH - 6);
+    if (t % 200 === 0) {
+      noStroke();
+      text(t + " ms", x, plotY + plotH + 4);
+    }
+  }
+
+
+  const x0 = plotX + (0 - T_PRE) * pxPerMs;
+  stroke(180);
+  strokeWeight(1.5);
+  line(x0, plotY, x0, plotY + plotH);
+  noStroke();
+  fill(220);
+  textAlign(LEFT, BOTTOM);
+  text("0 ms", x0 + 3, plotY + 10);
+
+
+  fill(180);
+  textAlign(LEFT, CENTER);
+  textSize(8);
+  text("+µV", plotX + 4, plotY + 10);
+  text("0",   plotX + 4, yMid);
+  text("–µV", plotX + 4, plotY + plotH - 10);
+
+
+  textAlign(LEFT, CENTER);
+  fill(200);
+  textSize(10);
+  text("ERP (–200→800 ms)", plotX, plotY - 10);
+  noStroke();
+  fill(cStandard); rect(plotX, plotY + 6, 10, 10, 2);
+  fill(220); text("Standard (congruent)", plotX + 14, plotY + 11);
+  fill(cTarget); rect(plotX, plotY + 22, 10, 10, 2);
+  fill(220); text("Target (incongruent)", plotX + 14, plotY + 27);
+
+
+  fill(200);
+  textSize(10);
+  text(`Averaged:  Std ${nStd}   Tgt ${nTgt}`, plotX, plotY + 44);
+
+
+  const uVperDiv = 10;
+  const gain = (plotH * 0.45) / uVperDiv;
+
+
+  function xAtIndex(i) {
+    const t_ms = T_PRE + (i / FS) * 1000;
+    return plotX + (t_ms - T_PRE) * pxPerMs;
+  }
+  function drawTrace(arr, col) {
+    stroke(col);
+    noFill();
+    strokeWeight(1.5);
+    beginShape();
+    for (let i = 0; i < N_SAMPLES; i++) {
+      const x = xAtIndex(i);
+      const y = yMid - (arr[i] * gain);
+      vertex(x, y);
+    }
+    endShape();
+  }
+  if (nStd > 0) drawTrace(avgStd, cStandard);
+  if (nTgt > 0) drawTrace(avgTgt, cTarget);
+
+
+  if (nStd === 0 && nTgt === 0) {
+    fill(150);
+    textAlign(CENTER, CENTER);
+    textSize(11);
+    text("No ERP data yet.\n(Traces will appear here.)", plotX + plotW/2, plotY + plotH/2);
+  }
+  pop();
+}
+function clipRect(x, y, w, h) {
+  drawingContext.save();
+  drawingContext.beginPath();
+  drawingContext.rect(x, y, w, h);
+  drawingContext.clip();
+}

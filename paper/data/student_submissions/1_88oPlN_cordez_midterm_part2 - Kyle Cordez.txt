@@ -1,0 +1,218 @@
+/***
+  MIDTERM PART 2: ERP Experiment
+  Kyle Cordez
+  
+  references:
+    - Epoch view from BrainImation
+***/
+
+
+// Set of noise frequencies; every time a sound is played one of these is selected randomly
+const HIGH_FREQS = [2000, 2500, 3000];
+const LOW_FREQS = [150, 200, 250]
+
+// EEG epoch visualization (like ERP analysis)
+let epochData = [];
+let epochLength = 128; // ~0.5 seconds at 256Hz
+
+var sound;
+
+let isPlaying = false; 
+let lastPlayed = 0;  // records the last time a stimulus was played
+let freqPlayed = 'NEITHER';
+
+let totalTrials = 0;
+let lowCounter = 0;
+let highCounter = 0;
+
+
+function auditoryN1SoundPlay() {
+  let current = millis();
+  let elapsed = current - lastPlayed;
+  
+  // Sound plays for at least 1 second
+  if (isPlaying && elapsed > 1000) {
+    sound.stop();
+    isPlaying = !isPlaying;
+
+    freqPlayed = 'NEITHER';
+  }
+    
+  // Spaces out sound chance of sound playing by having this block only run every 3 seconds (and when it's not playing)
+  if (!isPlaying && frameCount % 180 === 0) { 
+    let randomlyPlay = random();
+    
+    // Auditory N100 is stronger when stimulus is unpredictable; 50/50 chance of playing
+    if (randomlyPlay < 0.5) {
+      sound.start();
+    
+      sound.amp(0.1);
+    // Randomly selects a frequency to play 
+    // Stimulus categories are low frequency oscillation vs. high frequency oscillations
+      let highOrLow = random();
+      if (highOrLow < 0.5) {
+        sound.freq(random(LOW_FREQS));
+        freqPlayed = 'LOW';
+        lowCounter++;
+      } else {
+        sound.freq(random(HIGH_FREQS));
+        freqPlayed = 'HIGH';
+        highCounter++;
+      }
+    
+      isPlaying = true;
+      lastPlayed = current;
+
+      totalTrials++;
+    }
+  }
+}
+
+
+function collectEpochs() {
+  // Collect epochs when attention changes significantly
+  if (frameCount % 60 === 0) { // Every second
+    let recentEpoch = eegData.getRecentEpoch(epochLength);
+    if (recentEpoch.length >= epochLength) {
+      epochData.push({
+        data: recentEpoch,
+        attention: eegData.attention,
+        timestamp: millis()
+      });
+      
+      // Keep last 25 epochs
+      if (epochData.length > 25) {
+        epochData.shift();
+      }
+    }
+  }
+}
+
+
+function markersAndLabels() {
+  // Zero line
+  stroke(0, 0, 30);
+  strokeWeight(1);
+  line(0, height/2, width, height/2);
+    
+  // Time markers
+  textAlign(CENTER, BOTTOM);
+  textSize(10);
+  fill(0, 0, 60);
+  text("0ms", 60, height - 10);
+  text("250ms", width/2, height - 10);
+  text("500ms", width - 60, height - 10);
+    
+  // Title and info
+  fill(0, 0, 100);
+  textAlign(CENTER, TOP);
+  textSize(16);
+  text("Averaged Epochs (n=" + epochData.length + ")", width/2, 10);
+    
+  textSize(24);
+  text("Low Frequency Sound", width/2, height/4);
+  text("High Frequency Sound", width/2, height/4 * 3);
+
+  // Trial counters for each category are behind
+  textSize(16);
+  text("Trials with Low Frequency Averaged: " + lowCounter, width/2, height/4 + 30);
+  text("Trials with High Frequency Averaged: " + lowCounter, width/2, (height/4 * 3) + 30);
+
+  text("Total Trials: " + totalTrials, width/2, height-50);
+}
+
+
+function setup() {
+  colorMode(HSB, 360, 100, 100);
+
+  // Create sound stimulus to play
+  sound = new p5.Oscillator();
+  sound.setType('sine');
+}
+
+
+function draw() {
+  background(0, 0, 8);
+  
+  auditoryN1SoundPlay(); // play sound
+  collectEpochs();
+  
+  if (epochData.length > 0) {
+    // Draw averaged epoch
+    let avgEpoch = [];
+    for (let i = 0; i < epochLength; i++) {
+      let sum = [0, 0, 0, 0]; // First two channels dedicated to low freq, second two to high
+      let count = 0;
+      
+      for (let e = 0; e < epochData.length; e++) {
+        // Until the data has caught up, the first couple seconds of the graphs will appear unbalanced 
+        if (epochData[e].data[i]) {
+          if (freqPlayed === 'LOW') {
+            sum[0] += epochData[e].data[i][0] || 0;
+            sum[1] += epochData[e].data[i][3] || 0;
+          } else if (freqPlayed === 'HIGH') {
+            sum[2] += epochData[e].data[i][0] || 0;
+            sum[3] += epochData[e].data[i][3] || 0;
+          } else {
+            sum[0] += epochData[e].data[i][0] || 0;
+            sum[1] += epochData[e].data[i][3] || 0;
+            sum[2] += epochData[e].data[i][0] || 0;
+            sum[3] += epochData[e].data[i][3] || 0;
+          }
+          
+          for (let ch = 0; ch < 4; ch += 3) {
+            sum[ch] += epochData[e].data[i][ch] || 0;
+          }
+          count++;
+        }
+      }
+      
+      if (count > 0) {
+        avgEpoch.push([
+          sum[0] / count,
+          sum[1] / count,
+          sum[2] / count,
+          sum[3] / count
+        ]);
+      }
+    }
+    
+    // Draw the averaged epoch for each channel
+    // We care mostly only anout channels TP9 & TP10 because auditory N100 is stronger in areas of the brain located more laterally
+    let channelNames = ['TP9', 'TP10', 'TP9', 'TP10'];
+    let colors = [300, 120, 180, 60];
+    
+    for (let ch = 0; ch < 4; ch++) {
+      stroke(colors[ch], 80, 90);
+      strokeWeight(2);
+      noFill();
+      
+      beginShape();
+      for (let i = 0; i < avgEpoch.length; i++) {
+        let x = map(i, 0, avgEpoch.length - 1, 60, width - 60);
+        let y = height/2 + (ch - 1.5) * 60 + map(avgEpoch[i][ch], -50, 50, 30, -30);
+        vertex(x, y);
+      }
+      endShape();
+      
+      // Channel label
+      fill(colors[ch], 80, 90);
+      noStroke();
+      textAlign(LEFT, CENTER);
+      textSize(12);
+      text(channelNames[ch], 10, height/2 + (ch - 1.5) * 60);
+    }
+
+    // Draws title, info, time markers, etc.
+    markersAndLabels();
+
+  } else {
+    // Waiting message
+    fill(0, 0, 70);
+    textAlign(CENTER, CENTER);
+    textSize(18);
+    text("Collecting epochs...", width/2, height/2);
+    textSize(14);
+    text("Epochs will appear as data accumulates", width/2, height/2 + 30);
+  }
+}

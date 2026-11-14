@@ -1,0 +1,171 @@
+// 🌿 Smoothed Brain State Garden Trainer – Less Flashing
+
+let flowers = [];
+let clouds = [];
+let fireflies = [];
+let targetRatio = 1.8;
+let score = 0;
+let lastScoreUpdate = 0;
+
+// Backups for smoothing transitions
+let smoothProgress = 0;
+let smoothAttn = 0.5;
+let smoothMed = 0.5;
+
+function setup() {
+  colorMode(HSB, 360, 100, 100);
+  for (let i = 0; i < 25; i++) flowers.push(makeFlower());
+  for (let i = 0; i < 14; i++) clouds.push(makeCloud());
+  for (let i = 0; i < 25; i++) fireflies.push(makeFirefly());
+}
+
+function makeFlower() {
+  return {
+    x: random(width),
+    y: random(height * 0.85, height * 0.95),
+    size: random(25, 45),
+    bloom: 0.5,
+    hue: random(260, 310),
+    swayNoise: random(1000),
+    petals: Math.floor(random(6, 9))
+  };
+}
+function makeCloud() {
+  return {
+    x: random(width),
+    y: random(height * 0.1, height * 0.4),
+    size: random(120, 250),
+    noiseOffset: random(1000)
+  };
+}
+function makeFirefly() {
+  return {
+    x: random(width),
+    y: random(height * 0.7, height),
+    flicker: random(TWO_PI),
+    hue: random(50, 70),
+    moveNoise: random(1000),
+    opacity: 0.7 // start with mid opacity
+  };
+}
+
+function draw() {
+  let attention = (typeof eegData.attention === "number") ? eegData.attention : (typeof simulationControls !== "undefined" && "attention" in simulationControls ? simulationControls.attention : 0.5);
+  let meditation = (typeof eegData.meditation === "number") ? eegData.meditation : (typeof simulationControls !== "undefined" && "meditation" in simulationControls ? simulationControls.meditation : 0.5);
+  let alpha = eegData.alpha || 0;
+  let theta = eegData.theta || 0.0001;
+  let ratio = alpha / theta;
+  let diff = Math.abs(targetRatio - ratio);
+  let progress = map(diff, 0, targetRatio, 1, 0);
+  progress = constrain(progress, 0, 1);
+
+  // Smooth input values (crucial for visuals)
+  smoothProgress = lerp(smoothProgress, progress, 0.07);
+  smoothAttn = lerp(smoothAttn, attention, 0.07);
+  smoothMed = lerp(smoothMed, meditation, 0.07);
+
+  updateScore(smoothAttn, smoothMed, smoothProgress);
+
+  drawSky(smoothProgress);
+  drawClouds(smoothProgress);
+  drawGround();
+  drawFlowers(smoothProgress);
+  drawFireflies(smoothProgress);
+  drawHUD(alpha, theta, ratio, smoothProgress, smoothAttn, smoothMed);
+}
+
+function updateScore(attn, med, progress) {
+  if (millis() - lastScoreUpdate > 1000) {
+    let delta = (med * 12) - (attn * 8) + (progress * 4);
+    score += constrain(delta, -10, 14);
+    score = max(0, score);
+    lastScoreUpdate = millis();
+  }
+}
+
+function drawSky(progress) {
+  // SATURATION and brightness changes are more gradual
+  let hueV = lerp(200, 270, progress);
+  let bright = lerp(90, 55, progress);
+  let sat = lerp(40, 30, progress);
+  background(hueV, sat, bright);
+}
+
+function drawClouds(progress) {
+  noStroke();
+  for (let c of clouds) {
+    c.noiseOffset += 0.0004 * (0.5 + progress);
+    c.x = map(noise(c.noiseOffset), 0, 1, -c.size, width + c.size);
+    fill(200, 15, 95, 0.35); // less opaque clouds
+    ellipse(c.x, c.y, c.size * 0.8, c.size * 0.6);
+    ellipse(c.x + c.size * 0.2, c.y + 10, c.size * 0.6, c.size * 0.4);
+  }
+}
+function drawGround() {
+  noStroke();
+  fill(115, 30, 75); // reduced sat = less harsh
+  rect(0, height * 0.8, width, height * 0.25);
+}
+function drawFlowers(progress) {
+  for (let f of flowers) {
+    f.bloom = lerp(f.bloom, progress, 0.025);
+    f.swayNoise += 0.001 * (0.5 + progress * 1.7);
+    let sway = map(noise(f.swayNoise), 0, 1, -8 * f.bloom, 8 * f.bloom);
+    stroke(120, 55, 45);
+    strokeWeight(3);
+    line(f.x + sway, f.y, f.x, f.y - 70 * f.bloom);
+    push();
+    translate(f.x + sway, f.y - 70 * f.bloom);
+    drawFlowerHead(f, progress);
+    pop();
+  }
+}
+function drawFlowerHead(f, progress) {
+  let petals = f.petals;
+  let petalHue = lerp(f.hue, (f.hue + progress * 30) % 360, 0.10); // slower changes
+  for (let i = 0; i < petals; i++) {
+    push();
+    rotate((TWO_PI / petals) * i);
+    drawPetal(f.size, f.bloom, petalHue, progress);
+    pop();
+  }
+  fill(50, 75, 90, 0.86); // softer, less bright
+  noStroke();
+  ellipse(0, 0, f.size * 0.7);
+  fill(50, 70, 70, 0.78);
+  ellipse(0, f.size * 0.1, f.size * 0.35);
+}
+function drawPetal(size, bloom, hue, progress) {
+  noStroke();
+  fill(hue, 42 + progress * 25, 90, 0.77); // softer petals, lower intensity
+  beginShape();
+  vertex(0, 0);
+  bezierVertex(-size * 0.3, -size * 0.3, -size * 0.3, -size * 1.2, 0, -size * (1.5 + 0.5 * bloom));
+  bezierVertex(size * 0.3, -size * 1.2, size * 0.3, -size * 0.3, 0, 0);
+  endShape(CLOSE);
+}
+function drawFireflies(progress) {
+  let maxCount = Math.floor(map(progress, 0, 1, 8, 25));
+  for (let i = 0; i < maxCount; i++) {
+    let ff = fireflies[i];
+    ff.flicker += 0.015 * (1 + progress); // reduced flicker speed
+    ff.moveNoise += 0.001 * (1 + progress);
+    let flickerRaw = (sin(ff.flicker) + 1) / 2;
+    // Smoother opacity (no harsh flicker)
+    ff.opacity = lerp(ff.opacity, 0.4 + flickerRaw * 0.25, 0.1); // cap opacity swings
+    fill(ff.hue, 70, 90, ff.opacity); // less saturated & less alpha
+    noStroke();
+    ellipse(ff.x + map(noise(ff.moveNoise), 0, 1, -5, 5), ff.y, 4.5 + flickerRaw * 2.5);
+  }
+}
+function drawHUD(alpha, theta, ratio, progress, attn, med) {
+  fill(0, 0, 20, 0.67);
+  rect(0, 0, width, 85);
+  fill(0, 0, 98);
+  textSize(15);
+  textAlign(LEFT, TOP);
+  text("Target α/θ ratio: " + targetRatio.toFixed(2), 20, 10);
+  text("Current α/θ: " + ratio.toFixed(2), 20, 28);
+  text("Progress: " + (progress * 100).toFixed(1) + "%  |  Score: " + score.toFixed(0), 20, 45);
+  text("Attention: " + attn.toFixed(2) + "   Meditation: " + med.toFixed(2), 20, 65);
+}

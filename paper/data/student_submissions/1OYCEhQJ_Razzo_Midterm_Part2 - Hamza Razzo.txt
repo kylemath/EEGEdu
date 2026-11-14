@@ -1,0 +1,412 @@
+// P300 Oddball Paradigm ERP Display
+let rareTrials = [];
+let standardTrials = [];
+let currentTrial = null;
+let trialStartTime = 0;
+let baselineDuration = 200; // 200ms baseline (standard for ERPs)
+let stimulusDuration = 500; // Show stimulus for 500ms
+let interTrialInterval = 800; // 800ms ITI
+let epochLength = 256; // 1 second at 256Hz (200ms baseline + 800ms post-stimulus)
+let baselineSamples = 51; // 200ms baseline at 256Hz (~51 samples)
+let maxTrials = 20;
+let trialCount = 0;
+let rareCount = 0;
+let standardCount = 0;
+
+function setup() {
+  colorMode(HSB, 360, 100, 100);
+  startNewTrial();
+}
+
+function draw() {
+  background(0, 0, 8);
+  
+  let currentTime = millis() - trialStartTime;
+  
+  // Update trial state
+  if (currentTrial) {
+    // Check if we need to collect epoch data
+    if (currentTime >= baselineDuration + stimulusDuration + interTrialInterval) {
+      // Trial complete, collect the epoch
+      let epoch = eegData.getRecentEpoch(epochLength);
+      if (epoch.length >= epochLength) {
+        let trialData = {
+          data: epoch,
+          timestamp: millis(),
+          type: currentTrial.isRare ? 'rare' : 'standard'
+        };
+        
+        if (currentTrial.isRare) {
+          rareTrials.push(trialData);
+          if (rareTrials.length > maxTrials) {
+            rareTrials.shift();
+          }
+        } else {
+          standardTrials.push(trialData);
+          if (standardTrials.length > maxTrials) {
+            standardTrials.shift();
+          }
+        }
+      }
+      
+      startNewTrial();
+    }
+  }
+  
+  // Calculate relative time for display
+  let relativeTime = currentTime - baselineDuration;
+  
+  // Draw top panel - ERP traces
+  drawERPPanel(relativeTime);
+  
+  // Draw bottom panel - Stimulus display
+  drawStimulusPanel(relativeTime);
+  
+  // Draw connection status
+  if (!eegData.connected) {
+    fill(0, 100, 100);
+    textAlign(CENTER, CENTER);
+    textSize(18);
+    text("Waiting for EEG connection...", width/2, height/2);
+  }
+}
+
+function startNewTrial() {
+  trialCount++;
+  // 20% rare (target), 80% standard
+  let isRare = random() < 0.2;
+  
+  if (isRare) {
+    rareCount++;
+  } else {
+    standardCount++;
+  }
+  
+  currentTrial = {
+    isRare: isRare,
+    number: trialCount
+  };
+  trialStartTime = millis();
+}
+
+function calculateAveragedEpoch(trials) {
+  if (trials.length === 0) return null;
+  
+  let avgEpoch = [];
+  for (let i = 0; i < epochLength; i++) {
+    let sum = [0, 0, 0, 0];
+    let count = 0;
+    for (let t = 0; t < trials.length; t++) {
+      if (trials[t].data[i]) {
+        for (let ch = 0; ch < 4; ch++) {
+          sum[ch] += trials[t].data[i][ch] || 0;
+        }
+        count++;
+      }
+    }
+    if (count > 0) {
+      avgEpoch.push([
+        sum[0] / count,
+        sum[1] / count,
+        sum[2] / count,
+        sum[3] / count
+      ]);
+    }
+  }
+  return avgEpoch;
+}
+
+function drawERPPanel(relativeTime) {
+  let panelTop = 80;
+  let panelHeight = height * 0.5;
+  let panelBottom = panelTop + panelHeight;
+  
+  // Title
+  fill(0, 0, 100);
+  textAlign(CENTER, TOP);
+  textSize(18);
+  text("P300 Oddball Paradigm", width/2, 10);
+  textSize(14);
+  text("Event-Related Potentials", width/2, 32);
+  
+  // Trial counts
+  textSize(11);
+  fill(0, 100, 90);
+  textAlign(LEFT, TOP);
+  text("Rare: n=" + rareTrials.length, 10, 30);
+  fill(200, 80, 90);
+  text("Standard: n=" + standardTrials.length, 100, 30);
+  
+  if (rareTrials.length === 0 && standardTrials.length === 0) {
+    fill(0, 0, 70);
+    textAlign(CENTER, CENTER);
+    textSize(14);
+    text("Collecting trials...", width/2, panelTop + panelHeight/2);
+    text("Watch for the P300 around 300-600ms!", width/2, panelTop + panelHeight/2 + 20);
+    return;
+  }
+  
+  // Calculate averaged epochs
+  let rareAvg = calculateAveragedEpoch(rareTrials);
+  let standardAvg = calculateAveragedEpoch(standardTrials);
+  
+  // Draw grid and axis
+  let leftMargin = 80;
+  let rightMargin = 40;
+  let plotWidth = width - leftMargin - rightMargin;
+  
+  // Time axis (showing -200ms to 800ms as per ERP standards)
+  let timeStart = -200; // baseline start
+  let timeEnd = 800; // post-stimulus
+  
+  // Draw horizontal time axis line
+  stroke(0, 0, 60);
+  strokeWeight(2);
+  line(leftMargin, panelBottom, width - rightMargin, panelBottom);
+  
+  // Draw vertical grid lines and tick marks every 100ms
+  for (let t = timeStart; t <= timeEnd; t += 100) {
+    let x = map(t, timeStart, timeEnd, leftMargin, width - rightMargin);
+    
+    // Grid line
+    stroke(0, 0, 20);
+    strokeWeight(1);
+    line(x, panelTop, x, panelBottom);
+    
+    // Tick mark on axis
+    stroke(0, 0, 60);
+    strokeWeight(2);
+    line(x, panelBottom, x, panelBottom + 8);
+    
+    // Time labels
+    fill(0, 0, 90);
+    noStroke();
+    textAlign(CENTER, TOP);
+    textSize(12);
+    text(t + " ms", x, panelBottom + 10);
+  }
+  
+  // Highlight P300 window (300-600ms)
+  noStroke();
+  fill(60, 30, 20, 50);
+  let p300Start = map(300, timeStart, timeEnd, leftMargin, width - rightMargin);
+  let p300End = map(600, timeStart, timeEnd, leftMargin, width - rightMargin);
+  rect(p300Start, panelTop, p300End - p300Start, panelHeight);
+  
+  // P300 label
+  fill(60, 80, 80);
+  textAlign(CENTER, TOP);
+  textSize(10);
+  text("P300", (p300Start + p300End) / 2, panelTop + 5);
+  
+  // Stimulus onset line (at 0ms)
+  stroke(0, 100, 100);
+  strokeWeight(2);
+  let onsetX = map(0, timeStart, timeEnd, leftMargin, width - rightMargin);
+  line(onsetX, panelTop, onsetX, panelBottom);
+  
+  // Draw ERP traces for each channel
+  let channelNames = ['TP9', 'AF7', 'AF8', 'TP10'];
+  let colors = [300, 180, 60, 120]; // Purple, Cyan, Yellow, Green
+  
+  for (let ch = 0; ch < 4; ch++) {
+    let channelY = panelTop + (ch + 0.5) * (panelHeight / 4);
+    
+    // Draw standard trials (if available)
+    if (standardAvg && standardAvg.length > 0) {
+      stroke(200, 60, 70);
+      strokeWeight(1.5);
+      noFill();
+      
+      beginShape();
+      for (let i = 0; i < standardAvg.length; i++) {
+        let sampleTime = (i - baselineSamples) * (1000 / eegData.sampleRate);
+        let x = map(sampleTime, timeStart, timeEnd, leftMargin, width - rightMargin);
+        let y = channelY + map(standardAvg[i][ch], -50, 50, 25, -25);
+        vertex(x, y);
+      }
+      endShape();
+    }
+    
+    // Draw rare trials (if available)
+    if (rareAvg && rareAvg.length > 0) {
+      stroke(0, 80, 90);
+      strokeWeight(2);
+      noFill();
+      
+      beginShape();
+      for (let i = 0; i < rareAvg.length; i++) {
+        let sampleTime = (i - baselineSamples) * (1000 / eegData.sampleRate);
+        let x = map(sampleTime, timeStart, timeEnd, leftMargin, width - rightMargin);
+        let y = channelY + map(rareAvg[i][ch], -50, 50, 25, -25);
+        vertex(x, y);
+      }
+      endShape();
+    }
+    
+    // Channel labels
+    fill(colors[ch], 80, 90);
+    noStroke();
+    textAlign(RIGHT, CENTER);
+    textSize(12);
+    text(channelNames[ch], leftMargin - 10, channelY);
+    
+    // Baseline reference lines
+    stroke(0, 0, 30);
+    strokeWeight(1);
+    line(leftMargin, channelY, width - rightMargin, channelY);
+  }
+  
+  // Legend
+  let legendX = width - rightMargin - 120;
+  let legendY = panelBottom - 50;
+  
+  stroke(0, 80, 90);
+  strokeWeight(2);
+  line(legendX, legendY, legendX + 30, legendY);
+  fill(0, 0, 100);
+  noStroke();
+  textAlign(LEFT, CENTER);
+  textSize(11);
+  text("Rare (target)", legendX + 35, legendY);
+  
+  stroke(200, 60, 70);
+  strokeWeight(1.5);
+  line(legendX, legendY + 15, legendX + 30, legendY + 15);
+  fill(0, 0, 100);
+  noStroke();
+  text("Standard", legendX + 35, legendY + 15);
+  
+  // X-axis label
+  fill(0, 0, 90);
+  noStroke();
+  textAlign(CENTER, TOP);
+  textSize(14);
+  textStyle(BOLD);
+  text("Time (ms)", width/2, panelBottom + 28);
+  textStyle(NORMAL);
+  
+  // Y-axis label (rotated)
+  push();
+  translate(15, panelTop + panelHeight/2);
+  rotate(-PI/2);
+  textAlign(CENTER, CENTER);
+  textSize(14);
+  textStyle(BOLD);
+  fill(0, 0, 90);
+  text("Amplitude (μV)", 0, 0);
+  textStyle(NORMAL);
+  pop();
+}
+
+function drawStimulusPanel(relativeTime) {
+  let panelTop = height * 0.72;
+  let panelHeight = height * 0.28 - 10;
+  
+  // Panel background
+  noStroke();
+  fill(0, 0, 15);
+  rect(0, panelTop, width, panelHeight);
+  
+  // Title
+  fill(0, 0, 100);
+  textAlign(CENTER, TOP);
+  textSize(14);
+  text("Stimulus Display", width/2, panelTop + 5);
+  
+  // Draw stimulus based on timing
+  push();
+  translate(width/2, panelTop + panelHeight/2 + 10);
+  
+  // Show stimulus during presentation window (0-500ms)
+  if (relativeTime >= 0 && relativeTime < stimulusDuration) {
+    noStroke();
+    if (currentTrial.isRare) {
+      // RARE stimulus - red circle
+      fill(0, 80, 90);
+      circle(0, 0, 80);
+      
+      // Label
+      fill(0, 100, 100);
+      textAlign(CENTER, BOTTOM);
+      textSize(14);
+      text("RARE TARGET", 0, -60);
+      textSize(11);
+      text("Count these!", 0, -45);
+    } else {
+      // STANDARD stimulus - blue circle
+      fill(200, 70, 80);
+      circle(0, 0, 80);
+      
+      // Label
+      fill(200, 80, 100);
+      textAlign(CENTER, BOTTOM);
+      textSize(14);
+      text("STANDARD", 0, -60);
+    }
+    
+    // Timing
+    fill(0, 0, 70);
+    textAlign(CENTER, TOP);
+    textSize(10);
+    text(Math.round(relativeTime) + " ms", 0, 50);
+  }
+  // Baseline or ITI
+  else {
+    // Fixation cross
+    stroke(0, 0, 50);
+    strokeWeight(2);
+    line(-15, 0, 15, 0);
+    line(0, -15, 0, 15);
+    
+    // Status text
+    fill(0, 0, 70);
+    noStroke();
+    textAlign(CENTER, TOP);
+    textSize(11);
+    if (relativeTime < 0) {
+      text("Baseline", 0, 25);
+    } else {
+      text("Inter-trial interval", 0, 25);
+    }
+  }
+  
+  pop();
+  
+  // Trial information
+  fill(0, 0, 90);
+  textAlign(LEFT, TOP);
+  textSize(11);
+  text("Trial: " + trialCount, 10, panelTop + panelHeight - 45);
+  
+  fill(0, 100, 90);
+  text("Rare count: " + rareCount, 10, panelTop + panelHeight - 30);
+  
+  fill(200, 80, 90);
+  text("Standard count: " + standardCount, 10, panelTop + panelHeight - 15);
+  
+  // Instructions
+  fill(0, 0, 100);
+  textAlign(RIGHT, TOP);
+  textSize(10);
+  text("Mentally count the RARE targets", width - 10, panelTop + panelHeight - 30);
+  text("P300 should be larger for rare stimuli", width - 10, panelTop + panelHeight - 15);
+  
+  // Trial progress indicator
+  let progressWidth = width - 40;
+  let progressX = 20;
+  let progressY = height - 10;
+  
+  noFill();
+  stroke(0, 0, 40);
+  strokeWeight(1);
+  rect(progressX, progressY - 5, progressWidth, 10);
+  
+  let totalDuration = baselineDuration + stimulusDuration + interTrialInterval;
+  let progress = (millis() - trialStartTime) / totalDuration;
+  progress = constrain(progress, 0, 1);
+  
+  fill(currentTrial.isRare ? color(0, 80, 70) : color(200, 70, 70));
+  noStroke();
+  rect(progressX, progressY - 5, progressWidth * progress, 10);
+}

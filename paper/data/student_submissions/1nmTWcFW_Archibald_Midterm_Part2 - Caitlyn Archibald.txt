@@ -1,0 +1,251 @@
+// ERP Experiment: Faces vs Objects (N170-focused)
+let channels = ['TP9', 'TP10']; // only temporal-parietal electrodes relevant for N170
+let colors = { face: [270, 80, 90], object: [180, 80, 90] }; // H, S, B
+
+let epochLength = 256; // 1 second epochs at 256 Hz
+let preStim = 51;      // ~200 ms baseline
+let postStim = 205;    // ~800 ms post-stimulus
+let totalSamples = preStim + postStim;
+
+let faceTrials = { TP9: [], TP10: [] };
+let objectTrials = { TP9: [], TP10: [] };
+let maxTrials = 20;
+
+let trial = 0;
+let showFace = true;     // alternate stimuli (true = face this trial)
+let stimFrames = 12;     // ~200 ms
+let itiFrames = 24;      // ~400 ms ITI
+let stimCounter = 0;
+let stimState = 0;       // 0=ITI, 1=Stimulus
+
+// Object and face randomization
+let objectTypes = ['square', 'triangle', 'star']; // ✅ replaced circle with star
+let currentObject = 'square';
+
+let faceTypes = ['happy', 'sad', 'surprised'];
+let currentFace = 'happy';
+
+function setup() {
+  frameRate(60);
+  colorMode(HSB, 360, 100, 100);
+  textSize(14);
+}
+
+function draw() {
+  background(0, 0, 10);
+
+  // --- Stimulus state machine ---
+  stimCounter++;
+  if (stimState === 0 && stimCounter >= itiFrames) {
+    stimState = 1;
+    stimCounter = 0;
+
+    // Randomize stimulus variant
+    if (showFace) {
+      currentFace = random(faceTypes);
+    } else {
+      currentObject = random(objectTypes);
+    }
+
+    // Capture EEG epoch
+    channels.forEach((ch) => {
+      let epoch = eegData.getRawChannel(ch, totalSamples);
+      if (epoch.length === totalSamples) {
+        if (showFace) {
+          faceTrials[ch].push(epoch);
+          if (faceTrials[ch].length > maxTrials) faceTrials[ch].shift();
+        } else {
+          objectTrials[ch].push(epoch);
+          if (objectTrials[ch].length > maxTrials) objectTrials[ch].shift();
+        }
+      }
+    });
+
+  } else if (stimState === 1 && stimCounter >= stimFrames) {
+    stimState = 0;
+    stimCounter = 0;
+    showFace = !showFace;
+    trial++;
+  }
+
+  // --- Top panel: ERP (N170-focused) ---
+  let topY = 50, panelH = 200;
+  let channelSpacing = panelH / channels.length;
+  strokeWeight(1.5);
+  noFill();
+  let offsetAmount = 5;
+
+  channels.forEach((ch, c) => {
+    let avgFace = averageEpoch(faceTrials[ch]);
+    let avgObject = averageEpoch(objectTrials[ch]);
+    let yOffset = topY + c * channelSpacing + channelSpacing / 2;
+
+    let lineWeight = ch === 'TP10' ? 2.5 : 1.5;
+
+    if (avgFace) {
+      stroke(colors.face[0], colors.face[1], colors.face[2], 200);
+      strokeWeight(lineWeight);
+      beginShape();
+      for (let i = 0; i < avgFace.length; i++) {
+        let x = map(i, 0, totalSamples - 1, 50, width - 20);
+        let yFace = yOffset + map(avgFace[i], -100, 100, -channelSpacing / 2 + 10, channelSpacing / 2 - 10) - offsetAmount;
+        vertex(x, yFace);
+      }
+      endShape();
+    }
+
+    if (avgObject) {
+      stroke(colors.object[0], colors.object[1], colors.object[2], 200);
+      strokeWeight(lineWeight);
+      beginShape();
+      for (let i = 0; i < avgObject.length; i++) {
+        let x = map(i, 0, totalSamples - 1, 50, width - 20);
+        let yObject = yOffset + map(avgObject[i], -100, 100, -channelSpacing / 2 + 10, channelSpacing / 2 - 10) + offsetAmount;
+        vertex(x, yObject);
+      }
+      endShape();
+    }
+
+    fill(0, 0, 100);
+    noStroke();
+    textAlign(LEFT, CENTER);
+    text(ch, 10, yOffset);
+    stroke(0, 0, 20);
+    line(50, yOffset + channelSpacing / 2, width - 20, yOffset + channelSpacing / 2);
+  });
+
+  // 0 ms vertical line
+  stroke(0, 0, 90);
+  let zeroX = map(preStim, 0, totalSamples, 50, width - 20);
+  line(zeroX, topY, zeroX, topY + panelH);
+
+  // Horizontal axis + tick marks
+  stroke(0, 0, 60);
+  line(50, topY + panelH, width - 20, topY + panelH);
+  for (let i = 0; i <= totalSamples; i += 25) {
+    let x = map(i, 0, totalSamples, 50, width - 20);
+    stroke(0, 0, 100);
+    line(x, topY + panelH, x, topY + panelH + 15);
+    noStroke();
+    fill(0, 0, 100);
+    textAlign(CENTER, TOP);
+    textSize(12);
+    text(round((i - preStim) / 256 * 1000), x, topY + panelH + 18);
+  }
+
+  // Legend
+  fill(colors.face[0], colors.face[1], colors.face[2]);
+  noStroke();
+  rect(width - 150, topY, 10, 10);
+  fill(0, 0, 100);
+  textAlign(LEFT, CENTER);
+  text("Face", width - 135, topY + 5);
+  fill(colors.object[0], colors.object[1], colors.object[2]);
+  noStroke();
+  rect(width - 150, topY + 20, 10, 10);
+  fill(0, 0, 100);
+  text("Object", width - 135, topY + 25);
+
+  // --- Bottom panel: Stimulus ---
+  let bottomY = height * 0.65;
+
+  fill(0, 0, 100);
+  textAlign(RIGHT, TOP);
+  textSize(12);
+  text(`Face Trials: ${faceTrials.TP9.length}`, width - 20, bottomY - 60);
+  text(`Object Trials: ${objectTrials.TP9.length}`, width - 20, bottomY - 40);
+
+  if (stimState === 1) {
+    if (showFace) {
+      drawFaceExpression(currentFace, width / 2, bottomY, 70); // smaller faces
+      fill(0, 0, 100);
+      textAlign(CENTER);
+      textSize(10);
+      text(currentFace.toUpperCase(), width / 2, bottomY + 40);
+    } else {
+      fill(0, 0, 100);
+      noStroke();
+      let objSize = 55; // 🔹 increased from 40
+      if (currentObject === 'square') {
+        rect(width / 2 - objSize / 2, bottomY - objSize / 2, objSize, objSize);
+      } else if (currentObject === 'triangle') {
+        let triH = objSize * 1.1;
+        triangle(
+          width / 2, bottomY - triH / 2,
+          width / 2 - objSize / 2, bottomY + triH / 2,
+          width / 2 + objSize / 2, bottomY + triH / 2
+        );
+      } else if (currentObject === 'star') {
+        drawStar(width / 2, bottomY, objSize * 0.6, objSize / 3, 5);
+      }
+      fill(0, 0, 100);
+      textAlign(CENTER);
+      textSize(10);
+      text(currentObject.toUpperCase(), width / 2, bottomY + 40);
+    }
+  }
+
+  fill(0, 0, 100);
+  textAlign(CENTER);
+  textSize(12);
+  text("Trial " + trial, width / 2, 20);
+}
+
+// --- Draw a 5-pointed star ---
+function drawStar(x, y, radius1, radius2, npoints) {
+  let angle = TWO_PI / npoints;
+  let halfAngle = angle / 2.0;
+  beginShape();
+  for (let a = 0; a < TWO_PI; a += angle) {
+    let sx = x + cos(a) * radius2;
+    let sy = y + sin(a) * radius2;
+    vertex(sx, sy);
+    sx = x + cos(a + halfAngle) * radius1;
+    sy = y + sin(a + halfAngle) * radius1;
+    vertex(sx, sy);
+  }
+  endShape(CLOSE);
+}
+
+// --- Smaller face expressions ---
+function drawFaceExpression(type, x, y, size) {
+  noStroke();
+  fill(0, 0, 100);
+  ellipse(x, y, size, size * 1.1);
+
+  fill(20);
+  let eyeW = size * 0.12;
+  let eyeH = size * 0.12;
+  ellipse(x - size * 0.2, y - size * 0.18, eyeW, eyeH);
+  ellipse(x + size * 0.2, y - size * 0.18, eyeW, eyeH);
+
+  stroke(20);
+  strokeWeight(2);
+  noFill();
+  if (type === 'happy') {
+    arc(x, y + size * 0.15, size * 0.45, size * 0.25, 0, PI);
+  } else if (type === 'sad') {
+    arc(x, y + size * 0.25, size * 0.45, size * 0.25, PI, TWO_PI);
+  } else if (type === 'surprised') {
+    noStroke();
+    fill(20);
+    ellipse(x, y + size * 0.18, size * 0.12, size * 0.12);
+  }
+  noStroke();
+}
+
+// --- Helper function: average trials with baseline correction ---
+function averageEpoch(trials) {
+  if (!trials || trials.length === 0) return null;
+  let avg = Array(trials[0].length).fill(0);
+  trials.forEach(trial => {
+    let baseline = 0;
+    for (let i = 0; i < preStim; i++) baseline += trial[i];
+    baseline /= preStim;
+    for (let i = 0; i < trial.length; i++) {
+      avg[i] += trial[i] - baseline;
+    }
+  });
+  for (let i = 0; i < avg.length; i++) avg[i] /= trials.length;
+  return avg;
+}

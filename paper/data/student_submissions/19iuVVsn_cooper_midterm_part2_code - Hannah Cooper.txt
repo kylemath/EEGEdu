@@ -1,0 +1,384 @@
+/************************************************************
+ ERP Averager (Circle → Annulus) with Two Conditions
+ - ITI: 1000 ms
+ - Stimulus: circle 30 ms, gap 60 ms, annulus 30 ms (total 120 ms)
+ - Epoch: -200 to +800 ms around CIRCLE onset (time 0)
+ - Channels: TP9, AF7, AF8, TP10
+ - Averages last N trials per condition using online mean
+ - No createCanvas (compatible with BrainImation)
+*************************************************************/
+
+// ====== Config ======
+const CHANNELS = ["TP9", "AF7", "AF8", "TP10"];
+const MAX_TRIALS_TO_AVG = 20;
+
+let SR = 256;                    // will read from eegData.sampleRate if present
+const PRE_MS = 200;
+const POST_MS = 800;
+let PRE_SAMPLES, POST_SAMPLES, EPOCH_SAMPLES;
+
+const ITI_MS = 1000;             // onset-to-onset
+const CIRCLE_MS = 30;
+const GAP_MS = 60;
+const ANNULUS_MS = 30;           // 30 + 60 + 30 = 120 ms total stimulus sequence
+
+// Oddball mix
+const RARE_PROB = 0.20;          // 20% rare, 80% standard
+
+// ====== State ======
+let nextOnset = 0;               // time (ms) of next circle onset
+let trialIdx = 0;
+let currentTrial = null;         // {cond, onsetTime, phase, preGrabbed, preData}
+
+// ERP buffers (online mean)
+let mean = {};                   // mean[cond][ch] = Float32Array(EPOCH_SAMPLES)
+let count = { STANDARD: 0, RARE: 0 };
+
+// Drawing
+let topRect, bottomRect;
+
+// ====== Helpers ======
+function ensureArrays() {
+  for (const cond of ["STANDARD", "RARE"]) {
+    if (!mean[cond]) mean[cond] = {};
+    for (const ch of CHANNELS) {
+      if (!mean[cond][ch] || mean[cond][ch].length !== EPOCH_SAMPLES) {
+        mean[cond][ch] = new Float32Array(EPOCH_SAMPLES);
+        mean[cond][ch].fill(0);
+      }
+    }
+  }
+}
+
+// Online mean for a single channel trace
+function onlineMeanUpdate(targetArray, newTrace, n) {
+  // n is the new count AFTER adding this trial
+  const prevN = n - 1;
+  for (let i = 0; i < targetArray.length; i++) {
+    const prev = targetArray[i];
+    const updated = prev + (newTrace[i] - prev) / n;
+    targetArray[i] = updated;
+  }
+}
+
+// Grabs last N samples for all channels (returns map ch->Float32Array)
+function grabAllChannels(nSamples) {
+  // BrainImation helper: eegData.getAllChannels(n)
+  // If not connected, synthesize data
+  if (typeof eegData !== "undefined" && eegData && eegData.connected && eegData.getAllChannels) {
+    const obj = eegData.getAllChannels(nSamples) || {};
+    const out = {};
+    for (const ch of CHANNELS) {
+      const arr = (obj[ch] || []);
+      const a = new Float32Array(nSamples);
+      for (let i = 0; i < nSamples; i++) a[i] = arr[i] || 0;
+      out[ch] = a;
+    }
+    return out;
+  } else {
+    // Simulation mode: pink-ish noise + optional P300 bump ~300 ms post-stim
+    const out = {};
+    for (const ch of CHANNELS) {
+      const a = new Float32Array(nSamples);
+      let noise = 0;
+      for (let i = 0; i < nSamples; i++) {
+        noise = 0.98 * noise + 0.02 * (Math.random() * 2 - 1);
+        a[i] = 15 * noise; // μV-ish scale
+      }
+      out[ch] = a;
+    }
+    // Embed a synthetic positivity for RARE around +300 ms (if a trial is active)
+    if (currentTrial && currentTrial.cond === "RARE") {
+      const zeroIdx = PRE_SAMPLES;
+      const peak = zeroIdx + Math.round(0.300 * SR);
+      for (const ch of CHANNELS) {
+        for (let k = -15; k <= 15; k++) {
+          const idx = peak + k;
+          if (idx >= 0 && idx < nSamples) {
+            const ampBase = (ch === "TP9" || ch === "TP10") ? 5.0 : 3.5;
+            out[ch][idx] += ampBase * Math.exp(-0.5 * (k / 8) ** 2);
+          }
+        }
+      }
+    }
+    return out;
+  }
+}
+
+// Concatenate pre + post into one trace per channel
+function concatEpoch(preObj, postObj) {
+  const out = {};
+  for (const ch of CHANNELS) {
+    const a = new Float32Array(EPOCH_SAMPLES);
+    a.set(preObj[ch], 0);
+    a.set(postObj[ch], PRE_SAMPLES);
+    out[ch] = a;
+  }
+  return out;
+}
+
+// ====== p5 lifecycle ======
+function setup() {
+  // DO NOT createCanvas — BrainImation handles it.
+  textFont('sans-serif');
+  SR = (typeof eegData !== "undefined" && eegData && eegData.sampleRate) ? eegData.sampleRate : 256;
+  PRE_SAMPLES = Math.round((PRE_MS / 1000) * SR);
+  POST_SAMPLES = Math.round((POST_MS / 1000) * SR);
+  EPOCH_SAMPLES = PRE_SAMPLES + POST_SAMPLES;
+
+  ensureArrays();
+
+  // Panel layout
+  const pad = 16;
+  const mid = Math.floor(height * 0.58);
+  topRect = { x: pad, y: pad, w: width - pad * 2, h: mid - pad * 2 };
+  bottomRect = { x: pad, y: mid, w: width - pad * 2, h: height - mid - pad };
+
+  nextOnset = millis() + 1000; // first stimulus in 1 s
+}
+
+function draw() {
+  background(18);
+
+  // ====== Timing & Stimulus State Machine ======
+  const t = millis();
+
+  // Start a new trial (circle onset) at each ITI
+  if (!currentTrial && t >= nextOnset) {
+    const cond = (Math.random() < RARE_PROB) ? "RARE" : "STANDARD";
+    currentTrial = {
+      cond,
+      onsetTime: t,
+      phase: "CIRCLE",      // CIRCLE → GAP → ANNULUS → WAITPOST
+      preGrabbed: false,
+      preData: null
+    };
+  }
+
+  // During a trial, manage phases and data grabs
+  if (currentTrial) {
+    const dt = t - currentTrial.onsetTime;
+
+    // At onset, immediately grab PRE window
+    if (!currentTrial.preGrabbed) {
+      currentTrial.preData = grabAllChannels(PRE_SAMPLES);
+      currentTrial.preGrabbed = true;
+    }
+
+    // Phase changes
+    if (dt < CIRCLE_MS) {
+      currentTrial.phase = "CIRCLE";
+    } else if (dt < CIRCLE_MS + GAP_MS) {
+      currentTrial.phase = "GAP";
+    } else if (dt < CIRCLE_MS + GAP_MS + ANNULUS_MS) {
+      currentTrial.phase = "ANNULUS";
+    } else {
+      currentTrial.phase = "WAITPOST";
+    }
+
+    // When post window is ready (after POST_MS), finalize epoch & update means
+    if (dt >= POST_MS) {
+      const postData = grabAllChannels(POST_SAMPLES);
+      const epoch = concatEpoch(currentTrial.preData, postData);
+
+      // Baseline-correct each channel using pre window mean
+      for (const ch of CHANNELS) {
+        let base = 0;
+        for (let i = 0; i < PRE_SAMPLES; i++) base += epoch[ch][i];
+        base /= PRE_SAMPLES || 1;
+        for (let i = 0; i < EPOCH_SAMPLES; i++) epoch[ch][i] -= base;
+      }
+
+      // Online-mean update (cap at MAX_TRIALS_TO_AVG by using min count)
+      const cond = currentTrial.cond;
+      count[cond] = Math.min(count[cond] + 1, MAX_TRIALS_TO_AVG);
+      for (const ch of CHANNELS) {
+        if (count[cond] === MAX_TRIALS_TO_AVG) {
+          for (let i = 0; i < EPOCH_SAMPLES; i++) mean[cond][ch][i] *= 0.95;
+        }
+        onlineMeanUpdate(mean[cond][ch], epoch[ch], count[cond]);
+      }
+
+      trialIdx += 1;
+      currentTrial = null;
+      nextOnset += ITI_MS; // schedule next onset exactly 1000 ms later
+    }
+  }
+
+  // ====== Draw Top Panel (ERP) ======
+  drawERPPanel();
+
+  // ====== Draw Bottom Panel (Stimulus Monitor) ======
+  drawStimulusPanel();
+}
+
+// ====== Drawing functions ======
+function drawERPPanel() {
+  const r = topRect;
+  push();
+  translate(r.x, r.y);
+  noFill();
+  stroke(60);
+  rect(0, 0, r.w, r.h, 10);
+
+  const leftPad = 60;
+  const rightPad = 16;
+  const topPad = 18;
+  const bottomPad = 24;
+  const plotW = r.w - leftPad - rightPad;
+  const plotH = r.h - topPad - bottomPad;
+
+  noStroke();
+  fill(220);
+  textSize(14);
+  textAlign(LEFT, TOP);
+  text("ERP Averages (−200 to +800 ms)  •  CH: TP9, AF7, AF8, TP10", 10, 8);
+
+  // Tick marks every 100 ms
+  stroke(80);
+  const totalMs = PRE_MS + POST_MS;
+  for (let ms = -PRE_MS; ms <= POST_MS; ms += 100) {
+    const x = leftPad + map(ms, -PRE_MS, POST_MS, 0, plotW);
+    line(x, topPad, x, topPad + plotH);
+  }
+
+  // Time 0 vertical
+  stroke(160);
+  strokeWeight(2);
+  const x0 = leftPad + map(0, -PRE_MS, POST_MS, 0, plotW);
+  line(x0, topPad, x0, topPad + plotH);
+
+  // Channel baselines (stacked)
+  const rows = CHANNELS.length;
+  const rowH = plotH / rows;
+
+  noStroke();
+  fill(200);
+  textSize(12);
+  textAlign(CENTER, TOP);
+  text("Time (ms)", leftPad + plotW / 2, topPad + plotH + 4);
+
+  textAlign(RIGHT, CENTER);
+  for (let i = 0; i < rows; i++) {
+    const yMid = topPad + i * rowH + rowH / 2;
+    fill(180);
+    text(CHANNELS[i], leftPad - 8, yMid);
+  }
+
+  const condStyle = {
+    STANDARD: { stroke: color(90, 180, 255), label: "STANDARD", yOff: 0 },
+    RARE: { stroke: color(255, 90, 120), label: "RARE", yOff: 0 }
+  };
+
+  for (let i = 0; i < rows; i++) {
+    const ch = CHANNELS[i];
+    const yMid = topPad + i * rowH + rowH / 2;
+    stroke(90);
+    strokeWeight(1);
+    line(leftPad, yMid, leftPad + plotW, yMid);
+
+    const uvScale = 0.8 * (rowH / 40); // ~±25–30 μV fits well
+
+    for (const cond of ["STANDARD", "RARE"]) {
+      const arr = mean[cond][ch];
+      if (!arr || count[cond] === 0) continue;
+
+      noFill();
+      stroke(condStyle[cond].stroke);
+      strokeWeight(2);
+      beginShape();
+      for (let s = 0; s < EPOCH_SAMPLES; s++) {
+        const ms = (s - PRE_SAMPLES) * (1000 / SR);
+        const x = leftPad + map(ms, -PRE_MS, POST_MS, 0, plotW);
+        const y = yMid - arr[s] * uvScale;
+        vertex(x, y);
+      }
+      endShape();
+    }
+  }
+
+  const legendY = r.h - bottomPad + 2;
+  noStroke();
+  textAlign(LEFT, CENTER);
+  fill(180);
+  textSize(12);
+  fill(90, 180, 255);
+  rect(leftPad, legendY - 6, 16, 12, 3);
+  fill(220);
+  text(`STANDARD  n=${count.STANDARD}`, leftPad + 22, legendY);
+  fill(255, 90, 120);
+  rect(leftPad + 170, legendY - 6, 16, 12, 3);
+  fill(220);
+  text(`RARE  n=${count.RARE}`, leftPad + 170 + 22, legendY);
+
+  pop();
+}
+
+function drawStimulusPanel() {
+  const r = bottomRect;
+  push();
+  translate(r.x, r.y);
+
+  noFill();
+  stroke(60);
+  rect(0, 0, r.w, r.h, 10);
+
+  noStroke();
+  fill(220);
+  textSize(14);
+  textAlign(LEFT, TOP);
+  text("Stimulus Monitor (Circle → Annulus)  •  1000 ms ITI", 10, 8);
+
+  const pad = 24;
+  const cx = pad + (r.w - 2 * pad) / 2;
+  const cy = pad + (r.h - 2 * pad) / 2 + 10;
+
+  const bannerY = 34;
+  textSize(12);
+  fill(180);
+  let condText = "—";
+  if (currentTrial) condText = currentTrial.cond;
+  text(`Condition: ${condText}    Trial: ${trialIdx}`, 12, bannerY);
+
+  stroke(200);
+  noFill();
+  rect(pad, pad + 40, r.w - 2 * pad, r.h - 2 * pad - 40, 8);
+
+  const circleR = 50;
+  const annulusInnerR = circleR;
+  const annulusOuterR = annulusInnerR * 2;
+
+  if (currentTrial) {
+    const t = millis();
+    const dt = t - currentTrial.onsetTime;
+
+    if (dt < CIRCLE_MS) {
+      noStroke();
+      fill(0);
+      ellipse(cx, cy, circleR * 2, circleR * 2);
+    } else if (dt >= CIRCLE_MS + GAP_MS && dt < CIRCLE_MS + GAP_MS + ANNULUS_MS) {
+      noFill();
+      stroke(0);
+      strokeWeight(annulusOuterR - annulusInnerR);
+      ellipse(cx, cy, (annulusInnerR + annulusOuterR), (annulusInnerR + annulusOuterR));
+      strokeWeight(1);
+    }
+
+    noStroke();
+    fill(currentTrial.cond === "RARE" ? color(255, 90, 120) : color(90, 180, 255));
+    ellipse(r.w - 34, 24, 14, 14);
+  } else {
+    const now = millis();
+    const rem = Math.max(0, nextOnset - now);
+    const frac = 1 - (rem / ITI_MS);
+    noStroke();
+    fill(90, 180, 255);
+    rect(pad, r.h - pad - 10, (r.w - 2 * pad) * frac, 10, 4);
+    fill(200);
+    textSize(12);
+    textAlign(RIGHT, BOTTOM);
+    text("Next circle onset", r.w - pad, r.h - pad - 14);
+  }
+
+  pop();
+}

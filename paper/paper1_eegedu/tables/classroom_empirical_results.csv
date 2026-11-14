@@ -1,0 +1,9 @@
+Experiment_Metric,N,Condition_A_Mean_SD,Condition_B_Mean_SD,t_stat,p_val,Cohens_dz
+Mod 2 Orthostatic ECG (Standing vs Sitting BPM),67,87.57 +/- 29.80,77.85 +/- 25.18,2.54,0.0135,0.31
+"Mod 2 Symmetric Orthostatic ECG (Standing vs Sitting BPM, 30–200 BPM)",75,83.32 +/- 31.01,75.27 +/- 26.79,2.14,0.0357,0.25
+Mod 3 Spectral FFT ECG (Standing vs Sitting BPM),76,65.25 +/- 20.11,56.43 +/- 18.60,3.49,0.00080,0.40
+Mod 6 Classroom Unguided Alpha (Closed vs Open μV),83,4.67 +/- 4.81,5.73 +/- 5.66,-2.82,0.0060,-0.31
+Mod 9 Temporal TP9/TP10 Rel Alpha (Closed vs Open %),67,4.84 +/- 0.79,4.31 +/- 0.62,5.62,4.24e-07,0.69
+Mod 9 Frontal AF7/AF8 Rel Alpha (Closed vs Open %),67,4.25 +/- 0.42,4.02 +/- 0.46,3.06,0.0032,0.37
+Mod 9 1/f-Detrended Temporal Alpha Bump (Closed vs Open %),67,+0.53 +/- 0.87,-0.16 +/- 0.62,6.20,4.22e-08,0.76
+Mod 9 1/f-Detrended Frontal Alpha Bump (Closed vs Open %),67,-0.05 +/- 0.45,-0.18 +/- 0.36,1.79,0.0778,0.22

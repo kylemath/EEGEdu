@@ -1,0 +1,314 @@
+// EEG-Controlled Tetris Game 
+// What it uses: attention, theta, and alpha EEG inputs that are integrated to control movement, rotation, and drop speed. 
+// Why it is cool: instead of using keys, the player influences the game by adjusting their mental state
+
+// Global Variables
+let cols = 5; 
+let rows = 20; 
+let blockSize;
+let grid = [];
+let currentPiece;
+let nextPiece;
+let dropCounter = 0;
+let dropInterval = 10; 
+let linesCleared = 0; 
+let level = 1;
+let score = 0;
+let dropSampleCounter = 0;
+const dropSampleFrames = 180; // How often to update dropInterval
+let lastDropInterval = 10; // Initial drop interval
+let isGameOver = false;
+
+// Move/rotation cooldowns
+let moveCooldown = 0; 
+let rotateCooldown = 0; 
+let lockDelay = 0; 
+
+// EEG smoothing buffers
+let attentionHistory = [];
+let thetaHistory = [];
+let alphaHistory = [];
+
+// Alpha sampling buffer for visible drop speed
+let alphaSampleBuffer = [];
+const alphaSampleSize = 30; // average over last 30 frames
+
+// Grid offset for centering
+let gridOffsetX; 
+
+// Classic Tetris shapes and colours
+let shapes = [
+  [[1,1,1,1]],           
+  [[1,1],[1,1]],         
+  [[0,1,0],[1,1,1]],     
+  [[1,1,0],[0,1,1]],     
+  [[0,1,1],[1,1,0]],     
+  [[1,0,0],[1,1,1]],     
+  [[0,0,1],[1,1,1]]      
+];
+let colors = ["#00FFFF","#FFFF00","#800080","#00FF00","#FF0000","#FFA500","#0000FF"];
+
+// Setup 
+function setup() {
+  colorMode(RGB);
+  textAlign(LEFT, TOP);
+  textSize(16);
+  blockSize = min(width/cols, height/rows); 
+  for(let r=0;r<rows;r++){
+    grid[r] = Array(cols).fill(null);
+  }
+  currentPiece = createPiece();
+  nextPiece = createPiece();
+
+  // Compute horizontal centering for grid between HUD and "Next" area
+  let hudWidth = 120;   // space on the left for stats text
+  let nextWidth = 160;  // space on the right for "Next" preview
+  let gridPixelWidth = cols * blockSize;
+  gridOffsetX = (width - (hudWidth + nextWidth + gridPixelWidth)) / 2 + hudWidth;
+}
+
+// EEG Smoothing
+function getSmoothedValue(raw, history){
+  history.push(raw);
+  if(history.length > 5) history.shift(); 
+  let sum = history.reduce((a,b)=>a+b,0);
+  return sum / history.length;
+}
+
+// Draw Loop
+function draw() {
+  background(220);
+
+  if(!eegData.connected){
+    fill(0);
+    textAlign(CENTER,CENTER);
+    text("Connect or simulate EEG", width/2, height/2);
+    return;
+  }
+
+  // Always draw the game state first
+  let attentionRaw = eegData.attention !== undefined ? eegData.attention : 0.5;
+  let thetaRaw = eegData.theta !== undefined ? eegData.theta : 0.5; 
+  let alphaRaw = eegData.alpha !== undefined ? eegData.alpha : 0.5;
+
+  let attention = getSmoothedValue(attentionRaw, attentionHistory);
+  let theta = getSmoothedValue(thetaRaw, thetaHistory);
+  let alpha = getSmoothedValue(alphaRaw, alphaHistory);
+
+  // Alpha sampling for drop speed
+  alphaSampleBuffer.push(alpha);
+  if(alphaSampleBuffer.length > 10) alphaSampleBuffer.shift();
+  let avgAlpha = alphaSampleBuffer.reduce((a,b)=>a+b,0)/alphaSampleBuffer.length;
+
+  // Only update game logic if not game over
+  if(!isGameOver){
+    // "Sample and hold" drop interval
+    dropSampleCounter++;
+    if(dropSampleCounter >= dropSampleFrames){
+      let minDrop = 22; // Slowest drop --> high alpha (calm state)
+      let maxDrop = 10; // Fastest drop --> low alpha (stressed state)
+      let newDrop = map(avgAlpha, 0.25, 0.45, minDrop, maxDrop);
+      lastDropInterval = constrain(newDrop, maxDrop, minDrop);
+      dropSampleCounter = 0;
+    }
+// Use the held interval (updated only every 60 frames)
+  dropInterval = lastDropInterval; 
+
+  // Calm bonus points - Maintaining alpha 
+  if(avgAlpha > 0.36) score += 0.5; 
+
+  // Horizontal movement - attention
+  if(moveCooldown <= 0){
+    if(attention > 0.48) movePiece(1);       
+    else if(attention < 0.42) movePiece(-1); 
+    moveCooldown = 2; 
+  } else moveCooldown--;
+
+  // Rotation - theta
+  if(rotateCooldown <= 0 && theta > 0.40){
+    rotatePiece(currentPiece);
+    rotateCooldown = 5; 
+  } else {
+    rotateCooldown--;
+  }
+
+  // Gravity & lock
+  dropCounter++;
+  if(dropCounter >= dropInterval){
+    currentPiece.y++; 
+    if(collision(currentPiece)){ 
+      currentPiece.y--; 
+      lockDelay++;
+      if(lockDelay >= 2){ 
+        lockPiece();
+        lockDelay = 0;
+      }
+    } else {
+      lockDelay = 0; 
+    }
+    dropCounter = 0; 
+  }
+}
+
+// Always draw game elements
+  drawGrid();
+  drawPiece(currentPiece, currentPiece.x, currentPiece.y); 
+  drawNextPiece(); 
+  drawHUD();
+
+// Draw game over overlay on top if game is over
+if(isGameOver){
+  // Semi-transparent overlay
+  fill(0, 200);
+  rect(0, 0, width, height);
+
+  // Game Over test centered on canvas
+  fill(255, 0, 0); 
+  textAlign(CENTER, CENTER);
+  textSize(48);
+  text("GAME OVER", width/2, height/2);
+
+  // Final Score
+  fill(255);
+  textSize(24);
+  text(`Final Score: ${floor(score)}`, width/2, height/2 + 60);
+    text(`Lines: ${linesCleared}`, width/2, height/2 + 90);
+    return;
+  }
+}
+
+// Helper Functions 
+function createPiece(){
+  let index = floor(random(shapes.length));
+  let shape = shapes[index].map(row => row.slice()); 
+  let startX = floor((cols - shape[0].length)/2);
+  let piece = { shape: shape, color: colors[index], x: startX, y: 0 };
+
+  if(collision(piece)) gameOver();
+  return piece;
+}
+
+function drawGrid(){
+  stroke(50);
+  strokeWeight(1);
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      fill(grid[r][c] ? grid[r][c] : 255); 
+      rect(gridOffsetX + c*blockSize, r*blockSize, blockSize, blockSize);
+    }
+  }
+}
+
+function drawPiece(p, px, py){
+  for(let r=0;r<p.shape.length;r++){
+    for(let c=0;c<p.shape[r].length;c++){
+      if(p.shape[r][c]){
+        fill(p.color);
+        stroke(50);
+        rect(gridOffsetX + (px+c)*blockSize, (py+r)*blockSize, blockSize, blockSize);
+      }
+    }
+  }
+}
+
+function movePiece(dir){
+  currentPiece.x += dir;
+  if(collision(currentPiece)) currentPiece.x -= dir; 
+}
+
+function lockPiece(){
+  for(let r=0;r<currentPiece.shape.length;r++){
+    for(let c=0;c<currentPiece.shape[r].length;c++){
+      if(currentPiece.shape[r][c]){
+        let gx = currentPiece.x + c;
+        let gy = currentPiece.y + r;
+        if(gy>=0 && gx>=0 && gx<cols) grid[gy][gx] = currentPiece.color; 
+      }
+    }
+  }
+  clearLines(); 
+  currentPiece = nextPiece; 
+  nextPiece = createPiece(); 
+}
+
+function collision(p){
+  for(let r=0;r<p.shape.length;r++){
+    for(let c=0;c<p.shape[r].length;c++){
+      if(p.shape[r][c]){
+        let gx = p.x + c;
+        let gy = p.y + r;
+        if(gx<0 || gx>=cols || gy>=rows) return true; 
+        if(gy>=0 && grid[gy][gx]) return true; 
+      }
+    }
+  }
+  return false;
+}
+
+function clearLines(){
+  let lines = 0;
+  for(let r=rows-1;r>=0;r--){
+    if(grid[r].every(cell => cell)){ 
+      grid.splice(r,1); 
+      grid.unshift(Array(cols).fill(null)); 
+      lines++;
+      r++; 
+    }
+  }
+
+  if(lines>0){
+    linesCleared += lines;
+    level += lines; 
+    score += lines*1000;
+  }
+}
+
+function drawNextPiece(){
+  fill(0);
+  textSize(16);
+  textAlign(LEFT, TOP);
+  text("Next:", width - 200, 30);
+  for(let r=0;r<nextPiece.shape.length;r++){
+    for(let c=0;c<nextPiece.shape[r].length;c++){
+      if(nextPiece.shape[r][c]){
+        fill(nextPiece.color);
+        stroke(50);
+        rect(width - 150 + c*blockSize, 30 + r*blockSize, blockSize, blockSize);
+      }
+    }
+  }
+}
+
+function drawHUD(){
+  fill(0);
+  textAlign(LEFT, TOP);
+  textSize(16);
+  text(`Lines: ${linesCleared}`, 10, 10);
+  text(`Level: ${level}`, 10, 30);
+  text(`Score: ${floor(score)}`, 10, 50);
+  if (alphaHistory.length > 0) {
+    text(`Alpha: ${alphaHistory[alphaHistory.length-1].toFixed(2)}`, 10, 70);
+  }
+  text(`Drop Int: ${dropInterval.toFixed(0)}`, 10, 90);
+}
+
+function rotatePiece(p){
+  let newShape = [];
+  let rowsS = p.shape.length;
+  let colsS = p.shape[0].length;
+  for(let c=0;c<colsS;c++){
+    let newRow = [];
+    for(let r=rowsS-1;r>=0;r--){
+      newRow.push(p.shape[r][c]);
+    }
+    newShape.push(newRow);
+  }
+  let oldShape = p.shape;
+  p.shape = newShape;
+  if(p.x + p.shape[0].length > cols) p.x = cols - p.shape[0].length;
+  if(collision(p)) p.shape = oldShape; 
+}
+
+function gameOver() {
+  isGameOver = true;
+}

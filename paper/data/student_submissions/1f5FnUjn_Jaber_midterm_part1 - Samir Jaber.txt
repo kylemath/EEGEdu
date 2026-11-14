@@ -1,0 +1,174 @@
+// Part 1, Target Brain State Trainer + Adaptive Feedback
+// Works with older p5 builds, uses ellipse(), no nf(), instance safe keys
+
+let waveHistory = [];
+let bands = ["alpha", "beta", "theta", "delta"];
+let hues = [300, 180, 60, 0];
+let smooth = { alpha: 0, beta: 0, theta: 0, delta: 0 };
+let smoothAmt = 0.85;
+let targetIndex = 0;
+let stressLevel = 0;
+let relaxLevel = 0;
+
+// trainer state
+let trainOn = true;
+let targetRatio = 1.40;     // alpha to theta
+let ratioSmooth = 0;
+let ratioSmoothAmt = 0.90;
+let progress01 = 0;         // 0..1 distance to target inverted
+let score = 0;              // accumulates with progress
+let eyesClosed = false;
+let eyeHoldMs = 0;
+let lastMs = 0;
+
+function setup() {
+  colorMode(HSB, 360, 100, 100);
+  background(0, 0, 10);
+
+  // instance safe keys
+  window.addEventListener("keydown", handleKey);
+}
+
+function draw() {
+  const nowMs = millis();
+
+  // live EEG reading
+  const reading = getReading();
+
+  // smoothing for lanes
+  for (let b of bands) smooth[b] = lerp(reading[b], smooth[b], smoothAmt);
+
+  // affect indices from bands
+  computeAffectLevels(smooth);
+
+  // trainer metrics
+  const dt = lastMs ? (nowMs - lastMs) / 1000 : 0;
+  lastMs = nowMs;
+
+  const curRatio = smooth.theta > 0.0001 ? smooth.alpha / smooth.theta : 0;
+  ratioSmooth = lerp(ratioSmooth, curRatio, ratioSmoothAmt);
+
+  const relErr = Math.abs(ratioSmooth - targetRatio) / Math.max(0.0001, targetRatio);
+  progress01 = constrain(1 - relErr, 0, 1);
+
+  if (trainOn) {
+    // reward proximity, small decay keeps it focused on sustained control
+    score = Math.max(0, score + progress01 * dt - 0.05 * dt);
+  }
+
+  // eyes closed flag from elevated alpha fraction for 0.5 s
+  const totalPow = Math.max(0.0001, smooth.alpha + smooth.beta + smooth.theta + smooth.delta);
+  const alphaFrac = smooth.alpha / totalPow;
+  if (alphaFrac > 0.45) eyeHoldMs += dt * 1000; else eyeHoldMs = Math.max(0, eyeHoldMs - dt * 200);
+  eyesClosed = eyeHoldMs > 500;
+
+  // background responds to training progress
+  const baseHue = lerp(0, 240, relaxLevel);
+  const baseSat = 20 + 50 * progress01;
+  const baseBri = 10 + 35 * progress01;
+  background(baseHue, baseSat, baseBri);
+
+  // history for lane plot
+  waveHistory.push({ ...smooth });
+  if (waveHistory.length > width / 2) waveHistory.shift();
+
+  // draw lanes full canvas
+  drawLanesAndWaves(width, height);
+
+  // HUD
+  drawHUD();
+}
+
+// keyboard handler for instance mode pages
+function handleKey(e) {
+  const a = document.activeElement;
+  if (a && ["INPUT", "TEXTAREA", "SELECT"].includes(a.tagName)) return;
+  const k = e.key.toLowerCase();
+
+  if (k === "t") { targetIndex = (targetIndex + 1) % bands.length; return; }
+  if (k === "g") { trainOn = !trainOn; return; }
+  if (k === "]") { targetRatio = Math.min(3.0, targetRatio + 0.05); return; }
+  if (k === "[") { targetRatio = Math.max(0.5, targetRatio - 0.05); return; }
+  if (k === "c") {  // quick calibration to current state
+    const denom = Math.max(0.0001, smooth.theta);
+    targetRatio = smooth.alpha / denom;
+    return;
+  }
+  if (k === "r") { score = 0; return; }
+}
+
+function drawLanesAndWaves(w, h) {
+  const laneH = h / bands.length;
+  const amp = laneH * 0.4;
+  textSize(12); textAlign(LEFT, CENTER);
+
+  for (let i = 0; i < bands.length; i++) {
+    const cy = laneH * i + laneH * 0.65;
+
+    if (i === targetIndex) { noStroke(); fill(0, 0, 20, 30); rect(0, laneH * i, w, laneH); }
+    stroke(0, 0, 25); strokeWeight(1); line(0, cy, w, cy);
+    noStroke(); fill(0, 0, 80); text(bands[i].toUpperCase(), 10, cy - laneH * 0.45);
+
+    // alpha stronger with relax, beta stronger with stress
+    let briBoost = 0, sw = i === targetIndex ? 3 : 2;
+    if (bands[i] === "alpha") { briBoost = 20 * relaxLevel; sw += 2 * relaxLevel; }
+    if (bands[i] === "beta")  { briBoost = 20 * stressLevel; sw += 2 * stressLevel; }
+
+    stroke(hues[i], 80, Math.min(95 + briBoost, 100)); strokeWeight(sw); noFill();
+    beginShape();
+    for (let k = 0; k < waveHistory.length; k++) {
+      const x = map(k, 0, waveHistory.length - 1, 0, w);
+      const y = cy - waveHistory[k][bands[i]] * amp;
+      vertex(x, y);
+    }
+    endShape();
+  }
+}
+
+function drawHUD() {
+  fill(0, 0, 90);
+  textSize(16);
+  text("BrainImation, Target State Trainer", 12, 10);
+  textSize(12);
+  text("Target " + bands[targetIndex].toUpperCase() + "  T to change", 12, 30);
+  text("Alpha to Theta " + ratioSmooth.toFixed(2) + "  target " + targetRatio.toFixed(2), 12, 48);
+  text("Progress " + Math.round(progress01 * 100) + "%   Score " + score.toFixed(1), 12, 64);
+  text("Eyes " + (eyesClosed ? "closed" : "open") + "   Training " + (trainOn ? "on" : "off"), 12, 80);
+}
+
+// input adapter
+function _findLiveObj() {
+  if (typeof eegData !== "undefined") return eegData;
+  for (const k in window) {
+    const v = window[k];
+    if (v && typeof v === "object" && "alpha" in v && "beta" in v && "theta" in v && "delta" in v) return v;
+  }
+  return null;
+}
+
+function getReading() {
+  const src = _findLiveObj();
+  if (src) {
+    return {
+      alpha: constrain(src.alpha ?? 0, 0, 1),
+      beta: constrain(src.beta ?? 0, 0, 1),
+      theta: constrain(src.theta ?? 0, 0, 1),
+      delta: constrain(src.delta ?? 0, 0, 1),
+    };
+  }
+  // fallback demo
+  const t = millis() * 0.0008;
+  return {
+    alpha: 0.5 + 0.3 * noise(t * 1.2),
+    beta:  0.4 + 0.3 * noise(t * 1.6 + 10),
+    theta: 0.5 + 0.2 * noise(t * 0.9 + 20),
+    delta: 0.35 + 0.2 * noise(t * 0.6 + 30)
+  };
+}
+
+function computeAffectLevels(b) {
+  const total = Math.max(0.0001, b.alpha + b.beta + b.theta + b.delta);
+  const relaxRaw = b.alpha / total, stressRaw = b.beta / total;
+  relaxLevel = constrain(map(relaxRaw, 0.15, 0.45, 0, 1), 0, 1);
+  stressLevel = constrain(map(stressRaw, 0.10, 0.40, 0, 1), 0, 1);
+}

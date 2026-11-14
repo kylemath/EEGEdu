@@ -1,0 +1,203 @@
+// === Two-Category ERP Experiment Visualization (Final Clear Version) ===
+
+let sampleRate = 256;
+let preStimMs = 200;
+let postStimMs = 800;
+let epochMs = preStimMs + postStimMs;
+let epochLength = Math.floor(epochMs * sampleRate / 1000);
+let stimInterval = 1000;
+let lastStimTime = 0;
+let stimCategory = null;
+let categories = ["Frequent", "Rare"];
+let categoryProb = [0.8, 0.2];
+let epochs = { Frequent: [], Rare: [] };
+let colors;
+
+// === SETUP ===
+function setup() {
+  colorMode(HSB, 360, 100, 100);
+  textFont("Helvetica");
+  lastStimTime = millis();
+  colors = {
+    Frequent: color(210, 90, 90), // blue
+    Rare: color(25, 90, 95)       // orange
+  };
+}
+
+// === DRAW ===
+function draw() {
+  background(0, 0, 10);
+  let now = millis();
+  let t = now - lastStimTime;
+
+  if (t >= stimInterval) {
+    triggerStimulus();
+    lastStimTime = now;
+    t = 0;
+  }
+
+  drawERPPlot();
+  drawStimulusMonitor(t);
+}
+
+// === TRIGGER NEW STIMULUS ===
+function triggerStimulus() {
+  stimCategory = random() < categoryProb[0] ? "Frequent" : "Rare";
+  let epoch = randomEpoch();
+  epochs[stimCategory].push(epoch);
+  if (epochs[stimCategory].length > 40) epochs[stimCategory].shift();
+}
+
+// === DRAW STIMULUS BOX ===
+function drawStimulusMonitor(t) {
+  let stimX = width / 2 - 80;
+  let stimY = 375; // just below ERP plot
+  let w = 160, h = 160;
+
+  // Box frame
+  fill(0, 0, 15);
+  stroke(0, 0, 50);
+  rect(stimX - 10, stimY - 10, w + 20, h + 20, 12);
+
+  // Flash phase (50 ms on)
+  let stimPhase = t < 80 ? "flash" : "off";
+  push();
+  translate(stimX + w / 2, stimY + h / 2);
+  noStroke();
+  fill(colors[stimCategory] || color(0, 0, 40));
+
+  if (stimPhase === "flash") {
+    if (stimCategory === "Frequent") ellipse(0, 0, 90);
+    else rectMode(CENTER), rect(0, 0, 90, 90, 10);
+  }
+  pop();
+
+  // Labels
+  noStroke();
+  fill(0, 0, 90);
+  textAlign(CENTER, TOP);
+  textSize(16);
+  text("Stimulus Display", width / 2, stimY + h + 20);
+
+  if (stimCategory) {
+    fill(colors[stimCategory]);
+    textSize(14);
+    text(stimCategory, width / 2, stimY + h + 45);
+  }
+}
+
+// === DRAW ERP PLOT ===
+function drawERPPlot() {
+  let plotX1 = 70, plotX2 = width - 70;
+  let plotY = 60;
+  let plotH = 260;
+
+  // --- Gridlines ---
+  stroke(0, 0, 25);
+  strokeWeight(1);
+  for (let ms = -200; ms <= 800; ms += 100) {
+    let x = map(ms, -200, 800, plotX1, plotX2);
+    line(x, plotY, x, plotY + plotH);
+  }
+  for (let y = -40; y <= 40; y += 20) {
+    let yPix = plotY + plotH / 2 - map(y, -40, 40, -plotH / 2, plotH / 2);
+    line(plotX1, yPix, plotX2, yPix);
+  }
+
+  // --- 0 ms line ---
+  stroke(0, 0, 80);
+  strokeWeight(2);
+  let zeroX = map(0, -200, 800, plotX1, plotX2);
+  line(zeroX, plotY, zeroX, plotY + plotH);
+
+  // --- Baseline shading (pre-stim) ---
+  noStroke();
+  fill(0, 0, 20, 0.4);
+  rect(map(-200, -200, 800, plotX1, plotX2), plotY, map(0, -200, 800, plotX1, plotX2) - plotX1, plotH);
+
+  // --- Compute averages ---
+  let avgFreq = averageEpochs(epochs.Frequent);
+  let avgRare = averageEpochs(epochs.Rare);
+
+  // --- Plot both ERPs ---
+  strokeWeight(2.5);
+  noFill();
+
+  if (avgFreq) {
+    stroke(colors.Frequent);
+    beginShape();
+    for (let i = 0; i < avgFreq.length; i++) {
+      let ms = (i / sampleRate) * 1000 - preStimMs;
+      let x = map(ms, -200, 800, plotX1, plotX2);
+      let y = plotY + plotH / 2 - map(avgFreq[i], -30, 30, -100, 100);
+      vertex(x, y);
+    }
+    endShape();
+  }
+
+  if (avgRare) {
+    stroke(colors.Rare);
+    beginShape();
+    for (let i = 0; i < avgRare.length; i++) {
+      let ms = (i / sampleRate) * 1000 - preStimMs;
+      let x = map(ms, -200, 800, plotX1, plotX2);
+      let y = plotY + plotH / 2 - map(avgRare[i], -30, 30, -100, 100);
+      vertex(x, y);
+    }
+    endShape();
+  }
+
+  // --- Axis labels ---
+  fill(0, 0, 90);
+  noStroke();
+  textAlign(CENTER, BOTTOM);
+  textSize(18);
+  text("Event-Related Potentials (ERP)", (plotX1 + plotX2) / 2, plotY - 5);
+  textSize(12);
+  text("Time (ms)", (plotX1 + plotX2) / 2, plotY + plotH + 25);
+
+  push();
+  translate(plotX1 - 45, plotY + plotH / 2);
+  rotate(-HALF_PI);
+  text("Amplitude (µV)", 0, 0);
+  pop();
+
+  // --- Tick labels ---
+  textAlign(CENTER, TOP);
+  textSize(10);
+  fill(0, 0, 80);
+  for (let ms = -200; ms <= 800; ms += 100) {
+    let x = map(ms, -200, 800, plotX1, plotX2);
+    text(ms, x, plotY + plotH + 5);
+  }
+
+  // --- Trial counters ---
+  textAlign(RIGHT, TOP);
+  fill(colors.Frequent);
+  textSize(12);
+  text("Frequent trials: " + epochs.Frequent.length, plotX2, plotY - 25);
+  fill(colors.Rare);
+  text("Rare trials: " + epochs.Rare.length, plotX2, plotY - 10);
+}
+
+// === AVERAGING ===
+function averageEpochs(arr) {
+  if (arr.length === 0) return null;
+  let avg = new Array(arr[0].length).fill(0);
+  for (let ep of arr) {
+    for (let i = 0; i < ep.length; i++) avg[i] += ep[i][0];
+  }
+  return avg.map(v => v / arr.length);
+}
+
+// === EEG SIMULATION ===
+function randomEpoch() {
+  let arr = [];
+  for (let i = 0; i < epochLength; i++) {
+    arr.push([
+      (noise(i * 0.08, frameCount * 0.015) - 0.5) * 60 +
+      sin(i / 8) * (random() < 0.15 ? 25 : 0)
+    ]);
+  }
+  return arr;
+}

@@ -1,0 +1,154 @@
+/***
+  MIDTERM PART 1: BCI Innovation
+  Kyle Cordez
+  
+  references:
+    - Star class from assignment #2 Raindrop class
+    - timer from "countdown timer" by marynotari
+***/
+
+
+let timer = 1500; // set to 25 minutes, can be adjusted
+let stars = [];
+let score = 0;
+let counting = true;
+
+
+class Star {
+  // this is a recycled version of the 'Raindrop' class I used for assignment #2!
+  /*** 
+    Stuff
+      vel: movement speed 
+      x: x coordinate
+      y: y coordinate
+      shade: colour of star
+  ***/
+  constructor(vel, x, y, shade) {
+    this.vel = vel;
+    this.x = x;
+    this.y = y;
+    this.shade = shade;
+  }
+  
+  /* Draws the Star instance */
+  show() {
+    fill(this.shade);
+    noStroke();
+    ellipse(this.x, this.y, 5);
+  }
+  
+  /* Returns this star's speed */ 
+  getVel() {
+    return this.vel;
+  }
+
+  /* Shift this star's velocity */
+  updateVel(increment) {
+    this.vel += increment;
+  }
+  
+  /* Relocates this star to random coordinates */
+  updateLocation() {
+    this.x = random(width);
+    this.y = random(height, -height/2)
+  }
+
+  /* Changes this star's colour */
+  updateShade(new_shade) {
+    this.shade = new_shade;
+  }
+  
+  /* Handles this instance's movement & colour change */
+  flyPast(new_shade) {
+    this.y += this.vel;
+    
+    if (this.y > height) {
+      this.updateLocation();
+      this.updateShade(new_shade);
+    }
+  }
+}
+
+
+function setup() {
+  // Create stars
+  for (let i = 0; i < 15; i++) {
+    stars.push(new Star(5, random(width), random(height), 'white'));
+  }
+}
+
+
+function draw() {
+  background('black');
+  
+  // Draw stars
+  for (let i of stars) {
+    i.show();
+  } 
+
+  // Draw ship
+  let x = width/2;
+  let y = height/2;
+  fill('rgb(58,197,151)');
+  noStroke(); 
+  triangle(x, y-40, x-15, y+40, x+15, y+40);
+    
+  // Instructions
+  fill('white')
+  textAlign(LEFT, TOP);
+  textSize(14);
+  text('YOUR GOAL:', 10, 10);
+  textSize(24);
+  text('JOURNEY THROUGH THE STARS', 10, 30);
+  text('REMAIN IN FLOW STATE. . .', 10, 60);
+
+  let vel_change = 0;
+  let star_clr = 'orange';
+
+  // Increase speed if alpha too high
+  if (eegData.alpha > 0.75) {
+    vel_change += eegData.alpha * 10;  
+    star_clr = random(['red', 'blue', 'yellow', 'pink', 'purple']); 
+  }
+
+  // Decrease speed if beta too high
+  if (eegData.beta > 0.5) {
+    vel_change -= eegData.beta * 10;
+    star_clr = 'white';
+  }
+
+  // Update speed
+  for (let star of stars) {
+    if (star.getVel()+vel_change >= 1 && star.getVel()+vel_change <= 25) {
+      star.updateVel(vel_change);
+    }
+  }
+  
+  // Move stars & update colour
+  for (let i of stars) {
+    i.flyPast(star_clr);
+  }
+
+  // Countdown timer
+  if (frameCount % 60 == 0 && timer > 0) { 
+    timer --;
+    // Adds a point for every second we are in the target alpha values
+    if (eegData.alpha < 0.75 && eegData.alpha > 0.5 && counting) {
+      score ++;
+    }
+  }
+   
+  // Score text label 
+  textAlign(LEFT, TOP);
+  textSize(32);
+  text("SCORE: " + score, 10, height-50);
+
+  // Finish up!
+  if (timer === 0) {
+    counting = false;
+
+    textAlign(CENTER, CENTER);
+    textSize(45);
+    text("FINAL SCORE: " + score, width/2, height/2);
+  } 
+}

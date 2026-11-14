@@ -1,0 +1,219 @@
+let waves = [];
+
+// Parol-inspired color palette (HSL)
+let parolPalette = [
+  [45, 90, 70],   // gold
+  [0, 80, 65],    // red
+  [130, 70, 60],  // green
+  [210, 70, 65],  // blue
+  [50, 30, 85]    // pearl white
+];
+
+// Parameters for the star shape
+const NUM_STAR_POINTS = 5; // For a classic 5-point star
+const STAR_INNER_RATIO = 0.6; // Controls the 'pointiness' of the star (0.0 to 1.0) - A higher value for more traditional points
+const OUTER_GLOW_RADIUS_FACTOR = 1.5; // How much larger the outer glow circle is than the main wave
+const OUTER_GLOW_STROKE_WEIGHT = 10;
+
+const BIG_STAR_STROKE_WEIGHT = 5; // Re-introduced constant for the main star's stroke
+
+function setup() {
+  colorMode(RGB, 255);
+  background(0);
+  pixelDensity(1);
+}
+
+// Pick multiple colors for one pulse
+function pickParolColors(count = 3) {
+  let shuffled = [...parolPalette].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, count);
+}
+
+function draw() {
+  background(0, 0, 0, 18);
+
+  // Add new alpha wave
+  if (typeof eegData !== 'undefined' && eegData.alpha !== undefined) {
+    if (frameCount % 8 === 0) {
+      waves.push({
+        x: width / 2,
+        y: height / 2,
+        r: 0,
+        alpha: constrain(eegData.alpha, 0, 1),
+        phase: random(TWO_PI),
+        blinkOffset: random(TWO_PI),
+        colors: pickParolColors(3)
+      });
+    }
+  }
+
+  // Draw and update waves
+  for (let i = waves.length - 1; i >= 0; i--) {
+    let w = waves[i];
+
+    drawParolRibbon(
+      w.x,
+      w.y,
+      w.r,
+      w.alpha,
+      w.phase,
+      w.colors,
+      w.blinkOffset,
+      NUM_STAR_POINTS, // Pass star points
+      STAR_INNER_RATIO // Pass inner ratio
+    );
+
+    drawOuterGlowCircle(
+      w.x,
+      w.y,
+      w.r * OUTER_GLOW_RADIUS_FACTOR, // Make it larger than the main wave
+      w.alpha * 0.6, // Slightly less opaque
+      w.phase, // Use same phase for synchronization
+      w.colors[0] // Use the first color for a consistent glow
+    );
+
+    drawStarsBetweenPoints(
+      w.x, w.y, w.r * 1.5, // Pass a scaled radius for the smaller stars to be positioned relative to the main star
+      w.alpha, // Full opacity for prominence
+      w.phase, w.colors,
+      NUM_STAR_POINTS
+    );
+
+    // Breathing + slow drift
+    w.r += w.alpha * 9 + sin(frameCount * 0.03) * 0.7;
+    w.alpha *= 0.97;
+    w.phase += 0.01;
+
+    if (w.alpha < 0.01) {
+      waves.splice(i, 1);
+    }
+  }
+}
+
+// Draw parol ribbon with blinking light segments - NOW ONLY DRAWS THE SHARP CORE
+function drawParolRibbon(x, y, r, alpha, phase, colors, blinkOffset, numStarPoints, starInnerRatio) {
+  push();
+  translate(x, y);
+  rotate(-HALF_PI); // Rotate by -90 degrees (or -PI/2) to make a tip point straight up
+  noFill();
+
+  // Directly draw a sharp 5-pointed star as the main element
+  let outerRadius = r * 1.5; // Scale the main star's size
+  let innerRadius = outerRadius * starInnerRatio;
+
+  let c = colors[0];
+  let rgb = hslToRgb(c[0], c[1], c[2] + 20);
+  stroke(rgb[0], rgb[1], rgb[2], alpha * 255);
+  strokeWeight(BIG_STAR_STROKE_WEIGHT); // Use a prominent stroke weight for the main star
+
+  let angle = TWO_PI / numStarPoints;
+  let halfAngle = angle / 2.0;
+
+  beginShape();
+  for (let a = 0; a < TWO_PI; a += angle) {
+    vertex(cos(a) * outerRadius, sin(a) * outerRadius);
+    vertex(cos(a + halfAngle) * innerRadius, sin(a + halfAngle) * innerRadius);
+  }
+  endShape(CLOSE);
+  pop();
+}
+
+// New function to draw an outer glowing circle
+function drawOuterGlowCircle(x, y, r, alpha, phase, color) {
+  push();
+  translate(x, y);
+  noFill();
+  strokeWeight(OUTER_GLOW_STROKE_WEIGHT);
+
+  let rgb = hslToRgb(color[0], color[1], color[2]);
+  stroke(rgb[0], rgb[1], rgb[2], alpha * 150);
+
+  beginShape();
+  for (let i = 0; i < 360; i++) {
+    let a = radians(i);
+    let radius = r * OUTER_GLOW_RADIUS_FACTOR + sin(a * 10 + phase * 2) * 3 + sin(frameCount * 0.1) * 2; // Scaled radius for the glow
+    vertex(radius * cos(a), radius * sin(a));
+  }
+  endShape(CLOSE);
+  pop();
+}
+
+// New function to draw a simple star shape
+function drawSimpleStar(x, y, radius1, radius2, npoints, alpha, rgbColor) {
+  let angle = TWO_PI / npoints;
+  let halfAngle = angle / 2.0;
+
+  push();
+  translate(x, y);
+  noFill();
+  stroke(rgbColor[0], rgbColor[1], rgbColor[2], alpha * 255);
+  strokeWeight(3); // Thicker stroke for small stars
+
+  beginShape();
+  for (let a = 0; a < TWO_PI; a += angle) {
+    let sx = cos(a) * radius2;
+    let sy = sin(a) * radius2;
+    vertex(sx, sy);
+    sx = cos(a + halfAngle) * radius1;
+    sy = sin(a + halfAngle) * radius1;
+    vertex(sx, sy);
+  }
+  endShape(CLOSE);
+  pop();
+}
+
+// New function to draw small stars between the main star points
+function drawStarsBetweenPoints(mainStarX, mainStarY, mainStarRadius, alpha, phase, colors, numMainStarPoints) {
+  // First set of small stars (as originally implemented, now more prominent)
+  const smallStarCount1 = numMainStarPoints; // One small star per valley
+  const smallStarRadiusOuter1 = mainStarRadius * 0.2; // Increased size
+  const smallStarRadiusInner1 = smallStarRadiusOuter1 * 0.4; // Inner radius for small star
+  const distanceFromCenter1 = mainStarRadius * 1.0; // Moved further out for visibility
+
+  for (let k = 0; k < smallStarCount1; k++) {
+    let angleForSmallStar = (k + 0.5) * TWO_PI / numMainStarPoints + phase * 0.5;
+    let smallStarCenterX = mainStarX + distanceFromCenter1 * cos(angleForSmallStar);
+    let smallStarCenterY = mainStarY + distanceFromCenter1 * sin(angleForSmallStar);
+    let c = colors[k % colors.length];
+    let rgb = hslToRgb(c[0], c[1], c[2] + 15); // Slightly brighter
+    drawSimpleStar(smallStarCenterX, smallStarCenterY, smallStarRadiusInner1, smallStarRadiusOuter1, NUM_STAR_POINTS, alpha, rgb);
+  }
+
+  // Second set of smaller stars, slightly further out and offset
+  const smallStarCount2 = numMainStarPoints * 2; // More stars
+  const smallStarRadiusOuter2 = mainStarRadius * 0.15; // Slightly increased size
+  const smallStarRadiusInner2 = smallStarRadiusOuter2 * 0.4;
+  const distanceFromCenter2 = mainStarRadius * 1.2; // Further out
+
+  for (let k = 0; k < smallStarCount2; k++) {
+    // Offset the angle for the second set to avoid direct overlap and create a new ring
+    let angleForSmallStar = (k + 0.0) * TWO_PI / smallStarCount2 + phase * 0.7;
+    let smallStarCenterX = mainStarX + distanceFromCenter2 * cos(angleForSmallStar);
+    let smallStarCenterY = mainStarY + distanceFromCenter2 * sin(angleForSmallStar);
+    let c = colors[(k + 1) % colors.length]; // Use a slightly different color from palette
+    let rgb = hslToRgb(c[0], c[1], c[2] + 10); // Slightly brighter
+    drawSimpleStar(smallStarCenterX, smallStarCenterY, smallStarRadiusInner2, smallStarRadiusOuter2, NUM_STAR_POINTS, alpha * 0.8, rgb); // Slightly less opaque but more than before
+  }
+}
+
+
+// HSL to RGB conversion
+function hslToRgb(h, s, l) {
+  s /= 100;
+  l /= 100;
+
+  let k = n => (n + h / 30) % 12;
+  let a = s * Math.min(l, 1 - l);
+
+  let f = n =>
+    l - a * Math.max(
+      -1,
+      Math.min(k(n) - 3, Math.min(9 - k(n), 1))
+    );
+
+  return [
+    255 * f(0),
+    255 * f(8),
+    255 * f(4)
+  ];
+}

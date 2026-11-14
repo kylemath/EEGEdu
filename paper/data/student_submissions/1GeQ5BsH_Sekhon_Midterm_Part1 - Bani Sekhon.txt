@@ -1,0 +1,268 @@
+let state = "focused"; // default
+
+
+// EEG-Responsive Kaleidoscope with Wave-Specific Pulsing Connections and Size Growth
+let particles = [];
+let time = 0;
+let symmetry = 6;
+let angle = TWO_PI / symmetry;
+
+
+
+
+function setup() {
+colorMode(HSB, 360, 100, 100, 1);
+
+
+
+
+// Initialize particles with wave group (0=Alpha, 1=Theta, 2=Beta, 3=Delta)
+for (let i = 0; i < 50; i++) {
+  particles.push({
+    x: random(width),
+    y: random(height),
+    vx: random(-1, 1),
+    vy: random(-1, 1),
+    hue: random(360),
+    saturation: 80,
+    size: 5,
+    waveGroup: i % 4
+  });
+}
+}
+
+
+
+
+function draw() {
+// Background responds to meditation
+background(220, 30, 10, map(eegData.meditation, 0, 1, 0.05, 0.2));
+translate(width / 2, height / 2);
+let stateSpeed = 0.01; // default
+
+
+if (state === "relaxed") stateSpeed = 0.005;
+else if (state === "focused") stateSpeed = 0.02;
+else if (state === "stressed") stateSpeed = 0.04;
+
+
+time += stateSpeed;
+
+
+
+
+for (let i = 0; i < particles.length; i++) {
+  let p = particles[i];
+
+
+
+
+  // Wave amplitudes
+  let alpha = eegData.alpha;
+  let theta = eegData.theta;
+  let beta  = eegData.beta;
+  let delta = eegData.delta;
+
+
+// --- Determine mental state ---
+state = "focused"; // default
+if (eegData.alpha > 0.7) state = "relaxed";
+else if (eegData.beta > 0.7) state = "stressed";
+
+
+
+
+  // Particle movement influenced by waves
+  let moveForce = (alpha + theta)*2 + beta*2 + delta;
+  p.vx += random(-moveForce, moveForce) * 0.01;
+  p.vy += random(-moveForce, moveForce) * 0.01;
+
+
+
+
+  p.vx *= 0.99;
+  p.vy *= 0.99;
+  p.x += p.vx;
+  p.y += p.vy;
+
+
+
+
+  // Wrap around edges
+  if (p.x < 0) p.x = width;
+  if (p.x > width) p.x = 0;
+  if (p.y < 0) p.y = height;
+  if (p.y > height) p.y = 0;
+
+
+
+
+  let cx = p.x - width / 2;
+  let cy = p.y - height / 2;
+
+
+
+
+  // --- Assign wave-specific color ---
+  let targetHue, targetSaturation, targetBrightness;
+
+
+
+
+  if (p.waveGroup === 0) {
+    targetHue = map(alpha, 0, 1, 180, 220);  // Alpha - Blue
+    targetSaturation = 80;
+    targetBrightness = 80;
+  } else if (p.waveGroup === 1) {
+    targetHue = map(theta, 0, 1, 200, 240); // Theta - Cyan
+    targetSaturation = 80;
+    targetBrightness = 80;
+  } else if (p.waveGroup === 2) {
+    targetHue = map(beta, 0, 1, 0, 30);     // Beta - Red/Orange
+    targetSaturation = 100;
+    targetBrightness = 80;
+  } else {
+    targetHue = 0;                           // Delta - White
+    targetSaturation = 0;
+    targetBrightness = map(delta, 0, 1, 50, 100);
+  }
+
+
+
+
+  // Smooth color transitions
+  p.hue = lerp(p.hue, targetHue, 0.05);
+  p.saturation = lerp(p.saturation, targetSaturation, 0.05);
+  let brightness = targetBrightness;
+
+
+  // --- Particle size based on wave ---
+  let targetSize;
+  if (p.waveGroup === 0) targetSize = 5 + alpha * 15;
+  else if (p.waveGroup === 1) targetSize = 5 + theta * 15;
+  else if (p.waveGroup === 2) targetSize = 5 + beta * 15;
+  else targetSize = 5 + delta * 15;
+
+
+
+
+  p.size = lerp(p.size, targetSize, 0.1);
+
+
+
+
+  // --- Draw particle in kaleidoscope symmetry ---
+  for (let s = 0; s < symmetry; s++) {
+    rotate(angle);
+    fill(p.hue, p.saturation, brightness, 0.8);
+    noStroke();
+    ellipse(cx, cy, p.size);
+
+
+
+
+    push();
+    scale(1, -1);
+    ellipse(cx, cy, p.size);
+    pop();
+  }
+
+
+
+
+  // --- Wave-specific connections with pulsing and size growth ---
+  for (let j = i + 1; j < particles.length; j++) {
+    let p2 = particles[j];
+
+
+
+
+    // Connect only particles of the same wave group
+    if (p.waveGroup !== p2.waveGroup) continue;
+
+
+
+
+    let dx = p2.x - width / 2;
+    let dy = p2.y - height / 2;
+    let d = dist(cx, cy, dx, dy);
+
+
+
+
+    if (d < 80) {
+      // Wave amplitude
+      let waveAmp;
+      if (p.waveGroup === 0) waveAmp = alpha;
+      else if (p.waveGroup === 1) waveAmp = theta;
+      else if (p.waveGroup === 2) waveAmp = beta;
+      else waveAmp = delta;
+
+
+
+
+      // Pulsing effect
+      let pulse = map(sin(time * 5), -1, 1, 0.3, 1);
+      let alphaLine = map(d, 0, 80, 0.5, 0) * waveAmp * pulse;
+
+
+
+
+      // Increase particle size on connection
+      let sizeBoost = map(d, 0, 80, waveAmp * 5, 0);
+      p.size = lerp(p.size, p.size + sizeBoost, 0.2);
+      p2.size = lerp(p2.size, p2.size + sizeBoost, 0.2);
+
+
+
+
+      // Optional subtle hue shift for pulse
+      let pulseHue = p.hue + pulse * 10;
+
+
+
+
+      stroke(pulseHue, p.saturation * 0.7, brightness * 0.7, alphaLine);
+      strokeWeight(1 + waveAmp * 2);
+
+
+
+
+      // Kaleidoscope rotation
+      for (let s = 0; s < symmetry; s++) {
+        rotate(angle);
+        line(cx, cy, dx, dy);
+        push();
+        scale(1, -1);
+        line(cx, cy, dx, dy);
+        pop();
+
+
+        // --- Overlay mental state ---
+        push();
+        resetMatrix();  // ensure it’s in screen coordinates
+        fill(0, 0, 100, 0.9);
+        noStroke();
+        textAlign(CENTER, CENTER);
+        textSize(24);
+        text(`State: ${state}`, width / 2, 30);
+        pop();
+      }
+    }
+  }
+}
+
+
+
+
+// --- Message for simulated EEG data ---
+if (!eegData.connected) {
+  fill(0, 0, 100, 0.8);
+  textAlign(CENTER, CENTER);
+  textSize(20);
+  text("Using simulated EEG data", 0, -10);
+  textSize(16);
+  fill(0, 0, 70, 0.6);
+  text("Colors and movement respond to brain waves", 0, 20);
+}
+}

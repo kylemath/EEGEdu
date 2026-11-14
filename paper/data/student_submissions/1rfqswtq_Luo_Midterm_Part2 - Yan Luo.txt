@@ -1,0 +1,243 @@
+// --- ERP Averaging Demo: Face vs Object ---
+// BrainImation-ready (no createCanvas)
+// −200 → +800 ms epochs, baseline-corrected
+// Continuous averaging (no trial limit)
+// Random upright or inverted face stimuli
+// Total trial = 1500 ms, tick labels on top
+
+let trial = 0;
+let trialTimer = 0;
+let showStim = false;
+let showFace = false;
+let showObject = false;
+
+let sampleRate = 256;
+let msPerFrame = 1000 / 30;
+
+let channels = ['TP9', 'AF7', 'AF8', 'TP10'];
+let erpData = { FACE: {}, OBJECT: {} };
+let trialCounts = { FACE: 0, OBJECT: 0 };
+
+let faceCaptured = false;
+let objCaptured = false;
+let faceInverted = false;
+
+function setup() {
+  frameRate(30);
+  textAlign(CENTER, CENTER);
+  colorMode(HSB, 360, 100, 100);
+  for (let cond of ['FACE', 'OBJECT'])
+    for (let ch of channels) erpData[cond][ch] = [];
+}
+
+function draw() {
+  background(0, 0, 10);
+
+  if (!eegData?.connected) {
+    fill(0, 80, 100);
+    text('Waiting for EEG connection...', width / 2, height / 2);
+    return;
+  }
+
+  trialTimer += msPerFrame;
+
+  // --- Stimulus timing (total trial = 1500 ms) ---
+  showStim = false;
+  showFace = false;
+  showObject = false;
+
+  if (trialTimer < 1000) {
+    // baseline
+  } 
+  else if (trialTimer < 1050) {
+    showStim = true;
+    showFace = true;
+    if (!faceCaptured && !objCaptured && trialTimer < 1010) {
+      faceInverted = random([true, false]);
+    }
+  } 
+  else if (trialTimer < 1200) {
+    // blank
+  } 
+  else if (trialTimer < 1250) {
+    showStim = true;
+    showObject = true;
+  } 
+  else if (trialTimer >= 1500) {
+    trialTimer = 0;
+    trial++;
+    faceCaptured = false;
+    objCaptured = false;
+  }
+
+  // --- EEG capture ---
+  if (trialTimer >= 1050 && !faceCaptured) {
+    recordEpoch('FACE');
+    faceCaptured = true;
+  }
+  if (trialTimer >= 1250 && !objCaptured) {
+    recordEpoch('OBJECT');
+    objCaptured = true;
+  }
+
+  drawERPPanel();
+  drawStimulusPanel();
+}
+
+// --- Continuous averaging: no trial cap ---
+function recordEpoch(condition) {
+  let preMs = 200, postMs = 800;
+  let totalMs = preMs + postMs;
+  let totalSamples = Math.floor((totalMs / 1000) * sampleRate);
+
+  for (let ch of channels) {
+    let samples = eegData.getRawChannel(ch, totalSamples);
+    if (!samples || samples.length < totalSamples) continue;
+    let corrected = baselineCorrect(samples, preMs);
+    erpData[condition][ch].push(corrected);
+  }
+
+  trialCounts[condition]++;  // keep true total
+}
+
+function baselineCorrect(segment, baselineMs) {
+  let preSamples = Math.floor((baselineMs / 1000) * sampleRate);
+  let baseline = segment.slice(0, preSamples)
+    .reduce((a, b) => a + b, 0) / preSamples;
+  return segment.map(v => v - baseline);
+}
+
+function drawERPPanel() {
+  let panelH = height / 2;
+  let leftMargin = 60, rightMargin = 40;
+  let plotW = width - leftMargin - rightMargin;
+
+  fill(0, 0, 20);
+  rect(0, 0, width, panelH);
+
+  // ERP axis −200 → +800 ms
+  let epochMs = 1000;
+  let pxPerMs = plotW / epochMs;
+
+  push();
+  translate(leftMargin, 0);
+
+  // --- Gridlines ---
+  stroke(0, 0, 50);
+  strokeWeight(0.4);
+  for (let t = 0; t <= epochMs; t += 100) {
+    let x = t * pxPerMs;
+    line(x, 15, x, panelH); // gridlines below top labels
+  }
+
+  // --- Tick labels at top ---
+  noStroke();
+  fill(230);
+  textSize(9);
+  textAlign(CENTER, TOP);
+  for (let t = 0; t <= epochMs; t += 100) {
+    let x = t * pxPerMs;
+    stroke(255);
+    line(x, 12, x, 15); // small tick mark
+    noStroke();
+    text(t - 200, x, 0); // label at top (−200 to +800)
+  }
+
+  // --- Vertical line at 0 ms (stimulus onset) ---
+  stroke(0, 100, 100);
+  strokeWeight(1.2);
+  let onsetX = 200 * pxPerMs;
+  line(onsetX, 15, onsetX, panelH);
+
+  // --- Channel traces ---
+  let chSpacing = (panelH - 30) / (channels.length + 1);
+  for (let i = 0; i < channels.length; i++) {
+    let ch = channels[i];
+    let yBase = chSpacing * (i + 1) + 20;
+    drawConditionTrace(erpData.FACE[ch], yBase, pxPerMs, color(210, 80, 100));
+    drawConditionTrace(erpData.OBJECT[ch], yBase, pxPerMs, color(40, 90, 100));
+    noStroke(); fill(255); textSize(9);
+    textAlign(RIGHT, CENTER);
+    text(`${ch}`, -12, yBase);
+  }
+
+  pop();
+
+  // --- Trial counters + title ---
+  noStroke();
+  textSize(10);
+  fill(210, 80, 100);
+  textAlign(RIGHT, TOP);
+  text(`FACE avg: ${trialCounts.FACE}`, width - 60, 10);
+  fill(40, 90, 100);
+  text(`OBJECT avg: ${trialCounts.OBJECT}`, width - 60, 25);
+
+  textAlign(CENTER, CENTER);
+  fill(255);
+  textSize(10);
+  text('ERP Averages (−200 → +800 ms, Face=Blue, Object=Orange)', width / 2, panelH - 8);
+}
+
+function drawConditionTrace(epochs, yBase, pxPerMs, col) {
+  if (epochs.length === 0) return;
+  let n = epochs.length;
+  let avg = new Array(epochs[0].length).fill(0);
+  for (let ep of epochs)
+    for (let j = 0; j < ep.length; j++)
+      avg[j] += ep[j] / n;
+
+  let maxAmp = Math.max(...avg.map(Math.abs)) || 1;
+  noFill();
+  stroke(col);
+  strokeWeight(1);
+  beginShape();
+  for (let j = 0; j < avg.length; j++) {
+    let x = (j / sampleRate) * 1000 * pxPerMs;
+    let y = yBase - (avg[j] / maxAmp) * 30;
+    vertex(x, y);
+  }
+  endShape();
+}
+
+function drawStimulusPanel() {
+  let panelH = height / 2;
+  let panelTop = height / 2;
+  let stimHeight = 75;
+  let stimY = panelTop + 25 + stimHeight;
+
+  fill(0, 0, 10);
+  rect(0, panelTop, width, panelH);
+
+  fill(255);
+  textSize(11);
+  text(`Trial ${trial}`, width / 2, panelTop + 25);
+
+  // --- Face ---
+  if (showFace) {
+    push();
+    translate(width / 2, stimY);
+    if (faceInverted) rotate(PI);
+    fill(255);
+    ellipse(0, 0, 60, 75);
+    fill(0);
+    ellipse(-12, -8, 8, 8);
+    ellipse(12, -8, 8, 8);
+    arc(0, 8, 30, 15, 0, PI);
+    pop();
+
+    fill(255);
+    text(faceInverted ? 'INVERTED FACE' : 'UPRIGHT FACE', width / 2, stimY + 60);
+  }
+  // --- Object ---
+  else if (showObject) {
+    fill(255);
+    rect(width / 2 - 30, stimY - 30, 60, 60);
+    fill(255);
+    text('OBJECT', width / 2, stimY + 50);
+  }
+  // --- Baseline / ITI ---
+  else {
+    fill(150);
+    text('BASELINE / ITI', width / 2, stimY);
+  }
+}

@@ -1,0 +1,179 @@
+// --- ERP with real EEG input + Face/Object stimulus + timing axis + clean labels ---
+
+let epochDataFace = [];
+let epochDataObject = [];
+let epochLength = 256; // 1000ms at 256Hz (-200 to +800ms)
+let preStimSamples = 51; // 200ms pre-stimulus (0.2*256)
+let postStimSamples = 205; // 800ms post-stimulus (0.8*256)
+
+let trial = 0;
+let showFace = true;
+let stimState = "baseline";
+let stimTimer = 0;
+
+let channels = ['TP9','AF7','AF8','TP10'];
+let colors = {face: 220, object: 0}; // HSB: blue=face, red=object
+
+function draw() {
+  background(0,0,8);
+  let now = millis();
+
+  // --- Stimulus timing ---
+  if(stimState==='baseline'){
+    fill(100);
+    textAlign(CENTER);
+    textSize(14);
+    text("Baseline (-200ms)", width/2, height*0.75);
+    if(now - stimTimer > 200){
+      stimState='stimulus';
+      stimTimer=now;
+    }
+  } else if(stimState==='stimulus'){
+    drawStimulus();
+    collectEEGEpoch();
+    if(now - stimTimer > 30){
+      stimState='postStim';
+      stimTimer=now;
+    }
+  } else if(stimState==='postStim'){
+    fill(50);
+    textAlign(CENTER);
+    textSize(14);
+    text("Post-stimulus (+ms)", width/2, height*0.75);
+    if(now - stimTimer > 770){
+      stimState='baseline';
+      stimTimer=now;
+      showFace = !showFace;
+      trial++;
+    }
+  }
+
+  // --- Clean ERP trace labels ---
+  noStroke();
+  textSize(14);
+  textAlign(LEFT, TOP);
+  fill(255);
+  text("Face ERP (average)", 80, 10);
+  text("Object ERP (average)", 240, 10);
+
+  // Colored dots beside labels
+  noStroke();
+  fill(colors.face, 80, 90);
+  ellipse(65, 18, 10, 10); // blue dot
+  fill(colors.object, 80, 90);
+  ellipse(225, 18, 10, 10); // red dot
+
+  // --- Draw top ERP panel ---
+  drawERPPanel(epochDataFace, colors.face);
+  drawERPPanel(epochDataObject, colors.object);
+
+  // Trial counters
+  fill(255);
+  textSize(14);
+  textAlign(LEFT, BOTTOM);
+  text("Trial: FACE " + epochDataFace.length + " | OBJECT " + epochDataObject.length, 10, height - 10);
+}
+
+// --- Draw ERP panel with X-axis below all channels ---
+function drawERPPanel(epochArray, col){
+  if(epochArray.length === 0) return;
+  let avgEpoch = [];
+  for(let i=0;i<epochLength;i++){
+    let sum = [0,0,0,0];
+    for(let e=0;e<epochArray.length;e++){
+      for(let ch=0;ch<4;ch++){
+        sum[ch]+=epochArray[e].data[i][ch];
+      }
+    }
+    avgEpoch.push([
+      sum[0]/epochArray.length,
+      sum[1]/epochArray.length,
+      sum[2]/epochArray.length,
+      sum[3]/epochArray.length
+    ]);
+  }
+
+  // --- Draw ERP traces ---
+  let panelY = height * 0.35;
+  let channelSpacing = 50; 
+  let traceScale = 25;     
+  let lowestY = panelY + (3-1.5)*channelSpacing + traceScale;
+
+  for(let ch=0;ch<4;ch++){
+    stroke(col, 80, 90);
+    strokeWeight(2);
+    noFill();
+    beginShape();
+    for(let i=0;i<avgEpoch.length;i++){
+      let x = map(i, 0, epochLength - 1, 60, width - 60);
+      let y = panelY + (ch - 1.5)*channelSpacing + map(avgEpoch[i][ch], -50, 50, traceScale, -traceScale);
+      vertex(x, y);
+    }
+    endShape();
+
+    // Channel labels
+    noStroke();
+    fill(255);
+    textAlign(LEFT, CENTER);
+    textSize(12);
+    text(channels[ch], 10, panelY + (ch - 1.5)*channelSpacing);
+  }
+
+  // Zero line
+  stroke(100);
+  strokeWeight(1);
+  line(60, panelY, width - 60, panelY);
+
+  // --- Timing markers below all channels ---
+  let msPerSample = 1000 / 256;
+  for(let t = -200; t <= 800; t += 100){
+    let sampleIndex = preStimSamples + Math.round(t / msPerSample);
+    sampleIndex = constrain(sampleIndex, 0, epochLength - 1);
+    let x = map(sampleIndex, 0, epochLength - 1, 60, width - 60);
+    stroke(120);
+    line(x, lowestY - 5, x, lowestY + 5);
+    noStroke();
+    fill(255);
+    textAlign(CENTER, TOP);
+    textSize(10);
+    text(t + "ms", x, lowestY + 8);
+  }
+}
+
+// --- Draw stimulus ---
+function drawStimulus(){
+  fill(255);
+  noStroke();
+  if(showFace){
+    ellipse(width/2, height*0.75, 50, 60);
+    fill(20);
+    ellipse(width/2 - 12, height*0.75 - 8, 8, 8);
+    ellipse(width/2 + 12, height*0.75 - 8, 8, 8);
+    arc(width/2, height*0.75 + 8, 25, 15, 0, PI);
+    fill(255);
+    textAlign(CENTER);
+    textSize(10);
+    text("FACE", width/2, height*0.75 + 50);
+  } else {
+    rect(width/2 - 25, height*0.75 - 25, 50, 50);
+    fill(255);
+    textAlign(CENTER);
+    textSize(10);
+    text("OBJECT", width/2, height*0.75 + 50);
+  }
+}
+
+// --- Collect EEG epoch from BrainImation ---
+function collectEEGEpoch(){
+  if(!eegData.connected) return;
+  let recentEpoch = eegData.getRecentEpoch(epochLength);
+  if(recentEpoch.length < epochLength) return;
+
+  if(showFace){
+    epochDataFace.push({data: recentEpoch});
+    if(epochDataFace.length > 20) epochDataFace.shift();
+  } else {
+    epochDataObject.push({data: recentEpoch});
+    if(epochDataObject.length > 20) epochDataObject.shift();
+  }
+}

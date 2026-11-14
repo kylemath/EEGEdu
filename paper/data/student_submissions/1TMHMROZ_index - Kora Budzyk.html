@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroForge Studios - Business Proposal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #252525;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --accent-purple: #8b5cf6;
+            --accent-blue: #3b82f6;
+            --accent-orange: #f97316;
+            --border-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 1000;
+            padding: 1rem 2rem;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        nav a {
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: color 0.3s;
+            font-weight: 500;
+        }
+
+        nav a:hover {
+            color: var(--accent-purple);
+        }
+
+        /* Header Section */
+        header {
+            margin-top: 80px;
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+        }
+
+        .logo-container {
+            margin: 2rem auto;
+            max-width: 600px;
+        }
+
+        .logo-container img {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin: 2rem 0 1rem;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .authors {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-top: 1rem;
+        }
+
+        /* Main Content */
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        section {
+            margin: 4rem 0;
+            padding: 2rem;
+            background: var(--bg-secondary);
+            border-radius: 15px;
+            border: 1px solid var(--border-color);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.2);
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            margin-bottom: 1.5rem;
+            color: var(--accent-purple);
+            border-bottom: 2px solid var(--accent-purple);
+            padding-bottom: 0.5rem;
+        }
+
+        h3 {
+            font-size: 1.6rem;
+            margin: 2rem 0 1rem;
+            color: var(--accent-blue);
+        }
+
+        p {
+            margin-bottom: 1.2rem;
+            color: var(--text-primary);
+            font-size: 1.05rem;
+        }
+
+        /* Video Container */
+        .video-container {
+            margin: 2rem 0;
+            border-radius: 10px;
+            overflow: hidden;
+            background: var(--bg-tertiary);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Image Container */
+        .image-container {
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+        }
+
+        .image-caption {
+            margin-top: 0.5rem;
+            color: var(--text-secondary);
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--accent-purple);
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0 1rem 2rem;
+            color: var(--text-primary);
+        }
+
+        li {
+            margin: 0.5rem 0;
+        }
+
+        /* Scroll Animation */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s, transform 0.6s;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            margin-top: 4rem;
+            color: var(--text-secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.6rem;
+            }
+
+            nav ul {
+                gap: 1rem;
+                font-size: 0.9rem;
+            }
+
+            section {
+                padding: 1.5rem;
+            }
+        }
+
+        /* Smooth Scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Highlight important sections */
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1));
+            border-left: 4px solid var(--accent-purple);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="#executive-summary">Executive Summary</a></li>
+            <li><a href="#current-progress">Current Progress</a></li>
+            <li><a href="#future-projects">Future Projects</a></li>
+            <li><a href="#research">Research Applications</a></li>
+            <li><a href="#market">Market Analysis</a></li>
+            <li><a href="#business-model">Business Model</a></li>
+            <li><a href="#budget">Budget</a></li>
+            <li><a href="#funding">Funding</a></li>
+        </ul>
+    </nav>
+
+    <header>
+        <div class="logo-container">
+            <img src="images/NeuroforgeLogo.png" alt="NeuroForge Studios Logo">
+        </div>
+        <h1>Business Proposal: NeuroForge Studios</h1>
+        <div class="subtitle">Department of Psychology, University of Alberta</div>
+        <div class="subtitle">PSYCH 403A1: Neuroimaging and Neurostimulation</div>
+        <div class="authors">
+            <p><strong>Authors:</strong> Jake Gannon and Kora Budzyk</p>
+            <p><strong>Instructor:</strong> Dr. Kyle Mathewson</p>
+            <p><strong>Date:</strong> December 13th, 2025</p>
+        </div>
+    </header>
+
+    <main>
+        <section id="executive-summary" class="fade-in">
+            <h2>Executive Summary</h2>
+            <p>NeuroForge Studios is a video game development company focused on creating interactive gaming experiences that integrate consumer neuroimaging technology as brain computer interfaces (BCIs). Our mission is to provide quality video game products to users of consumer neuroimaging technology. Currently, there is a lack of accessible entertainment and education products using consumer neuroimaging devices. There are very few existing games that address this niche market. At the same time, neuroimaging devices are becoming more and more popular, especially with influencers such as Bryan Johnson emphasizing their potential uses in health optimization. More of these products in consumer hands means an increasing demand for creative, educational entertainment applications that allow users to treat their neuroimaging technology as a "brain computer interface" (BCI). Our company will address this demand by creating fun, interactive gaming experiences that are either completely controlled by, or complemented by brain data input from neuroimaging devices. These experiences are designed to be accessible to everyday users while still reflecting core principles of BCI technology.</p>
+        </section>
+
+        <section id="current-progress" class="fade-in">
+            <h2>Current Progress and Technology</h2>
+            <p>NeuroForge Studios has already developed EEG-controlled games, demonstrating the feasibility of integrating consumer neuroimaging data into interactive gameplay. At present, our development process involves using the BrainImation platform to receive and process EEG signals associated with the Muse headset, translating these neural signals into control inputs that can be used by the games to influence player actions and game difficulty. This approach allows brain activity to function as an active control mechanism rather than serving solely as a passive visualization. While the platform is designed to operate with real-time EEG data, development and demonstration to date have primarily used BrainImation's simulated EEG data mode to test and refine gameplay mechanics.</p>
+
+            <h3>EEG-Controlled Tetris</h3>
+            <div class="video-container">
+                <video controls>
+                    <source src="videos/EEG Tetris.mov" type="video/quicktime">
+                    <source src="videos/EEG Tetris.mov" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+            <p>One completed prototype is an EEG-controlled version of Tetris that incorporates principles of neurofeedback and adaptive game design. In this implementation, EEG-derived metrics related to attention, alpha wave activity, and theta wave activity are mapped to core gameplay mechanics, including horizontal movement, piece rotation, and drop speed of Tetrominoes. This design creates a real-time neurofeedback loop: the player's neural state is able to directly influence gameplay, and the resulting game dynamics provide immediate feedback that enables the player to consciously adjust their mental state to improve performance.</p>
+            <p>To support stable and interpretable control, these signals are processed using rolling averages to reduce moment-to-moment variability. Certain gameplay parameters are updated at discrete time intervals rather than continuously, allowing changes in difficulty to be perceptible and learnable. In addition, the game includes performance incentives tied to maintaining specific neural states, encouraging players to develop meta-awareness and practice self-regulation. By allowing neural activity to govern gameplay mechanics rather than superficial visual elements, this prototype demonstrates how consumer EEG can be used to create meaningful, adaptive BCI experiences.</p>
+
+            <h3>EEG-Controlled Flappy Bird</h3>
+            <div class="video-container">
+                <video controls>
+                    <source src="videos/Flappy bird EEG v2.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+            <p>A second completed prototype is our EEG-controlled Flappy Bird game. This game has all the important features of classic Flappy Bird, such as obstacles to avoid, a points system, and a "game over" event when the bird touches an obstacle. What makes it unique is that in this game, the bird is controlled by EEG alpha wave data. When the alpha value is greater than 0.35, the bird moves up a distance proportional to the alpha wave value. Otherwise, it moves down at a constant "gravity" rate. The idea is that the bird can be controlled by controlling your level of attention. Lowering your level of attention should cause higher alpha values, causing the bird to move upwards.</p>
+            <p>The game also has an adaptive difficulty mechanic based on beta wave readings. There are 5 discrete difficulty levels which depend on beta value. Level 1 occurs at the lowest range of beta values, and level 5 at the highest range. Each level gets progressively more difficult by reducing the gap between obstacles, and increasing the spawn rate of obstacles. When the game begins, only level 1 is available, meaning that no matter your beta level, the game will be in its easiest state. However, every 15 seconds, the next level "unlocks." After this point, the difficulty of the game can fluctuate between level 1 and 2, depending on your beta value. This pattern continues until level 5 unlocks. After this point, the difficulty level of the game can fluctuate between levels 1-5, depending on your beta value. A change in difficulty occurs when, every 4 seconds, the game reads your beta level, and uses that to assign the difficulty level for the next 4 seconds of obstacles. This adds an interesting dynamic to the game, and rewards the player for maintaining a relaxed state. Since high beta-wave activity is linked to stress, players who experience higher stress levels will be more likely to be assigned higher difficulty levels, making the game more difficult. This goes beyond brain waves controlling basic visible parameters, because it gives the player feedback on their mental state, and rewards them for achieving a more desirable brain state.</p>
+        </section>
+
+        <section id="future-projects" class="fade-in">
+            <h2>Future Projects</h2>
+            <p>In the future, we plan on designing more complex games, such as 3D and multiplayer games. To do this, it would be beneficial to expand beyond the BrainImation web application, and find a way to use EEG data as an input into existing video game development software, such as Unity and Unreal Engine. These softwares are optimized for designing high-quality games, and would open up a broader set of possibilities for future gaming experiences. Additionally, we have found that Muse headsets are not always able to connect via Bluetooth to many devices. It seems that they are mainly limited to Apple devices. It will be essential to design software that allows a Muse headset to connect to any device, and allows the EEG input to be readable and usable in video games and video game development software. In the future, this same software should be expanded to be compatible with all other popular consumer neuroimaging device brands, rather than being limited to Muse. It is important to mention that these software components are not only essential to expanding the possibilities of EEG gaming, they also open up a business opportunity for patenting and selling this software to other gaming companies interested in using neuroimaging techniques. Furthermore, as we expand the compatibility of this software to other brands of EEG headbands, we could look for mutually beneficial marketing deals with each of these brands. For example, some games are "Playstation Exclusive," meaning they can only be played on Playstation devices and are unavailable to competitors. In this same way, exclusive game deals with different headband brands could be a source of income for our company in the future.</p>
+            
+            <div class="highlight-box">
+                <p>Once we have developed EEG-integration into Unity game-design software, we are planning on working on a first-person shooter (FPS) zombie-horror game prototype. The idea for this game is to test out how an individual's mental state, as measured by EEG, can be reflected in the reactions of their character in a FPS-style setting. Because of the anxiety-provoking horror element of the game, it will likely cause stress and fear in the player. Using alpha and beta wave readings from EEG, we can quantify and measure the level of fear, and reflect it in the behaviour of the player character. For example, as stress increases, the player character's heartbeat might become more and more audible, the field-of-view might narrow, and the aim of the character's weapon might start to waver and become less accurate. All of these mechanics would exist to give visual and auditory feedback that the player is getting stressed, and incentivise them to reduce their stress and remain calm. In this way, it would work as a BCI similar to our Flappy Bird and Tetris prototypes, allowing the user to practice their anxiety management in a more immersive way.</p>
+            </div>
+
+            <div class="image-container">
+                <img src="images/POVcodzombies.png" alt="Call of Duty Zombies first-person perspective">
+                <div class="image-caption">Figure 2. Image from Call of Duty zombies. Imagine a first-person shooter experience where your level of stress and fear is reflected in the point-of-view of your character.</div>
+            </div>
+
+            <p>We also hope to make it possible to connect multiple EEG headsets to one device, to allow for multiplayer experiences. One potential application for this is a classic versus Tetris game, where two players face off to see whose level of mental control is superior.</p>
+        </section>
+
+        <section id="research" class="fade-in">
+            <h2>Potential Research Applications</h2>
+            <p>NeuroForge Studios' EEG-integrated games provide opportunities for exploratory research and educational demonstrations in psychology and neuroscience. Since gameplay events and neural data can be synchronized in real time, these platforms allow cognitive processes to be studied in dynamic, emotionally engaging environments.</p>
+            
+            <h3>Stress Regulation Research</h3>
+            <p>One potential application involves examining stress regulation during high-arousal gameplay. For example, players could navigate a horror-based game either while verbally describing their actions or while remaining silent. Comparing neural responses across these conditions may provide insight into whether verbal self-guidance helps reduce stress-related activity and supports cognitive control under pressure, building on prior work related to verbal grounding and emotional regulation.</p>
+            
+            <h3>Attention and Error Monitoring</h3>
+            <p>Another application involves embedding rare or unexpected in-game events within gameplay to examine attention and error monitoring in an interactive setting. Comparing verbalized versus silent responses may help explore how verbalization influences attentional control and performance, linking gameplay to classic oddball paradigms.</p>
+            
+            <h3>Social Context and Neural Engagement</h3>
+            <p>Multiplayer EEG games also offer a way to study how social context influences neural engagement. By comparing neural activity during solo play versus multiplayer interactions, these games could be used to investigate how social presence modulates attention, emotional arousal, or decision-making processes in real time.</p>
+            
+            <h3>Decision-Making Under Stress</h3>
+            <p>Finally, fast-paced or high-stakes gameplay scenarios could be used to examine decision-making under stress. Games such as Tetris, Flappy Bird, or first-person combat prototypes naturally introduce time pressure and performance demands. Monitoring EEG activity during these tasks may help examine how stress relates to decision-making speed, risk-taking, and error rates within interactive environments.</p>
+        </section>
+
+        <section id="market" class="fade-in">
+            <h2>Market Analysis</h2>
+            <p>In recent years, consumer EEG devices such as the Muse headband have become increasingly accessible to the general public. These devices are often marketed for meditation, focus training, or personal wellness, yet their use cases remain relatively narrow. As a result, many users own neuroimaging hardware without having access to engaging applications that allow them to interact with their brain data in meaningful ways. This gap suggests an opportunity for software experiences that extend beyond passive data visualization.</p>
+            
+            <h3>Primary Target Market</h3>
+            <p>Our primary target group includes individuals interested in neuroscience, psychology, mental performance, and health optimization. These users are often motivated by curiosity about their own cognitive and emotional states, and are likely already familiar with concepts such as attention, stress, and neurofeedback. EEG-controlled games provide a novel way for this group to investigate brain-behaviour relationships in an interactive and intuitive format. This offers a form of immediate, interactive feedback that traditional wellness applications do not always provide.</p>
+            
+            <h3>Gaming Community</h3>
+            <p>A second potential market consists of members of the general gaming community who are interested in new forms of interaction and immersive gameplay. While this group may not initially seek out neuroimaging technology, EEG-integrated games introduce a unique control modality that differs from standard input devices. By framing brain activity as part of the game design and mechanics, rather than as a scientific measurement tool, our products can appeal to players who value novelty, challenge, and experimentation in gameplay, and who seek fun, immersive experiences that change according to brain state.</p>
+            
+            <h3>Academic and Research Market</h3>
+            <p>A third important group includes academic researchers and students in psychology and neuroscience. A substantial number of research tasks tend to be repetitive and can lack ecological validity. EEG-integrated games offer an alternative approach by embedding experimental manipulations within engaging environments. These games can simulate complex or emotionally engaging scenarios that would be difficult or impractical to study in real-world settings. In addition, the ability to time-stamp in-game events alongside EEG data makes these platforms suitable for exploratory research, pilot studies, and lab-based demonstrations.</p>
+            
+            <h3>B2B Market</h3>
+            <p>The fourth group consists of other game-design companies interested in utilizing EEG data as a gaming mechanic. Development of software tools and integrations into common game-design platforms would allow us to sell solutions to other companies as the demand for EEG gaming increases.</p>
+            
+            <p>Overall, the current market for consumer EEG hardware appears to be ahead of the market for creative and interactive software applications. NeuroForge Studios addresses this imbalance by focusing on games that are accessible, engaging, and grounded in principles of BCI. As consumer neuroimaging continues to gain popularity and visibility, the demand for applications that allow users to actively engage with their brain data is likely to increase.</p>
+        </section>
+
+        <section id="business-model" class="fade-in">
+            <h2>Business Model</h2>
+            <p>NeuroForge Studios is designed to support multiple user groups through a shared technological platform. Our primary audiences include consumers who already own or are interested in EEG devices, members of the gaming community who are drawn to novel forms of interaction, researchers or students in psychology and neuroscience, as well as other game companies looking to expand into modern neuroimaging techniques.</p>
+            
+            <p>The core offering consists of EEG-integrated games that function both as interactive entertainment and as neurofeedback-based experiences. These games can also be adapted into research-friendly platforms that allow gameplay events to be synchronized with EEG data for exploratory or educational use. As mentioned earlier, the software used to allow for EEG-integration into games and game-design softwares can also be sold to other game companies.</p>
+            
+            <p>Value is delivered by allowing users to engage with their brain activity in an active and meaningful way, rather than through passive visualization alone. The same underlying technology can support different use cases, ranging from consumer-facing games to experimental or educational-based applications.</p>
+            
+            <p>Access could be structured through standalone consumer games, as well as academic or lab-oriented versions designed for research, teaching, or demonstration purposes.</p>
+        </section>
+
+        <section id="budget" class="fade-in">
+            <h2>Budget</h2>
+            <p>Key budget considerations include compensation for game designers and developers, as well as user experience and user interface design support. Advertising and outreach would also be a necessary cost for reaching both consumer and academic audiences.</p>
+            
+            <p>Hardware expenses include the purchase of EEG devices, such as multiple Muse headsets, to allow for testing, validation, and demonstration. Software-related costs may include development tools, platform-specific licensing, and fees associated with distributing games on platforms such as Steam. Cloud services may be required for online or data-enabled game features. Digital assets such as animated character models, props, and environments for use in games can also get expensive for a high-end 3D gaming experience.</p>
+            
+            <p>Intellectual property costs are also an important consideration. Continued development of games inspired by existing titles, such as Tetris or Flappy Bird, could involve licensing fees, whereas fully original games would avoid these constraints. On the other hand, securing patents for our original game design features and mechanics is also a consideration, especially since the concept of utilizing EEG inputs for video games is very novel. This process would cost some upfront fees, but could lead to a source of revenue later down the road assuming EEG gaming becomes more popular and other companies begin to emulate our techniques.</p>
+            
+            <p>Ethical and technical considerations surrounding brain data introduce additional costs. If anonymized EEG data were collected to improve future products, investments in cybersecurity, data protection, and legal compliance would be essential. Testing costs would also be required to ensure both usability and reliability.</p>
+            
+            <h3>Budget Estimation</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Key Assumptions</th>
+                        <th>Estimated Cost (CAD)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Personnel & Contractors</strong></td>
+                        <td>1 full-time developer, 1 part-time designer, part-time UI/UX, contract EEG & QA support</td>
+                        <td>$230,000</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Hardware</strong></td>
+                        <td>3 Muse EEG headsets, basic dev PCs & demo equipment</td>
+                        <td>$12,000</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Software & Tools</strong></td>
+                        <td>Game engine add-ons, 3D tools, EEG SDKs, Steam fee</td>
+                        <td>$12,000</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Digital Assets & Art</strong></td>
+                        <td>Limited custom 3D assets, animation, sound</td>
+                        <td>$20,000</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cloud & Infrastructure</strong></td>
+                        <td>Light cloud usage, secure storage, analytics</td>
+                        <td>$8,000</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Marketing & Outreach</strong></td>
+                        <td>Website, demo video, minimal digital ads, academic demos</td>
+                        <td>$15,000</td>
+                    </tr>
+                    <tr>
+                        <td><strong>IP & Legal</strong></td>
+                        <td>Provisional patent filing, trademark, basic legal advice</td>
+                        <td>$18,000</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Ethics, Data & Testing</strong></td>
+                        <td>Privacy compliance, anonymization, usability testing</td>
+                        <td>$15,000</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Contingency (~10%)</strong></td>
+                        <td>Buffer for unexpected costs</td>
+                        <td>$33,000</td>
+                    </tr>
+                    <tr style="background: var(--accent-purple); font-weight: bold;">
+                        <td colspan="2"><strong>Total Estimated Budget</strong></td>
+                        <td><strong>≈ $363,000 CAD</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="funding" class="fade-in">
+            <h2>Funding</h2>
+            <p>Potential funding sources include grants, particularly those that support interdisciplinary research or educational technology. This would be particularly applicable if NeuroForge Studios continues with research-based applications of EEG-integrated games. Traditional business loans may also be an option to pursue in later stages.</p>
+            
+            <p>Additionally, venture capital firms focused on the gaming industry, such as Griffin Gaming Partners, serve as examples of organizations that are specialized in investing in interactive and experimental gaming technologies. While early development would likely rely on smaller-scale funding, these types of investors represent possible long-term pathways if the project were to expand and larger amounts of funding are deemed necessary for growth.</p>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 NeuroForge Studios. Business Proposal for PSYCH 403A1: Neuroimaging and Neurostimulation</p>
+        <p>University of Alberta | Department of Psychology</p>
+    </footer>
+
+    <script>
+        // Smooth scroll animation on load
+        document.addEventListener('DOMContentLoaded', function() {
+            const sections = document.querySelectorAll('.fade-in');
+            
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+
+            // Smooth scroll for navigation links
+            document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+        });
+
+        // Add active state to navigation on scroll
+        window.addEventListener('scroll', function() {
+            const sections = document.querySelectorAll('section[id]');
+            const navLinks = document.querySelectorAll('nav a[href^="#"]');
+            
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (window.pageYOffset >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.style.color = '';
+                if (link.getAttribute('href') === '#' + current) {
+                    link.style.color = 'var(--accent-purple)';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

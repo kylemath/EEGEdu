@@ -1,0 +1,219 @@
+// === N400 Semantic ERP Demo (BrainImation, Full Assignment Version) ===
+
+// --- Stimulus configuration ---
+let wordPairs = [
+  ["DOG", "CAT"],     // congruent
+  ["BREAD", "BUTTER"],
+  ["CHAIR", "TABLE"],
+  ["DOG", "FORK"],    // incongruent
+  ["BREAD", "CAR"],
+  ["CHAIR", "RAIN"]
+];
+let currentPair = ["DOG", "CAT"];
+let isCongruent = true;
+
+let epochsC = [], epochsI = [];
+let maxTrials = 20;
+
+// === Adjust here for epoch length. Assignment asks for −200 to +800 ms at 256 Hz (256 samples)
+let epochSamples = 256; // 1s: −200 to +800 ms, can change to 384 for 1500 ms (−200 to +1300ms)
+let sampleRate = 256;
+let baselineStart = 0;                 // epoch sample 0 = −200 ms
+let baselineEnd = Math.floor(0.2 * sampleRate); // For 256Hz, ~51 samples = 200ms
+
+// Trial timing (ms)
+let baseDur = 1000;      // baseline pre trial
+let wordDur = 250;       // word 1 display
+let isiDur = 250;        // gap
+let itiDur = 500;        // ITI after word 2
+let totalTrial = baseDur + wordDur + isiDur + wordDur + itiDur;
+
+let trialStart;
+let nextSwitch = 0;
+
+function setup() {
+  colorMode(HSB, 360, 100, 100);
+  textFont("sans-serif");
+  trialStart = millis();
+}
+
+function draw() {
+  background(0, 0, 8);
+  let t = millis() - trialStart;
+
+  // Select new word pair every trial
+  if (millis() > nextSwitch) {
+    let pair = random(wordPairs);
+    currentPair = pair;
+    let i = wordPairs.indexOf(pair);
+    isCongruent = i < 3;
+    nextSwitch = millis() + totalTrial;
+  }
+
+  // Stimulus timing: show first word, then second
+  let phase = t % totalTrial;
+  let showPrime = (phase > baseDur && phase <= baseDur + wordDur);
+  let showTarget = (phase > baseDur + wordDur + isiDur && phase <= baseDur + wordDur + isiDur + wordDur);
+
+  // --- EEG epoch collection and simulation (baseline corrected) ---
+  let isEEG = eegData && eegData.connected;
+  if (frameCount % 60 === 0) {
+    let epoch;
+    if (isEEG) {
+      epoch = eegData.getRecentEpoch(epochSamples);
+    } else {
+      // Simulate random EEG trace for demo if not connected
+      epoch = [];
+      for (let i = 0; i < epochSamples; i++) {
+        let sample = [];
+        for (let c = 0; c < 4; c++) sample.push(10 * sin(i / 8 + c * 1.7) + random(-2, 2));
+        epoch.push(sample);
+      }
+    }
+
+    if (epoch && epoch.length >= epochSamples) {
+      // Baseline correction (subtract mean of −200 to 0ms, i.e. first ~51 samples)
+      for (let c = 0; c < 4; c++) {
+        let baselineSum = 0;
+        for (let j = baselineStart; j < baselineEnd; j++) baselineSum += epoch[j][c];
+        let baselineMean = baselineSum / (baselineEnd - baselineStart);
+        for (let i = 0; i < epochSamples; i++) epoch[i][c] -= baselineMean;
+      }
+      // Simulate N400: negative bump 300–500ms in incongruent only
+      if (!isCongruent) {
+        let n400Start = Math.floor(0.5 * sampleRate);   // 0ms onset: sample 51
+        let n400Mid = Math.floor(0.7 * sampleRate);     // 400ms: sample 153
+        for (let i = n400Mid-15; i <= n400Mid+15; i++) {
+          if (i >= baselineEnd && i < epochSamples) {
+            for (let c = 0; c < 4; c++) epoch[i][c] -= 12;
+          }
+        }
+      }
+      if (isCongruent) {
+        epochsC.push(epoch);
+        if (epochsC.length > maxTrials) epochsC.shift();
+      } else {
+        epochsI.push(epoch);
+        if (epochsI.length > maxTrials) epochsI.shift();
+      }
+    }
+  }
+
+  // --- ERP (top) ---
+  let erpH = height * 0.7;
+  drawERPPanel(erpH);
+
+  // --- Stimulus panel (bottom) ---
+  drawStimulusPanel(erpH, showPrime, showTarget);
+}
+
+function drawERPPanel(erpH) {
+  fill(0, 0, 10);
+  rect(0, 0, width, erpH);
+
+  stroke(0, 0, 25);
+  strokeWeight(1);
+  line(60, erpH / 2, width - 60, erpH / 2);
+
+  // Time ticks (−200 to +800ms)
+  for (let ms = -200; ms <= 800; ms += 100) {
+    let idx = map(ms + 200, 0, 1000, 0, epochSamples);
+    let x = map(idx, 0, epochSamples, 60, width - 60);
+    line(x, 60, x, erpH - 60);
+    noStroke(); fill(0, 0, 80);
+    textSize(10);
+    textAlign(CENTER, TOP);
+    text(ms + " ms", x, erpH - 40);
+    stroke(0, 0, 25);
+  }
+
+  stroke(0, 0, 100);
+  strokeWeight(2);
+  let zeroX = map(200, 0, 1000, 60, width - 60); // 0ms onset position
+  line(zeroX, 50, zeroX, erpH - 50);
+
+  // N400 window (shading 300–500ms)
+  noStroke();
+  fill(0, 0, 60, 0.2);
+  let nStart = map(300 + 200, 0, 1000, 60, width - 60);
+  let nEnd = map(500 + 200, 0, 1000, 60, width - 60);
+  rect(nStart, 50, nEnd - nStart, erpH - 100);
+  fill(0, 0, 90);
+  textAlign(LEFT, TOP);
+  textSize(10);
+  text("N400 region (300–500 ms)", nStart + 5, 55);
+
+  drawAverageERP(epochsC, [120, 220, 160, 100], erpH, "Congruent", 60);
+  drawAverageERP(epochsI, [20, 180, 40, 300], erpH, "Incongruent", 80);
+}
+
+function drawAverageERP(buffer, clrArray, erpH, label, yOff) {
+  if (buffer.length === 0) return;
+  let avg = new Array(epochSamples).fill().map(() => [0, 0, 0, 0]);
+  for (let e = 0; e < buffer.length; e++)
+    for (let i = 0; i < epochSamples; i++)
+      for (let c = 0; c < 4; c++)
+        avg[i][c] += buffer[e][i][c] || 0;
+
+  for (let i = 0; i < epochSamples; i++)
+    for (let c = 0; c < 4; c++)
+      avg[i][c] /= buffer.length;
+
+  for (let ch = 0; ch < 4; ch++) {
+    stroke(clrArray[ch], 80, 90);
+    strokeWeight(2);
+    noFill();
+    beginShape();
+    for (let i = 0; i < avg.length; i++) {
+      let x = map(i, 0, avg.length - 1, 60, width - 60);
+      let y = erpH / 2 + (ch - 1.5) * 60 + map(avg[i][ch], -50, 50, 25, -25);
+      vertex(x, y);
+    }
+    endShape();
+    fill(clrArray[ch], 80, 90);
+    noStroke();
+    textSize(10);
+    textAlign(LEFT, CENTER);
+    text(["TP9", "AF7", "AF8", "TP10"][ch], 10, erpH / 2 + (ch - 1.5) * 60);
+  }
+
+  fill(0, 0, 100);
+  textSize(12);
+  noStroke();
+  textAlign(LEFT, TOP);
+  text(`${label} n=${buffer.length}`, 60, yOff);
+}
+
+function drawStimulusPanel(erpH, showPrime, showTarget) {
+  let stimY = erpH;
+  let stimH = height - erpH;
+  fill(0, 0, 15);
+  rect(0, stimY, width, stimH);
+
+  let cx = width / 2;
+  let cy = stimY + stimH / 2;
+
+  textAlign(CENTER, CENTER);
+  textSize(stimH * 0.25);
+
+  if (showPrime) {
+    fill(0, 0, 100);
+    text(currentPair[0], cx, cy);
+  } else if (showTarget) {
+    if (isCongruent) fill(120, 70, 100);
+    else fill(20, 80, 100);
+    text(currentPair[1], cx, cy);
+  } else {
+    fill(0, 0, 50);
+    textSize(20);
+    text("Get ready...", cx, cy);
+  }
+
+  fill(0, 0, 100);
+  textSize(16);
+  textAlign(LEFT, TOP);
+  text("Semantic Stimulus Display", 40, stimY + 20);
+  textAlign(RIGHT, TOP);
+  textSize(14);
+  text(isCongruent ? "Congruent" : "Incongruent", width - 40, stimY + 20);
+}

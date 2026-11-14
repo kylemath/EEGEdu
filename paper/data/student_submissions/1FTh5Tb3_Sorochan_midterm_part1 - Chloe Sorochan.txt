@@ -1,0 +1,66 @@
+﻿let cx, cy, r, ang = 0, dir = 1, px, py;
+let aSm = 0.5, bSm = 0.5, rSm = 0.7;
+const target = 0.70, tol = 0.15;  
+const stepPx = 2.5;  
+let holdFrames = 0, didChime = false, __audioCtx = null;
+
+
+function setup(){
+  colorMode(HSB,360,100,100,1); noFill();
+  cx = width/2; cy = height/2; r = min(width,height)*0.32;
+  px = cx + r*cos(ang); py = cy + r*sin(ang);
+}
+
+
+function draw(){
+  background(300,20,10,0.10);           
+
+
+  let a = 0.5, b = 0.5;
+  if (typeof eegData !== "undefined") {
+    a = constrain(+eegData.alpha||0, 0, 1);
+    b = constrain(+eegData.beta ||0, 0, 1);
+  }
+
+
+  aSm = 0.9*aSm + 0.1*a;
+  bSm = 0.9*bSm + 0.1*b;
+  rSm = 0.9*rSm + 0.1*(aSm/(bSm+0.05));
+
+
+  const inTarget = abs(rSm - target) < tol; 
+  const dAng = stepPx / r; 
+
+
+  if (inTarget) {
+    ang += dAng;
+    holdFrames++;
+    if (!didChime && holdFrames >= 60) { 
+      chime(880, 140);
+      didChime = true; 
+    }
+  } else {
+    holdFrames = 0;
+    didChime = false; 
+    if (random() < 0.25) dir *= -1; 
+    ang += dir * dAng + random(-0.4,0.4) * dAng * 2.5; 
+  }
+
+
+  const x = cx + r*cos(ang), y = cy + r*sin(ang);
+  stroke(320,85,100,0.65); strokeWeight(10); 
+  line(px,py,x,y); px = x; py = y;
+}
+
+
+function chime(freq, ms){
+  try{
+    if(!__audioCtx) __audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    const ctx = __audioCtx, o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime;
+    o.type="sine"; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(0.12,t+0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+ms/1000);
+    o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t+ms/1000);
+  }catch(e){}
+}

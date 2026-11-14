@@ -1,0 +1,295 @@
+// 🧠 BrainImation: Live EEG + P5.js
+// Blue Calm → Red Explosion + Fragments + Expanding Galaxy
+// - Meditation high → blue calm + sparkles + stars grow larger
+// - Attention high → red explosion + fragments
+// - Dynamic galaxy background with nebula + twinkling stars
+
+let particles = [];
+let fragments = [];
+let bgStars = [];
+let time = 0;
+let difficulty = 0.5; // tracks adaptive game difficulty (0 = easy, 1 = hard)
+
+// 🧠 Neurofeedback variables
+let targetMeditation = 0.8; // goal calmness (adjust as needed)
+let progressScore = 0;      // tracks user’s success
+
+function setup() {
+  colorMode(HSB, 360, 100, 100, 1);
+
+  // Floating EEG-reactive stars
+  for (let i = 0; i < 50; i++) {
+    particles.push({
+      x: random(width),
+      y: random(height),
+      vx: random(-1, 1),
+      vy: random(-1, 1),
+      shimmerOffset: random(1000)
+    });
+  }
+
+  // Background galaxy stars
+  for (let i = 0; i < 300; i++) {
+    bgStars.push({
+      x: random(width),
+      y: random(height),
+      brightness: random(60, 100),
+      size: random(0.5, 2),
+      twinkleSpeed: random(0.01, 0.05),
+      phase: random(TWO_PI)
+    });
+  }
+}
+
+function draw() {
+// ✨ Galaxy backdrop
+drawNebula();
+drawBackgroundStars();
+
+time += 0.01;
+let explosionForce = map(eegData.attention, 1, 0, 0, 20);
+
+// 🎯 Adaptive Difficulty System (fixed)
+// High attention = easier visuals (lower difficulty)
+// Low attention = harder visuals (higher difficulty)
+difficulty = lerp(difficulty, 1 - eegData.attention, 0.05);
+
+
+
+// 🧠 Neurofeedback: measure how close the user is to the target
+let diff = abs(eegData.meditation - targetMeditation);
+let progress = map(diff, 0, 0.5, 1, 0); // 1 = perfect, 0 = far
+progress = constrain(progress, 0, 1);
+
+// === Dynamic Halo Feedback ===
+noStroke();
+
+// Map meditation to 0–1 range
+let calmness = constrain(eegData.meditation / targetMeditation, 0, 1);
+
+// 💜→💚 Gradient transition (purple → teal as meditation increases)
+let glowHue = lerp(280, 170, calmness);  // 280 = purple, 170 = teal
+let glowSat = lerp(70, 100, calmness);
+let glowBright = lerp(50, 100, calmness);
+
+// 🫧 Transparency — fades in smoothly as user gets calmer
+let glowAlpha = map(calmness, 0, 1, 0.1, 0.9);
+
+
+// 🌬️ Breathing pulse feedback
+// Before target (meditation < 0.8): still, calm halo (no pulse)
+// At/above target (≥ 0.8): clear rhythmic pulsing to show success
+
+// Smooth meditation value to prevent jitter
+if (!this.smoothMeditation) this.smoothMeditation = eegData.meditation;
+this.smoothMeditation = lerp(this.smoothMeditation, eegData.meditation, 0.05);
+
+// Base pulse settings
+let slowPulse = 0.0;   // no pulsing before target
+let fastPulse = 4.0;   // clear rhythmic speed after reaching calm state
+
+// Pulse speed logic
+let targetPulseSpeed = (this.smoothMeditation >= targetMeditation) ? fastPulse : slowPulse;
+
+// Smoothly transition to new speed (avoids sudden jumps)
+if (!this.pulseSpeed) this.pulseSpeed = slowPulse;
+this.pulseSpeed = lerp(this.pulseSpeed, targetPulseSpeed, 0.1);
+
+// Pulse amplitude (how much it expands/contracts)
+// Before target → barely any movement; after → gentle rhythmic motion
+let pulseAmount = (this.smoothMeditation >= targetMeditation)
+  ? map(this.smoothMeditation, targetMeditation, 1, 0.1, 0.2)
+  : 0.0;
+
+// Final smooth pulse motion
+let pulse = sin(time * this.pulseSpeed) * pulseAmount + 1;
+
+// 🌀 Halo size grows slightly with calmness
+let baseSize = width * 0.5;
+let haloSize = baseSize * (0.9 + calmness * 0.4) * pulse;
+
+
+
+// Draw halo
+fill(glowHue, glowSat, glowBright, glowAlpha);
+ellipse(width / 2, height / 2, haloSize);
+
+
+
+// Now continue with your particle system
+for (let p of particles) {
+  // Movement influenced by alpha & beta
+  let alphaForce = eegData.alpha * 2;
+  let betaForce = eegData.beta * 3;
+// High attention = still (small movement), low attention = fast movement
+let moveIntensity = map(1 - eegData.attention, 0, 1, 0.005, 0.02);
+p.vx += random(-alphaForce - betaForce, alphaForce + betaForce) * moveIntensity;
+p.vy += random(-alphaForce - betaForce, alphaForce + betaForce) * moveIntensity;
+
+    // 💥 Explosion kick from attention
+    if (explosionForce > 5) {
+      let angle = random(TWO_PI);
+      p.vx += cos(angle) * explosionForce * 0.05;
+      p.vy += sin(angle) * explosionForce * 0.05;
+    }
+
+    // Damping and update
+    p.vx *= 0.98;
+    p.vy *= 0.98;
+    p.x += p.vx;
+    p.y += p.vy;
+
+    // Wrap edges
+    if (p.x < 0) p.x = width;
+    if (p.x > width) p.x = 0;
+    if (p.y < 0) p.y = height;
+    if (p.y > height) p.y = 0;
+
+    // 🌈 Color transition
+ // High attention = white, low attention = red chaos
+let calmHue = 0;   // red (low attention)
+let focusHue = 0;  // hue doesn’t matter for white
+let hueVal = lerp(calmHue, focusHue, eegData.attention);
+let satVal = lerp(90, 0, eegData.attention); // desaturate as attention rises
+let brightVal = 100; // always bright
+
+
+    // ✨ Shimmer with meditation
+    let shimmer = 0;
+    if (eegData.meditation > 0.8) shimmer = sin(time * 5 + p.shimmerOffset) * 10;
+
+    fill(hueVal, satVal, brightVal + shimmer, 0.9);
+    noStroke();
+
+    // 🌌 Size increases with meditation + theta
+    let baseSize = 5 + eegData.theta * 15;
+    let meditationGrowth = map(eegData.meditation, 0, 1, 1, 1.8); // grow up to 1.8×
+    let size = baseSize * meditationGrowth;
+
+    drawStar(p.x, p.y, size / 2.5, size, 5);
+
+  // ✨ Sparkles appear when very calm
+if (eegData.meditation > 0.9) drawSparkle(p.x, p.y, size * 0.6);
+
+// Explosions only during low attention
+if (eegData.attention < 0.3 && random() < 0.1) createExplosion(p.x, p.y, hueVal);
+
+
+    // Connection lines fade with attention
+    for (let p2 of particles) {
+      let d = dist(p.x, p.y, p2.x, p2.y);
+      if (d < 80) {
+        let alphaLine = map(d, 0, 80, 0.5, 0) * eegData.alpha * (1 - eegData.attention);
+        stroke(hueVal, satVal, 100, alphaLine);
+        strokeWeight(1);
+        line(p.x, p.y, p2.x, p2.y);
+      }
+    }
+  }
+
+  // 🌠 Fragments from explosions
+  for (let i = fragments.length - 1; i >= 0; i--) {
+    let f = fragments[i];
+    f.x += f.vx;
+    f.y += f.vy;
+    f.vx *= 0.97;
+    f.vy *= 0.97;
+    f.life -= 0.02;
+    fill(f.hue, 80, 100, f.life);
+    noStroke();
+    ellipse(f.x, f.y, 4);
+    if (f.life <= 0) fragments.splice(i, 1);
+  }
+
+  // Info text
+  if (!eegData.connected) {
+    fill(0, 0, 100, 0.9);
+    textAlign(CENTER, CENTER);
+    textSize(20);
+    text("Connect your Muse headset or use 'Simulate Data'", width / 2, height / 2 - 10);
+    textSize(16);
+    fill(0, 0, 80, 0.7);
+    text("↑ Meditation = calm blue expanding galaxy 🌌 | ↑ Attention = red explosion 💥", width / 2, height / 2 + 20);
+  }
+  // 🧠 Display adaptive difficulty info (bottom left corner)
+fill(0, 0, 100, 0.9);
+textAlign(LEFT);
+textSize(16);
+text(`🎮 Difficulty: ${(difficulty * 100).toFixed(0)}%`, 20, 90);
+text(`↑ Attention = Easier | ↓ Attention = Harder`, 20, 110);
+}
+
+
+// 🌌 Nebula glow: drifting cosmic mist
+function drawNebula() {
+  noStroke();
+  for (let i = 0; i < 3; i++) {
+    let hue = [260, 300, 200][i];
+    let x = width / 2 + sin(time * 0.1 + i) * width * 0.3;
+    let y = height / 2 + cos(time * 0.1 + i) * height * 0.3;
+    let size = width * 1.2;
+    fill(hue, 50, 40, 0.05);
+    ellipse(x, y, size);
+  }
+}
+
+// 🌠 Background twinkling stars
+function drawBackgroundStars() {
+  noStroke();
+  for (let s of bgStars) {
+    let twinkle = sin(time / 2 + s.phase) * 10;
+    fill(220, 20, s.brightness + twinkle, 1);
+    ellipse(s.x, s.y, s.size);
+  }
+}
+
+// ⭐ Draw a 5-pointed star
+function drawStar(x, y, radius1, radius2, npoints) {
+  let angle = TWO_PI / npoints;
+  let halfAngle = angle / 2.0;
+  beginShape();
+  for (let a = 0; a < TWO_PI; a += angle) {
+    let sx = x + cos(a) * radius2;
+    let sy = y + sin(a) * radius2;
+    vertex(sx, sy);
+    sx = x + cos(a + halfAngle) * radius1;
+    sy = y + sin(a + halfAngle) * radius1;
+    vertex(sx, sy);
+  }
+  endShape(CLOSE);
+}
+
+// ✨ Draw a sparkle (replaces smiley)
+function drawSparkle(x, y, s) {
+  push();
+  translate(x, y);
+  fill(60, 0, 100, 1); // bright white sparkle
+  noStroke();
+
+  // Cross shape sparkle
+  ellipse(0, 0, s * 0.4); // center
+  ellipse(0, 0, s * 1.2, s * 0.1); // horizontal beam
+  ellipse(0, 0, s * 0.1, s * 1.2); // vertical beam
+
+  // Add tiny sparkle points
+  ellipse(-s * 0.4, 0, s * 0.15);
+  ellipse(s * 0.4, 0, s * 0.15);
+  ellipse(0, -s * 0.4, s * 0.15);
+  ellipse(0, s * 0.4, s * 0.15);
+  pop();
+}
+
+
+// 💥 Create glowing debris fragments
+function createExplosion(x, y, hueVal) {
+  for (let i = 0; i < 10; i++) {
+    fragments.push({
+      x: x,
+      y: y,
+      vx: random(-3, 3),
+      vy: random(-3, 3),
+      life: 1.0,
+      hue: hueVal
+    });
+  }
+}

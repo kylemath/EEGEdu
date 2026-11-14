@@ -1,0 +1,326 @@
+// === BrainImation P300 Oddball (robust version) ===
+// - Two conditions: standard (circle, 80%) & rare (annulus, 20%)
+// - Averaging buffers (last 20 trials) per condition & per channel
+// - Top panel: averaged ERP traces (TP9, AF7, AF8, TP10) plotted together
+// - Bottom panel: stimulus display
+// - Time axis: -200 ms .. +800 ms (ticks every 100 ms)
+// - Works with eegData.getRecentEpoch(numSamples) if available; otherwise uses simulated data
+
+// ------- Parameters -------
+const channels = ['TP9', 'AF7', 'AF8', 'TP10'];
+const sampleRate = 256;                // Hz (typical Muse)
+const baselineMs = 200;                // -200 ms pre-stimulus
+const postMs = 800;                    // +800 ms post-stimulus
+const totalMs = baselineMs + postMs;   // 1000 ms epoch
+const numSamples = Math.floor(totalMs * sampleRate / 1000);
+
+const trialDuration = 1000;            // ms per trial (1 s)
+const stimulusMs = 30;                 // stimulus on-screen duration
+const rareProb = 0.2;                  // 20% rare
+const maxBufferTrials = 20;            // average last 20 trials
+
+// ------- State -------
+let trialStart = 0;
+let curCondition = 'standard'; // 'standard' or 'rare'
+let curStimulusOn = false;
+let buffer = { standard: {}, rare: {} }; // buffer[cond][channel] = array of epochs
+let averaged = { standard: {}, rare: {} }; // averaged[cond][channel] = epoch
+let counts = { standard: 0, rare: 0 };
+
+// init buffers
+for (let cond of ['standard', 'rare']) {
+  for (let ch of channels) {
+    buffer[cond][ch] = [];
+    averaged[cond][ch] = new Array(numSamples).fill(0);
+  }
+}
+
+// start
+function setup() {
+  colorMode(RGB, 255);
+  textFont('Helvetica');
+  frameRate(60);
+  trialStart = millis() - 10; // small offset so first trial begins quickly
+}
+
+// main loop
+function draw() {
+  background(10);
+
+  let now = millis();
+  let t = now - trialStart; // ms since current trial began
+
+  // determine stimulus on/off
+  curStimulusOn = (t >= 0 && t < stimulusMs);
+
+  // If trial finished -> start next trial (sample epoch and update buffers)
+  if (t >= trialDuration) {
+    startNextTrial();
+    trialStart = millis();
+  }
+
+  // Draw ERP panel (top)
+  drawERPPanel();
+
+  // Draw stimulus panel (bottom)
+  drawStimulusPanel();
+  function drawStimulusPanel() {
+  const y = height * 0.78;
+  noStroke(); fill(255);
+  textAlign(CENTER);
+  textSize(14);
+  text('Stimulus Display', width / 2, y - 30);
+
+  if (curStimulusOn) {
+    // both standard and rare are rings (annuli), but different colors
+    strokeWeight(15);
+    noFill();
+    if (curCondition === 'rare') {
+      // Rare = pink/magenta ring
+      stroke(255, 105, 180); // hot pink
+      ellipse(width / 2, y, 200, 200);
+    } else {
+      // Standard = blue ring
+      stroke(0, 150, 255); // bright blue
+      ellipse(width / 2, y, 200, 200);
+    }
+  } else {
+    // fixation point between stimuli
+    noStroke();
+    fill(180);
+    ellipse(width / 2, y, 10, 10);
+  }
+}
+
+
+  // Draw info
+  drawInfo();
+}
+
+// Start next trial: choose condition, collect epoch, push to buffer
+function startNextTrial() {
+  // choose condition
+  curCondition = (Math.random() < rareProb) ? 'rare' : 'standard';
+
+  // Attempt to fetch a recent epoch from eegData (if available)
+  // eegData.getRecentEpoch(numSamples) should return {TP9:[], AF7:[], ...}
+  let epochObj = null;
+  try {
+    if (typeof eegData !== 'undefined' && typeof eegData.getRecentEpoch === 'function') {
+      epochObj = eegData.getRecentEpoch(numSamples);
+    }
+  } catch (e) {
+    epochObj = null;
+  }
+
+  // Build an epoch per channel: use eeg epoch if present, otherwise simulate
+  let epochPerChannel = {};
+  for (let ch of channels) {
+    if (epochObj && epochObj[ch] && epochObj[ch].length >= numSamples) {
+      // ensure we have numSamples, take the last numSamples if more present
+      let arr = epochObj[ch].slice(-numSamples);
+      epochPerChannel[ch] = arr.map(v => v); // copy
+    } else {
+      // simulate baseline noise plus (for rare) a synthetic P3 bump ~300-600 ms
+      let arr = new Array(numSamples);
+      for (let i = 0; i < numSamples; i++) {
+        // map i -> ms relative to stimulus onset: -baselineMs .. +postMs
+        let ms = (i * totalMs / numSamples) - baselineMs;
+        // pink-ish noise baseline
+        let noise = (Math.random() - 0.5) * 6; // small amplitude noise
+        let val = noise;
+        if (curCondition === 'rare' && ms >= 250 && ms <= 450) {
+          // add P300-ish positive bump (gaussian)
+          let center = 350;
+          let width = 80;
+          val += 20 * Math.exp(-Math.pow(ms - center, 2) / (2 * width * width));
+          // small channel variability
+          val += (Math.random() - 0.5) * 4;
+        }
+        arr[i] = val;
+      }
+      epochPerChannel[ch] = arr;
+    }
+  }
+
+  // Push epochs into buffer for the selected condition
+  for (let ch of channels) {
+    buffer[curCondition][ch].push(epochPerChannel[ch]);
+    if (buffer[curCondition][ch].length > maxBufferTrials) {
+      buffer[curCondition][ch].shift();
+    }
+    // Recompute averaged epoch from buffer (simple mean)
+    let buf = buffer[curCondition][ch];
+    let avg = new Array(numSamples).fill(0);
+    for (let i = 0; i < numSamples; i++) {
+      let s = 0;
+      for (let tr = 0; tr < buf.length; tr++) s += buf[tr][i];
+      avg[i] = s / buf.length;
+    }
+    averaged[curCondition][ch] = avg;
+  }
+
+  // update counts (cap at maxBufferTrials)
+  counts[curCondition] = Math.min(maxBufferTrials, buffer[curCondition][channels[0]].length);
+}
+
+// Draw ERP top panel: both conditions overlaid
+function drawERPPanel() {
+  const topH = height * 0.55;
+  const left = 70, right = width - 30;
+  const plotW = right - left;
+
+  // Title
+  noStroke();
+  fill(255);
+  textAlign(CENTER, TOP);
+  textSize(16);
+  text('P300 Oddball — Averaged ERPs (−200 → +800 ms)', width / 2, 8);
+
+  // draw horizontal separator
+  stroke(60); strokeWeight(1);
+  line(10, topH, width - 10, topH);
+
+  // For each channel, draw averaged traces stacked vertically
+  const rows = channels.length;
+  for (let c = 0; c < rows; c++) {
+    let yCenter = 40 + (c + 1) * ((topH - 60) / (rows + 1));
+
+    // axis baseline
+    stroke(80); line(left, yCenter, right, yCenter);
+
+    // Tick marks & labels: -200 to +800 every 100 ms
+    noStroke();
+    fill(180);
+    textSize(10);
+    for (let ms = -baselineMs; ms <= postMs; ms += 100) {
+      let rel = (ms + baselineMs) / totalMs; // 0..1
+      let x = left + rel * plotW;
+      stroke(60); strokeWeight(1); line(x, yCenter - 6, x, yCenter + 6);
+      noStroke();
+      fill(180);
+      textAlign(CENTER, TOP);
+      text(ms, x, yCenter + 10);
+    }
+
+    // zero vertical line (0 ms)
+    let zeroRel = baselineMs / totalMs;
+    let zeroX = left + zeroRel * plotW;
+    stroke(200, 50, 50); strokeWeight(1.5);
+    line(zeroX, yCenter - 30, zeroX, yCenter + 30);
+
+    // plot standard (blue)
+    let avgStd = averaged.standard[channels[c]];
+    if (avgStd && avgStd.length === numSamples) {
+      stroke(50, 150, 255); strokeWeight(2); noFill(); beginShape();
+      for (let i = 0; i < numSamples; i++) {
+        let rel = i / (numSamples - 1);
+        let x = left + rel * plotW;
+        let y = yCenter - map(avgStd[i], -40, 80, -40, 40); // scale for visibility
+        vertex(x, y);
+      }
+      endShape();
+    }
+
+    // plot rare (magenta)
+    let avgRare = averaged.rare[channels[c]];
+    if (avgRare && avgRare.length === numSamples) {
+      stroke(230, 100, 180); strokeWeight(2); noFill(); beginShape();
+      for (let i = 0; i < numSamples; i++) {
+        let rel = i / (numSamples - 1);
+        let x = left + rel * plotW;
+        let y = yCenter - map(avgRare[i], -40, 80, -40, 40);
+        vertex(x, y);
+      }
+      endShape();
+    }
+
+    // channel label & small legend per row
+    noStroke(); fill(255); textAlign(LEFT, CENTER); textSize(12);
+    text(channels[c], 10, yCenter);
+  }
+
+  // overall legend and counts
+  noStroke(); fill(255); textSize(12);
+  textAlign(LEFT);
+  text('Standard (80%)', 12, topH + 8);
+  fill(50, 150, 255); rect(120, topH + 4, 12, 8);
+  fill(255);
+  textAlign(LEFT);
+  text(`Averaged: ${counts.standard}`, 150, topH + 4);
+
+  textAlign(RIGHT);
+  fill(255);
+  text('Rare (20%)', width - 140, topH + 8);
+  fill(230, 100, 180); rect(width - 120, topH + 4, 12, 8);
+  fill(255);
+  textAlign(RIGHT);
+  text(`Averaged: ${counts.rare}`, width - 20, topH + 4);
+}
+
+// Draw stimulus area (bottom)
+function drawStimulusPanel() {
+  const y = height * 0.78;
+  noStroke();
+  fill(255); textAlign(CENTER); textSize(14);
+  text('Stimulus Display', width / 2, y - 80);
+
+  if (curCondition === 'rare' && curStimulusOn) {
+    // annulus for rare condition
+    noFill(); stroke(255); strokeWeight(12);
+    ellipse(width / 2, y, 200, 200);
+  } else if (curCondition === 'standard' && curStimulusOn) {
+    // filled black circle for standard
+    noStroke(); fill(0); ellipse(width / 2, y, 100, 100);
+  } else {
+    // nothing or small fixation
+    noStroke(); fill(120); ellipse(width / 2, y, 16, 16);
+  }
+}
+
+// Info text
+function drawInfo() {
+  fill(200); textSize(12);
+  textAlign(LEFT);
+  text('Press D to download averaged data (CSV) — optional', 12, height - 28);
+  textAlign(RIGHT);
+  text(`Trial dur: ${trialDuration} ms | Stim: ${stimulusMs} ms`, width - 12, height - 28);
+}
+
+// Optional: download averaged data (press D)
+function keyPressed() {
+  if (key === 'd' || key === 'D') downloadAveragesCSV();
+}
+
+function downloadAveragesCSV() {
+  // creates CSV with averages per condition and channel
+  let lines = [];
+  let header = ['sample_ms'];
+  for (let ch of channels) {
+    header.push(`${ch}_std`);
+  }
+  for (let ch of channels) {
+    header.push(`${ch}_rare`);
+  }
+  lines.push(header.join(','));
+
+  for (let i = 0; i < numSamples; i++) {
+    // sample time relative to stimulus onset
+    let ms = Math.round((i / (numSamples - 1)) * totalMs - baselineMs);
+    let row = [ms];
+    for (let ch of channels) row.push(averaged.standard[ch] ? averaged.standard[ch][i].toFixed(4) : '0');
+    for (let ch of channels) row.push(averaged.rare[ch] ? averaged.rare[ch][i].toFixed(4) : '0');
+    lines.push(row.join(','));
+  }
+
+  let csv = lines.join('\n');
+  let blob = new Blob([csv], { type: 'text/csv' });
+  let url = URL.createObjectURL(blob);
+  let a = document.createElement('a');
+  a.href = url;
+  a.download = 'erp_averages.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}

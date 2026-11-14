@@ -1,0 +1,452 @@
+import React, { useEffect, useMemo, useRef, useState } from "react";
+
+/**
+ * EEG-Driven Heels Runner (Simulated)
+ * Sunset sky (pink→orange→lavender), static soft clouds,
+ * runner with long black hair, half-visible face profile, matte red dress,
+ * and thin stiletto heels. Paste into src/App.jsx (Vite React).
+ */
+
+// --------------------------- EEG SIMULATOR ---------------------------
+class EEGSimulator {
+  constructor({ tickMs = 120, noise = 0.05 } = {}) {
+    this.tickMs = tickMs;
+    this.noise = noise;
+    this.timer = null;
+    this.listeners = new Set();
+    this.t = 0;
+    this.stateIdx = 0;
+    this.states = [
+      { name: "Relaxed", vec: [0.8, 0.25, 0.2, 0.25], dur: 6000 },
+      { name: "Focused", vec: [0.45, 0.7, 0.25, 0.4], dur: 7000 },
+      { name: "Stressed", vec: [0.25, 0.95, 0.3, 0.5], dur: 5000 },
+      { name: "Drowsy", vec: [0.6, 0.2, 0.8, 0.2], dur: 6000 },
+    ];
+    this.stateEndsAt = this.states[0].dur;
+    this.curr = { alpha: 0.6, beta: 0.4, theta: 0.3, gamma: 0.3, name: "Relaxed" };
+  }
+  onSample(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); }
+  start() { if (!this.timer) this.timer = setInterval(() => this._tick(), this.tickMs); }
+  stop() { if (this.timer) { clearInterval(this.timer); this.timer = null; } }
+  _tick() {
+    this.t += this.tickMs;
+    if (this.t >= this.stateEndsAt) {
+      this.stateIdx = (this.stateIdx + 1) % this.states.length;
+      const s = this.states[this.stateIdx];
+      this.stateEndsAt += s.dur;
+    }
+    const target = this.states[this.stateIdx];
+    const lerp = (a, b, r) => a + (b - a) * r;
+    const jitter = () => (Math.random() - 0.5) * this.noise;
+    const r = 0.08;
+
+    const alpha = (this.curr.alpha = Math.max(0, lerp(this.curr.alpha, target.vec[0] + jitter(), r)));
+    const beta  = (this.curr.beta  = Math.max(0, lerp(this.curr.beta,  target.vec[1] + jitter(), r)));
+    const theta = (this.curr.theta = Math.max(0, lerp(this.curr.theta, target.vec[2] + jitter(), r)));
+    const gamma = (this.curr.gamma = Math.max(0, lerp(this.curr.gamma, target.vec[3] + jitter(), r)));
+    const sum = alpha + beta + theta + gamma + 1e-6;
+    const norm = { alpha: alpha/sum, beta: beta/sum, theta: theta/sum, gamma: gamma/sum };
+
+    const attention = clamp(beta / (alpha + theta + 1e-3));
+    const stress = clamp(beta / (alpha + 0.5 * theta + 1e-3));
+    const activation = clamp((alpha + beta + theta + gamma) / 4);
+
+    const sample = { ...norm, raw: { alpha, beta, theta, gamma }, name: target.name, attention, stress, activation };
+    this.listeners.forEach((fn) => fn(sample));
+  }
+}
+
+// --------------------------- UTILITIES ---------------------------
+const clamp = (v, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+
+class Ring {
+  constructor(n, init = 0) { this.n = n; this.i = 0; this.a = new Array(n).fill(init); }
+  push(v) { this.a[this.i] = v; this.i = (this.i + 1) % this.n; }
+  values() { const { i, a } = this; return a.slice(i).concat(a.slice(0, i)); }
+}
+
+// --------------------------- GAME CONSTANTS ---------------------------
+const GROUND_Y = 270;   // slightly lower due to taller canvas
+const GRAVITY = 0.85;
+const JUMP_VY = -12.5;
+
+function useAnimationFrame(callback) {
+  const cb = useRef(callback);
+  useEffect(() => { cb.current = callback; }, [callback]);
+  useEffect(() => {
+    let raf;
+    const loop = (t) => { cb.current(t); raf = requestAnimationFrame(loop); };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+}
+
+// --------------------------- MAIN APP ---------------------------
+export default function App() {
+  const canvasRef = useRef(null);
+  const [running, setRunning] = useState(true);
+  const [autoJump, setAutoJump] = useState(true);
+  const [simSpeed, setSimSpeed] = useState(1);
+  const [skinColor, setSkinColor] = useState("#b37a56"); // medium-tan default
+  const hairColor = "#0b0b0f"; // near-black
+  const [sample, setSample] = useState({ alpha:0,beta:0,theta:0,gamma:0,attention:0,stress:0,activation:0,name:"…" });
+
+  const eeg = useMemo(() => new EEGSimulator({ tickMs: 120 }), []);
+  const attRing = useMemo(() => new Ring(100, 0.5), []);
+  const stressRing = useMemo(() => new Ring(100, 0.5), []);
+
+  useEffect(() => {
+    const off = eeg.onSample((s) => { attRing.push(s.attention); stressRing.push(s.stress); setSample(s); });
+    eeg.start();
+    return () => { off(); eeg.stop(); };
+  }, [eeg, attRing, stressRing]);
+
+  const game = useRef({ t:0, x:80, y:GROUND_Y, vy:0, obstacles:[], timeToNext:1200 });
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.code === "Space") jump(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  function jump(){ const g = game.current; if (Math.abs(g.y - GROUND_Y) < 1) g.vy = JUMP_VY; }
+
+  // Static soft clouds (positions & sizes)
+  const clouds = useMemo(() => {
+    // Each cloud: x, y, scale
+    return [
+      { x: 80,  y: 40,  s: 1.2 },
+      { x: 260, y: 70,  s: 0.9 },
+      { x: 460, y: 50,  s: 1.4 },
+      { x: 680, y: 85,  s: 1.1 },
+      { x: 820, y: 35,  s: 0.8 },
+      { x: 150, y: 120, s: 1.0 },
+      { x: 540, y: 130, s: 0.95 },
+    ];
+  }, []);
+
+  useAnimationFrame(() => {
+    if (!running) return;
+    const cvs = canvasRef.current; if (!cvs) return;
+    const ctx = cvs.getContext("2d");
+    const g = game.current;
+
+    // EEG → difficulty & speed mapping
+    const difficulty = clamp(1 - sample.attention);
+    const easeByStress = clamp(1 - sample.stress * 0.5);
+    const combinedDifficulty = clamp(difficulty * 0.7 + (1 - easeByStress) * 0.3);
+    const walkerSpeed = lerp(2.2, 7.5, clamp(sample.alpha * 1.2 - sample.stress * 0.2 + 0.1));
+    const targetInterval = lerp(1700, 700, combinedDifficulty);
+    const brainMostActive = sample.activation > 0.78 || sample.stress > 0.9 || sample.beta > 0.9;
+    if (autoJump && brainMostActive) jump();
+
+    // Physics
+    const dt = 16.7 * simSpeed;
+    g.t += dt; g.timeToNext -= dt;
+
+    // Spawn obstacles
+    if (g.timeToNext <= 0) {
+      const h = 22 + Math.random() * 42 * (0.5 + combinedDifficulty);
+      const w = 12 + Math.random() * 18;
+      g.obstacles.push({ x: cvs.width + 10, w, h });
+      g.timeToNext = targetInterval * (0.8 + Math.random() * 0.6);
+    }
+
+    // Runner movement
+    g.vy += GRAVITY * simSpeed;
+    g.y += g.vy * simSpeed;
+    if (g.y > GROUND_Y) { g.y = GROUND_Y; g.vy = 0; }
+
+    // Move obstacles
+    g.obstacles.forEach((o) => { o.x -= walkerSpeed * simSpeed; });
+    g.obstacles = g.obstacles.filter((o) => o.x + o.w > -5);
+
+    // Collision check
+    let collided = false;
+    for (const o of g.obstacles) {
+      const ox1 = o.x, ox2 = o.x + o.w;
+      const oy1 = GROUND_Y - o.h, oy2 = GROUND_Y;
+      const rx1 = g.x - 14, rx2 = g.x + 14;
+      const ry1 = g.y - 40, ry2 = g.y;
+      if (ox1 < rx2 && ox2 > rx1 && oy1 < ry2 && oy2 > ry1) { collided = true; break; }
+    }
+
+    // --------------- DRAW ---------------
+
+    // Sunset gradient background
+    const grad = ctx.createLinearGradient(0, 0, 0, cvs.height);
+    grad.addColorStop(0,   "#ff9a8b"); // pinky
+    grad.addColorStop(0.45,"#ff6a88"); // deeper pink
+    grad.addColorStop(0.8, "#ffd1a1"); // orange glow
+    grad.addColorStop(1,   "#f7e4ff"); // lavender base
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+    // Soft static clouds
+    drawClouds(ctx, clouds);
+
+    // Ground (subtle dark line)
+    ctx.fillStyle = "#1f2937";
+    ctx.fillRect(0, GROUND_Y + 1, cvs.width, 2);
+
+    // Obstacles
+    ctx.fillStyle = "#7c3aed"; // purple pillars—readable against sunset
+    g.obstacles.forEach((o) => {
+      ctx.fillRect(o.x, GROUND_Y - o.h, o.w, o.h);
+    });
+
+    // Runner: curvy Latina silhouette, side-profile, long hair, matte red dress, stilettos
+    ctx.save();
+    ctx.translate(g.x, g.y);
+
+    // ---- Heels (thin stilettos) ----
+    // Shoe body (matte red), then a slim heel line
+    ctx.fillStyle = "#dc2626"; // matte red
+    drawStiletto(ctx, -7, 0, -6); // left shoe
+    drawStiletto(ctx,  7, 0,  6); // right shoe
+
+    // Legs
+    ctx.strokeStyle = "#0f172a"; ctx.lineWidth = 3.2;
+    ctx.beginPath(); ctx.moveTo(-4.5, -8); ctx.lineTo(-4.5, 0); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo( 4.5, -8); ctx.lineTo( 4.5, 0); ctx.stroke();
+
+    // Hips & torso (hourglass, side profile)
+    // Shape: start at left hip, curve to waist, bust, then down right hip—slightly rotated to show profile.
+    ctx.fillStyle = skinColor;
+    ctx.strokeStyle = "#0f172a"; ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(-9, -10);                          // left hip
+    ctx.quadraticCurveTo(-12, -18, -5.5, -22);    // left waist in
+    ctx.quadraticCurveTo(-1, -28, 5, -24);        // bust forward (profile)
+    ctx.quadraticCurveTo(11, -18, 9, -10);        // right waist / hip
+    ctx.quadraticCurveTo(6, -8, 4.5, -8);         // lower torso right
+    ctx.lineTo(-4.5, -8);                         // across hips
+    ctx.quadraticCurveTo(-7, -8, -9, -10);        // back to start
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Dress overlay (matte red), fitted to silhouette (no highlights)
+    ctx.fillStyle = "#dc2626";
+    ctx.beginPath();
+    ctx.moveTo(-8, -10);
+    ctx.quadraticCurveTo(-9, -17, -4.5, -20.5);   // waist rise
+    ctx.quadraticCurveTo(0, -23.5, 4.5, -21);     // bust
+    ctx.quadraticCurveTo(9, -17, 8, -10);         // waist down
+    ctx.lineTo(8, -10);
+    ctx.quadraticCurveTo(0, -8.5, -8, -10);       // subtle flare
+    ctx.closePath();
+    ctx.fill();
+
+    // Arms (slightly behind, side view; swing with speed)
+    const arm = Math.sin(g.t * 0.022 * (2 + Math.min(6, walkerSpeed))) * 9;
+    ctx.strokeStyle = "#0f172a"; ctx.lineWidth = 2.6;
+    // Back arm (fainter to imply depth)
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath(); ctx.moveTo(-1, -18); ctx.lineTo(-12 + arm, -10); ctx.stroke();
+    ctx.globalAlpha = 1.0;
+    // Front arm
+    ctx.beginPath(); ctx.moveTo(1, -18); ctx.lineTo(12 - arm, -10); ctx.stroke();
+
+    // Head (half-visible face, profile)
+    // Head base
+    ctx.fillStyle = skinColor;
+    ctx.beginPath(); ctx.arc(2, -36, 7.6, 0, Math.PI * 2); ctx.fill();
+
+    // Facial profile line (nose/chin) — very subtle
+    ctx.strokeStyle = "#0f172a"; ctx.lineWidth = 1.0;
+    ctx.beginPath();
+    ctx.moveTo(5, -36);         // forehead toward nose tip
+    ctx.quadraticCurveTo(8, -34.5, 6.8, -33.5); // nose tip
+    ctx.quadraticCurveTo(6, -33, 6.2, -31.2);   // philtrum
+    ctx.quadraticCurveTo(6.6, -30.4, 5.8, -29.6); // lips
+    ctx.quadraticCurveTo(5.2, -29.2, 5.1, -28.5); // chin
+    ctx.stroke();
+
+    // Long black hair: cap + flowing tail (static shape, slight sway with walk)
+    const sway = Math.sin(g.t * 0.02 * walkerSpeed) * 4;
+    ctx.fillStyle = hairColor;
+
+    // Hair cap around head (covers back half)
+    ctx.beginPath();
+    ctx.ellipse(0, -37, 10, 8.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Long flow behind head/shoulder (down the back)
+    ctx.beginPath();
+    ctx.moveTo(-2, -40);
+    ctx.quadraticCurveTo(-16, -38 + sway, -14, -22 + sway);
+    ctx.quadraticCurveTo(-12, -10 + sway, -6, -8 + sway);
+    ctx.quadraticCurveTo(-2, -10 + sway, -1, -20 + sway);
+    ctx.closePath();
+    ctx.fill();
+
+    // Few front strands near cheek/jaw
+    ctx.beginPath();
+    ctx.moveTo(3, -38);
+    ctx.quadraticCurveTo(7, -34 + sway * 0.3, 4, -31 + sway * 0.2);
+    ctx.quadraticCurveTo(3, -30 + sway * 0.1, 2, -30);
+    ctx.fill();
+
+    ctx.restore();
+
+    // HUD
+    const pad = 12;
+    ctx.fillStyle = "#111827"; ctx.font = "12px ui-sans-serif, system-ui";
+    ctx.fillText(`State: ${sample.name}`, pad, 18);
+    ctx.fillText(
+      `Attention: ${sample.attention.toFixed(2)}  Stress: ${sample.stress.toFixed(2)}  Alpha: ${sample.alpha.toFixed(2)}  Beta: ${sample.beta.toFixed(2)}`,
+      pad, 34
+    );
+    ctx.fillText(
+      `Speed: ${walkerSpeed.toFixed(1)}  Difficulty: ${combinedDifficulty.toFixed(2)}  AutoJump:${autoJump ? "on" : "off"}`,
+      pad, 50
+    );
+
+    drawSpark(ctx, attRing.values(), pad, 60, 200, 32, "Attention");
+    drawSpark(ctx, stressRing.values(), pad + 220, 60, 200, 32, "Stress");
+
+    if (collided) {
+      ctx.fillStyle = "#ef4444";
+      ctx.font = "bold 14px ui-sans-serif, system-ui";
+      ctx.fillText(
+        "Ouch! (Relaxed → faster; high attention/stress → easier; low attention/stress → harder)",
+        pad, 110
+      );
+    }
+  });
+
+  const panelStyle = { display:"flex", gap:16, flexWrap:"wrap", alignItems:"center", marginBottom:8 };
+
+  return (
+    <div style={{ fontFamily:"ui-sans-serif, system-ui", padding:16 }}>
+      <h2 style={{ fontSize:20, fontWeight:700, marginBottom:8 }}>EEG-Driven Heels Runner — Sunset Clouds</h2>
+
+      <div style={panelStyle}>
+        <label style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <input type="checkbox" checked={autoJump} onChange={e=>setAutoJump(e.target.checked)} />
+          Auto jump on high brain activity
+        </label>
+        <label style={{ display:"flex", alignItems:"center", gap:8 }}>
+          Simulation speed: <strong>{simSpeed.toFixed(2)}×</strong>
+          <input type="range" min={0.5} max={2.5} step={0.1} value={simSpeed} onChange={e=>setSimSpeed(parseFloat(e.target.value))}/>
+        </label>
+        <label style={{ display:"flex", alignItems:"center", gap:8 }}>
+          Skin
+          <input type="color" value={skinColor} onChange={e=>setSkinColor(e.target.value)} />
+        </label>
+        <button
+          onClick={() => setRunning(r=>!r)}
+          style={{ padding:"6px 10px", borderRadius:8, border:"1px solid #cbd5e1",
+                   background: running ? "#e2e8f0" : "#d1fae5", cursor:"pointer" }}
+        >
+          {running ? "Pause" : "Resume"}
+        </button>
+      </div>
+
+      <div style={{ color:"#475569", fontSize:13, marginBottom:8 }}>
+        High attention/stress → fewer obstacles (easier). Low attention/stress → more obstacles (harder).
+        Relaxed (high alpha) makes her walk faster. Press <b>Space</b> to jump.
+      </div>
+
+      <canvas
+        ref={canvasRef}
+        width={900}
+        height={320}
+        style={{ width:"100%", maxWidth:900, border:"1px solid #e2e8f0", borderRadius:12, background:"#fff" }}
+      />
+      <Metrics sample={sample} />
+    </div>
+  );
+}
+
+// --------------------------- SMALL UI HELPERS ---------------------------
+function Metrics({ sample }) {
+  const box = { border:"1px solid #e2e8f0", borderRadius:12, padding:12, marginTop:12 };
+  const row = (k, v) => (
+    <div key={k} style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+      <span style={{ color:"#475569" }}>{k}</span>
+      <span style={{ fontFamily:"ui-monospace, SFMono-Regular, Menlo, monospace" }}>
+        {typeof v === "number" ? v.toFixed(2) : v}
+      </span>
+    </div>
+  );
+  return (
+    <div style={box}>
+      <div style={{ fontWeight:600, marginBottom:8 }}>EEG Bands (normalized)</div>
+      {row("Alpha (relaxed)", sample.alpha)}
+      {row("Beta (attention)", sample.beta)}
+      {row("Theta (drowsy)", sample.theta)}
+      {row("Gamma (binding)", sample.gamma)}
+      <div style={{ height: 8 }} />
+      <div style={{ fontWeight:600, marginBottom:8 }}>Derived Metrics</div>
+      {row("Attention", sample.attention)}
+      {row("Stress", sample.stress)}
+      {row("Activation", sample.activation)}
+    </div>
+  );
+}
+
+function drawSpark(ctx, values, x, y, w, h, label){
+  ctx.fillStyle = "#374151";
+  ctx.font = "10px ui-sans-serif, system-ui";
+  ctx.fillText(label, x, y-2);
+  ctx.strokeStyle = "#94a3b8";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x, y, w, h);
+  ctx.beginPath();
+  const n = values.length;
+  for (let i=0;i<n;i++){
+    const vx = x + (i/(n-1))*w;
+    const vy = y + (1-values[i]) * h;
+    if (i===0) ctx.moveTo(vx, vy); else ctx.lineTo(vx, vy);
+  }
+  ctx.strokeStyle = "#0ea5e9";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+}
+
+// ----- Visual helpers -----
+function drawClouds(ctx, clouds) {
+  clouds.forEach(({ x, y, s }) => {
+    drawSoftCloud(ctx, x, y, s);
+  });
+}
+function drawSoftCloud(ctx, x, y, s) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  ctx.globalAlpha = 0.85;
+  ctx.fillStyle = "white";
+  // Build a cloud from several overlapping circles/ellipses
+  ellipse(ctx, 0, 0, 40, 24);
+  ellipse(ctx, -22, 6, 28, 18);
+  ellipse(ctx, 22, 8, 32, 18);
+  ellipse(ctx, -40, 10, 22, 14);
+  ellipse(ctx, 40, 12, 22, 14);
+  ctx.restore();
+}
+function ellipse(ctx, x, y, rx, ry) {
+  ctx.beginPath();
+  ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+function drawStiletto(ctx, x, y, dir) {
+  // dir: - for left foot, + for right foot
+  // sole
+  ctx.beginPath();
+  ctx.moveTo(x - 6 * Math.sign(dir), y - 1);
+  ctx.lineTo(x + 6 * Math.sign(dir), y - 1);
+  ctx.lineTo(x + 2 * Math.sign(dir), y + 2);
+  ctx.lineTo(x - 5 * Math.sign(dir), y + 2);
+  ctx.closePath();
+  ctx.fill();
+  // thin heel (line)
+  ctx.strokeStyle = "#0f172a";
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(x - 4 * Math.sign(dir), y + 2);
+  ctx.lineTo(x - 4 * Math.sign(dir), y + 7); // slender stiletto heel
+  ctx.stroke();
+}

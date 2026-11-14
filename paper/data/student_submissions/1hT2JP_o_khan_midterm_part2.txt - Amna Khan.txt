@@ -1,0 +1,242 @@
+﻿// Two categories: "Happy" (frequent) vs. "Sad" (rare)
+// Top: Averaged EEG traces for each condition
+// Bottom: Emotional face stimulus display
+// EEG channels: TP9, AF7, AF8, TP10
+
+
+let trial = 0;
+let isRare = false;
+let trialStart = 0;
+let stimulusPhase = 0; // 0 = baseline, 1 = circle, 2 = annulus
+let epochLength = 256; // 1 second (at 256 Hz)
+let preSamples = 51;   // 200 ms before (≈51 samples)
+let postSamples = 205; // 800 ms after (≈205 samples)
+let totalSamples = preSamples + postSamples;
+
+
+// Store ERP data separately for happy vs sad
+let happyERPs = { TP9: [], AF7: [], AF8: [], TP10: [] };
+let sadERPs = { TP9: [], AF7: [], AF8: [], TP10: [] };
+let maxTrials = 20;
+
+
+// Trial timing (ms)
+let baselineTime = 1000;
+let circleOn = 1000;          // 1s baseline, then stimulus
+let circleOff = circleOn + 30;
+let annulusOn = circleOff + 60;
+let annulusOff = annulusOn + 30;
+let trialInterval = 2000;     // 2s total per trial
+
+
+function setup() {
+  colorMode(HSB, 360, 100, 100);
+  textAlign(CENTER, CENTER);
+  textSize(12);
+  noStroke();
+  trialStart = millis();
+}
+
+
+function draw() {
+  background(0, 0, 10);
+
+
+  // Timing within trial
+  let t = millis() - trialStart;
+
+
+  // Determine phase and display stimulus
+  if (t < baselineTime) {
+    stimulusPhase = 0; // baseline
+  } else if (t < circleOff) {
+    stimulusPhase = 1; // first stimulus (circle/face)
+  } else if (t < annulusOff) {
+    stimulusPhase = 2; // second stimulus (annulus)
+  } else if (t > trialInterval) {
+    startNewTrial();
+  }
+
+
+  // --- Bottom panel: Face stimulus ---
+  drawFaceStimulus(stimulusPhase, isRare);
+
+
+  // --- Top panel: ERP traces ---
+  drawERPTraces();
+
+
+  // --- Collect EEG data if connected ---
+  if (eegData.connected) {
+    recordERPData();
+  }
+}
+
+
+// -------------------------
+// ERP Recording & Averaging
+// -------------------------
+function recordERPData() {
+  // Align samples around stimulus onset
+  let epoch = eegData.getRecentEpoch(totalSamples);
+  if (!epoch || epoch.length < totalSamples) return;
+
+
+  if (stimulusPhase === 0) return; // only record after onset
+
+
+  let avg = getChannelAverage(epoch);
+
+
+  // Store ERP by category
+  let target = isRare ? sadERPs : happyERPs;
+  for (let ch in target) {
+    target[ch].push(avg[ch]);
+    if (target[ch].length > maxTrials) target[ch].shift();
+  }
+}
+
+
+// Compute channel-wise average across samples
+function getChannelAverage(epoch) {
+  let result = { TP9: [], AF7: [], AF8: [], TP10: [] };
+  for (let ch in result) {
+    let samples = eegData.getRawChannel(ch, totalSamples);
+    result[ch] = samples;
+  }
+  return result;
+}
+
+
+// -------------------------
+// Drawing ERP Traces
+// -------------------------
+function drawERPTraces() {
+  push();
+  translate(0, 0);
+  let panelH = height * 0.5;
+  fill(0, 0, 15);
+  rect(0, 0, width, panelH);
+
+
+  // Axis setup
+  stroke(0, 0, 50);
+  line(50, panelH / 2, width - 50, panelH / 2);
+
+
+  // Time axis ticks (every 100 ms)
+  for (let ms = -200; ms <= 800; ms += 100) {
+    let x = map(ms, -200, 800, 50, width - 50);
+    stroke(0, 0, 30);
+    line(x, 40, x, panelH - 20);
+    noStroke();
+    fill(0, 0, 70);
+    text(ms + "ms", x, panelH - 8);
+  }
+
+
+  // Vertical 0 ms line (stimulus onset)
+  stroke(50, 100, 100);
+  line(map(0, -200, 800, 50, width - 50), 40, map(0, -200, 800, 50, width - 50), panelH - 20);
+
+
+  // Draw averaged ERP traces
+  let yMid = panelH / 2;
+  drawERPLine(happyERPs, color(120, 80, 100), yMid, "Happy");
+  drawERPLine(sadERPs, color(0, 80, 100), yMid, "Sad");
+
+
+  pop();
+}
+
+
+function drawERPLine(dataObj, col, yMid, label) {
+  stroke(col);
+  strokeWeight(2);
+  noFill();
+
+
+  beginShape();
+  let channel = "AF7"; // representative channel
+  if (!dataObj[channel] || dataObj[channel].length === 0) return;
+
+
+  let avg = averageArrays(dataObj[channel]);
+  for (let i = 0; i < avg.length; i++) {
+    let x = map(i, 0, totalSamples, 50, width - 50);
+    let y = map(avg[i], -50, 50, yMid + 40, yMid - 40);
+    vertex(x, y);
+  }
+  endShape();
+
+
+  noStroke();
+  fill(col);
+  text(label + " (" + dataObj[channel].length + " trials)", width - 100, yMid - (label === "Happy" ? 30 : 15));
+}
+
+
+function averageArrays(arrays) {
+  if (arrays.length === 0) return [];
+  let length = arrays[0].length;
+  let result = Array(length).fill(0);
+  for (let a of arrays) {
+    for (let i = 0; i < length; i++) {
+      result[i] += a[i];
+    }
+  }
+  return result.map(v => v / arrays.length);
+}
+
+
+// -------------------------
+// Stimulus Display (Face)
+// -------------------------
+function drawFaceStimulus(phase, rare) {
+  push();
+  translate(width / 2, height * 0.75);
+  let faceColor = rare ? color(0, 80, 100) : color(200, 60, 100);
+  noStroke();
+
+
+  // Face background
+  fill(50, 30, 30);
+  ellipse(0, 0, 120, 120);
+
+
+  // Eyes
+  fill(0, 0, 100);
+  ellipse(-25, -15, 15, 15);
+  ellipse(25, -15, 15, 15);
+
+
+  // Emotion mouth changes with condition and phase
+  stroke(0, 0, 100);
+  strokeWeight(4);
+  noFill();
+  if (rare) {
+    // Sad
+    arc(0, 20, 50, 30, PI, TWO_PI);
+  } else {
+    // Happy
+    arc(0, 25, 50, 30, 0, PI);
+  }
+
+
+  noStroke();
+  fill(255);
+  textSize(14);
+  text(rare ? "Rare" : "Frequent", 0, 70);
+  pop();
+}
+
+
+// -------------------------
+// Trial Control
+// -------------------------
+function startNewTrial() {
+  trial++;
+  isRare = random() < 0.2; // 20% rare
+  trialStart = millis();
+  stimulusPhase = 0;
+}

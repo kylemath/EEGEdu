@@ -1,0 +1,226 @@
+// 🌙 ERP Averaging Visualization with Two Stimulus Categories (MMN)
+// Includes simplified deviant/standard stimulus display
+
+let epochLength = 256 * 1.0; // 1000 ms window at 256 Hz
+let preStimSamples = 256 * 0.2; // 200 ms baseline
+let postStimSamples = 256 * 0.8; // 800 ms after stimulus
+let epochSamples = preStimSamples + postStimSamples;
+
+let epochs = { frequent: [], rare: [] };
+let trial = 0;
+let showStim = true;
+let isDeviant = false;
+
+let nextStimTime = 0;
+let trialActive = false;
+let stimStartTime = 0;
+
+let colors = {
+  frequent: [200, 80, 90],
+  rare: [20, 90, 90]
+};
+
+function setup() {
+  colorMode(HSB, 360, 100, 100);
+  textFont("monospace");
+  eegData.connected = true; // simulate if not connected
+  nextStimTime = millis() + 1000; // 1s baseline before first trial
+}
+
+function draw() {
+  background(0, 0, 10);
+
+  handleStimulusSequence();
+  drawERPPanel();
+  drawStimulusPanel();
+}
+
+// -----------------------------------------------
+// Stimulus & Trial Logic
+// -----------------------------------------------
+function handleStimulusSequence() {
+  let now = millis();
+
+  if (!trialActive && now > nextStimTime) {
+    trialActive = true;
+    stimStartTime = now;
+    showStim = true;
+    isDeviant = random() < 0.15; // 15% rare/deviant
+  }
+
+  if (trialActive) {
+    // collect EEG epoch only on stimulus presentation
+    if (showStim) {
+      collectEpoch(isDeviant ? "rare" : "frequent");
+      trialActive = false;
+      nextStimTime = now + 500; // simple ITI 0.5s for demo
+    }
+  }
+}
+
+// -----------------------------------------------
+// EEG Data Handling
+// -----------------------------------------------
+function collectEpoch(category) {
+  if (!eegData || !eegData.connected) return;
+
+  let recent = eegData.getRecentEpoch(epochSamples);
+  if (recent.length < epochSamples) return;
+
+  // Baseline correction
+  let baselineMeans = [0,0,0,0];
+  for (let i=0;i<preStimSamples;i++){
+    for (let ch=0; ch<4; ch++){
+      baselineMeans[ch]+=recent[i][ch];
+    }
+  }
+  for (let ch=0; ch<4; ch++) baselineMeans[ch]/=preStimSamples;
+
+  let corrected = [];
+  for (let i=0;i<recent.length;i++){
+    let arr=[];
+    for(let ch=0; ch<4; ch++){
+      arr.push(recent[i][ch]-baselineMeans[ch]);
+    }
+    corrected.push(arr);
+  }
+
+  epochs[category].push(corrected);
+  if (epochs[category].length>20) epochs[category].shift();
+}
+
+// -----------------------------------------------
+// Draw Panels
+// -----------------------------------------------
+function drawERPPanel(){
+  push();
+  translate(0,0);
+  fill(0,0,100);
+  textAlign(CENTER);
+  textSize(16);
+  text("ERP Averaging Display (Top Panel)", width/2, 20);
+
+  let panelTop = 50;
+  let panelBottom = height/2-20;
+  let panelHeight = panelBottom-panelTop;
+  let channels = ["TP9","AF7","AF8","TP10"];
+  let chSpacing = panelHeight/channels.length;
+
+  for(let ch=0; ch<channels.length; ch++){
+    let avgFreq = averageEpochs(epochs.frequent,ch);
+    let avgRare = averageEpochs(epochs.rare,ch);
+
+    // zero line
+    stroke(0,0,30);
+    line(60,panelTop+chSpacing*(ch+0.5), width-60, panelTop+chSpacing*(ch+0.5));
+
+    // time axis
+    drawTimeAxis(panelTop+chSpacing*(ch+0.5));
+
+    // frequent ERP
+    stroke(colors.frequent);
+    noFill();
+    strokeWeight(2);
+    beginShape();
+    for(let i=0;i<avgFreq.length;i++){
+      let x = map(i,0,avgFreq.length-1,60,width-60);
+      let y = panelTop+chSpacing*(ch+0.5)-map(avgFreq[i],-50,50,-30,30);
+      vertex(x,y);
+    }
+    endShape();
+
+    // rare ERP
+    stroke(colors.rare);
+    beginShape();
+    for(let i=0;i<avgRare.length;i++){
+      let x = map(i,0,avgRare.length-1,60,width-60);
+      let y = panelTop+chSpacing*(ch+0.5)-map(avgRare[i],-50,50,-30,30);
+      vertex(x,y);
+    }
+    endShape();
+
+    // channel label
+    fill(0,0,100);
+    noStroke();
+    textSize(12);
+    textAlign(LEFT,CENTER);
+    text(channels[ch],10,panelTop+chSpacing*(ch+0.5));
+  }
+
+  // legend
+  fill(colors.frequent); noStroke(); textAlign(RIGHT);
+  text("Frequent (n="+epochs.frequent.length+")", width-20,30);
+  fill(colors.rare);
+  text("Rare (n="+epochs.rare.length+")", width-20,45);
+  pop();
+}
+
+function drawStimulusPanel(){
+  let panelTop = height/2+20;
+  let panelBottom = height;
+  let cx = width/2;
+  let cy = (panelTop+panelBottom)/2;
+
+  fill(0,0,100);
+  textAlign(CENTER);
+  textSize(16);
+  text("Stimulus Display (Bottom Panel)", width/2, height/2+30);
+
+  if(showStim){
+    noStroke();
+    fill(isDeviant?color(255,200,100):color(150,150,255));
+    let size = isDeviant?80:50;
+    ellipse(cx,cy+40,size,size);
+    stroke(255);
+    strokeWeight(2);
+    noFill();
+    for(let i=0;i<3;i++){
+      ellipse(cx,cy+40,size/2+5+i*8, size/2+5+i*8);
+    }
+    noStroke();
+    fill(255);
+    textAlign(CENTER);
+    textSize(12);
+    text(isDeviant?"DEVIANT":"STANDARD", cx, cy+100);
+    text("Trial "+trial, cx, cy-40);
+  } else {
+    fill(100);
+    textAlign(CENTER);
+    textSize(10);
+    text("ITI", cx, cy+40);
+  }
+
+  showStim = !showStim;
+}
+
+// -----------------------------------------------
+// Helpers
+// -----------------------------------------------
+function drawTimeAxis(yMid){
+  stroke(0,0,50);
+  strokeWeight(1);
+  let tms = [-200,0,200,400,600,800];
+  for(let t of tms){
+    let x = map(t,-200,800,60,width-60);
+    line(x,yMid-5,x,yMid+5);
+    noStroke(); fill(0,0,60);
+    textAlign(CENTER,TOP);
+    text(t+"ms",x,yMid+8);
+    stroke(0,0,50);
+  }
+
+  // vertical 0 ms
+  stroke(0,100,100); strokeWeight(1.5);
+  let zeroX = map(0,-200,800,60,width-60);
+  line(zeroX,yMid-40,zeroX,yMid+40);
+}
+
+function averageEpochs(list,ch){
+  if(list.length===0) return Array(epochSamples).fill(0);
+  let avg = Array(epochSamples).fill(0);
+  for(let e=0;e<list.length;e++){
+    for(let i=0;i<epochSamples;i++) avg[i]+=list[e][i][ch];
+  }
+  for(let i=0;i<epochSamples;i++) avg[i]/=list.length;
+  return avg;
+}

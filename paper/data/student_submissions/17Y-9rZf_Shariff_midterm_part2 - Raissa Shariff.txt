@@ -1,0 +1,209 @@
+// === ERP Oddball Averager with 4 Brain States ===
+// Works in BrainImation. Detects calm, focused, drowsy, stressed and averages separately.
+
+
+const PRE_MS = 200, POST_MS = 800, ITI_MS = 1000;
+const EPOCH_MS = PRE_MS + POST_MS;
+const MAX_EPOCHS = 20;
+const P_ODDBALL = 0.2;
+
+
+let sr = 256;
+let samplesTotal = 0, samplesPre = 0;
+let lastOnsetMs = 0;
+let isOddball = false;
+let captured = false;
+
+
+// store epochs by both condition + state
+let epochs = {
+ calm: { std: [], odd: [] },
+ focused: { std: [], odd: [] },
+ drowsy: { std: [], odd: [] },
+ stressed: { std: [], odd: [] },
+};
+
+
+function setup() {
+ colorMode(HSB, 360, 100, 100);
+ textFont('sans-serif');
+ sr = eegData?.sampleRate || 256;
+ samplesTotal = Math.round(EPOCH_MS * sr / 1000);
+ samplesPre = Math.round(PRE_MS * sr / 1000);
+ lastOnsetMs = millis();
+ isOddball = random() < P_ODDBALL;
+}
+
+
+function draw() {
+ background(0, 0, 8);
+ const now = millis();
+ const t = now - lastOnsetMs;
+
+
+ const stimPanelY = height * 0.6;
+ drawStimulus(t, stimPanelY);
+
+
+ const state = getBrainState();
+
+
+ // collect EEG epochs
+ if (!captured && t >= POST_MS) {
+   const ep = eegData.getRecentEpoch(samplesTotal);
+   if (ep && ep.length >= samplesTotal) {
+     const bc = baselineCorrect(ep, samplesPre);
+     const bucket = epochs[state][isOddball ? "odd" : "std"];
+     bucket.push(bc);
+     if (bucket.length > MAX_EPOCHS) bucket.shift();
+   }
+   captured = true;
+ }
+
+
+ // next trial
+ if (t >= ITI_MS) {
+   lastOnsetMs = now;
+   isOddball = random() < P_ODDBALL;
+   captured = false;
+ }
+
+
+ drawERP(state);
+}
+
+
+function drawStimulus(t, yStart) {
+ const stimOn = (t >= 0 && t < 250);
+ noStroke(); fill(0, 0, 12); rect(0, yStart, width, height - yStart);
+ const mx = width / 2, my = yStart + (height - yStart) / 2;
+ if (stimOn) fill(isOddball ? color(0, 80, 100) : color(210, 80, 100)), ellipse(mx, my, 100, 100);
+ fill(255); textAlign(CENTER); textSize(14);
+ text(isOddball ? "RARE (RED)" : "STANDARD (BLUE)", mx, yStart + 40);
+}
+
+
+function drawERP(state) {
+ const avgStd = averageEpochs(epochs[state].std, samplesTotal);
+ const avgOdd = averageEpochs(epochs[state].odd, samplesTotal);
+
+
+ fill(255); textAlign(CENTER, TOP); textSize(16);
+ text(`ERP Averages — ${state.toUpperCase()} State`, width / 2, 10);
+ textSize(12); fill(200);
+ text("Window −200..+800 ms • Baseline −200..0 ms • 0 ms = Stimulus onset", width / 2, 28);
+
+
+ if (!avgStd && !avgOdd) {
+   fill(180);
+   text("Collecting EEG epochs… Turn ON 'Simulating EEG Data'", width / 2, height / 3);
+   return;
+ }
+
+
+ const plotL = 60, plotR = width - 60, plotT = 60, plotB = height * 0.55;
+ const rowH = (plotB - plotT) / 4;
+ const chNames = ['TP9', 'AF7', 'AF8', 'TP10'];
+ const colors = [300, 180, 60, 120];
+
+
+ // legend box
+ const legendX = width - 200, legendY = 50;
+ noStroke(); fill(0, 0, 15, 0.85); rect(legendX, legendY, 160, 70, 6);
+ fill(255); textAlign(LEFT, TOP); textSize(12);
+ fill(210, 80, 100); rect(legendX + 10, legendY + 10, 12, 12);
+ fill(0, 0, 95); text(`Standard (blue) n=${epochs[state].std.length}`, legendX + 30, legendY + 8);
+ fill(0, 90, 100); rect(legendX + 10, legendY + 28, 12, 12);
+ fill(0, 0, 95); text(`Rare (red) n=${epochs[state].odd.length}`, legendX + 30, legendY + 26);
+ fill(0, 0, 95); text(`State: ${state}`, legendX + 10, legendY + 46);
+
+
+ for (let ch = 0; ch < 4; ch++) {
+   const rowTop = plotT + ch * rowH, mid = rowTop + rowH / 2;
+   noStroke(); fill(0, 0, 12 + ch * 3, 0.45);
+   rect(plotL - 40, rowTop, (plotR - plotL) + 80, rowH);
+
+
+   stroke(60); line(plotL, mid, plotR, mid);
+   const x0 = map(samplesPre, 0, samplesTotal - 1, plotL, plotR);
+   stroke(0, 0, 90); strokeWeight(2); line(x0, rowTop, x0, rowTop + rowH);
+   strokeWeight(1);
+
+
+   stroke(80);
+   for (let ms = -PRE_MS; ms <= POST_MS; ms += 100) {
+     const idx = samplesPre + Math.round(ms * sr / 1000);
+     if (idx < 0 || idx >= samplesTotal) continue;
+     const xx = map(idx, 0, samplesTotal - 1, plotL, plotR);
+     line(xx, rowTop, xx, rowTop + rowH);
+     if (ch === 3) {
+       noStroke(); fill(200); textSize(10); textAlign(CENTER, TOP);
+       text(`${ms}`, xx, rowTop + rowH + 4);
+     }
+   }
+
+
+   if (avgStd) {
+     stroke(210, 80, 100); noFill(); beginShape();
+     for (let i = 0; i < samplesTotal; i++) {
+       const x = map(i, 0, samplesTotal - 1, plotL, plotR);
+       const y = mid + map(avgStd[i][ch], -50, 50, 30, -30);
+       vertex(x, y);
+     } endShape();
+   }
+
+
+   if (avgOdd) {
+     stroke(0, 90, 100); noFill(); beginShape();
+     for (let i = 0; i < samplesTotal; i++) {
+       const x = map(i, 0, samplesTotal - 1, plotL, plotR);
+       const y = mid + map(avgOdd[i][ch], -50, 50, 30, -30);
+       vertex(x, y);
+     } endShape();
+   }
+
+
+   noStroke(); fill(colors[ch], 100, 100); textAlign(LEFT, CENTER);
+   text(chNames[ch], 15, mid);
+   fill(180); textAlign(RIGHT, TOP); textSize(10);
+   text("µV (rel.)", plotR, rowTop + 4);
+ }
+}
+
+
+// --- Brain State Detection ---
+function getBrainState() {
+ const A = eegData.attention || 0;
+ const M = eegData.meditation || 0;
+ if (A > 0.7 && M > 0.5) return "focused";
+ if (A < 0.4 && M > 0.6) return "calm";
+ if (A < 0.4 && M < 0.5) return "drowsy";
+ if (A > 0.7 && M < 0.4) return "stressed";
+ return "calm";
+}
+
+
+function baselineCorrect(ep, preCount) {
+ const N = ep.length, m = [0, 0, 0, 0], use = Math.min(preCount, N);
+ for (let i = 0; i < use; i++) for (let ch = 0; ch < 4; ch++) m[ch] += ep[i][ch] || 0;
+ for (let ch = 0; ch < 4; ch++) m[ch] /= use;
+ const out = [];
+ for (let i = 0; i < N; i++) {
+   const row = [];
+   for (let ch = 0; ch < 4; ch++) row.push((ep[i][ch] || 0) - m[ch]);
+   out.push(row);
+ } return out;
+}
+
+
+function averageEpochs(arr, N) {
+ if (!arr || arr.length === 0) return null;
+ const sum = Array.from({ length: N }, () => [0, 0, 0, 0]);
+ for (let e = 0; e < arr.length; e++) {
+   const ep = arr[e];
+   for (let i = 0; i < N; i++) for (let ch = 0; ch < 4; ch++) sum[i][ch] += ep[i][ch] || 0;
+ }
+ return sum.map(row => row.map(v => v / arr.length));
+}
+
+

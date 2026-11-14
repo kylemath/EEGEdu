@@ -1,0 +1,261 @@
+// ===== ERP Experiment Setup =====
+let eegBuffer = []; 
+let maxSamples = 256 * 5; // ~5s display
+let epochLength = 256;    // 1 second at 256 Hz
+let preStimSamples = 51;  // -200ms baseline
+
+
+let runningEEG = []; // buffer of recent EEG samples for ERP extraction
+
+
+// Oddball paradigm: frequent vs. rare
+let categories = ["frequent", "rare"];
+let currentCategory = null;
+
+
+let categoryEpochs = { "frequent": [], "rare": [] };
+let categoryERP = {
+ "frequent": Array(epochLength).fill(0),
+ "rare": Array(epochLength).fill(0)
+};
+let trialCounts = { "frequent": 0, "rare": 0 };
+
+
+// P300 trial variables
+let trial = 0;
+let isRare = false;
+let stimState = "baseline"; // "baseline", "circle", "annulus"
+let stimTimer = 0;
+let stimInterval = 1000; // Stimulus every 1 second
+let circleOnsetTime = 0;
+
+
+// Timing constants
+let circleDuration = 30;  // 30ms for circle
+let annulusDuration = 30; // 30ms for annulus
+let stimulusDuration = circleDuration + annulusDuration;  // Total 120ms stimulus sequence
+
+
+function setup() {
+ frameRate(60);
+ textFont('monospace');
+}
+
+
+function draw() {
+ background(250);
+
+
+ // ===== Record EEG =====
+ if (typeof eegData !== "undefined" && eegData.connected) {
+   let all = eegData.getAllChannels(1);
+   let avg = 0;
+   for (let ch in all) avg += all[ch][0];
+   avg /= Object.keys(all).length;
+   runningEEG.push(avg);
+ }
+
+
+ if (runningEEG.length > maxSamples) runningEEG.shift();
+
+
+ // ===== Update Stimulus =====
+ updateStimulus();
+
+
+ // ===== EEG Plot Section =====
+ drawEEGPlot(50, 50, width - 100, 150);
+
+
+ // ===== Stimulus Monitor =====
+ drawStimulusMonitor(50, 250, width - 100, 130);
+}
+
+
+// === EEG Plot ===
+function drawEEGPlot(x, y, w, h) {
+ push();
+ translate(x, y);
+ stroke(0);
+ noFill();
+ rect(0, 0, w, h);
+ fill(0);
+ text("ERP Average (Frequent vs Rare)", 1, -5);
+
+
+ // zero ms line
+ let zeroIndex = preStimSamples;
+ let zeroX = map(zeroIndex, 0, epochLength - 1, 0, w);
+ stroke(255, 0, 0);
+ line(zeroX, 0, zeroX, h);
+ noStroke();
+ fill(255, 0, 0);
+ text("0 ms", zeroX + 5, 15);
+
+
+ // tick marks every 100 ms (-200 to +800)
+ stroke(150);
+ fill(0);
+ for (let ms = -200; ms <= 800; ms += 100) {
+   let xPos = map(ms, -200, 800, 0, w);
+   line(xPos, h - 10, xPos, h);
+   noStroke();
+   fill(0);
+   text(ms, xPos - 10, h + 15);
+   stroke(150);
+ }
+
+
+ // Zero tick mark on y-axis (for visual reference)
+ stroke(0);
+ line(-5, h / 2, 5, h / 2);
+ noStroke();
+ fill(0);
+ text("0", -15, h / 2 + 4.6);
+
+
+ // Draw averaged ERP waveforms
+ if (trialCounts.frequent > 0 || trialCounts.rare > 0) {
+   // Frequent = red
+   stroke(255, 0, 0);
+   noFill();
+   beginShape();
+   for (let i = 0; i < epochLength; i++) {
+     let xPos = map(i, 0, epochLength - 1, 0, w);
+     let yPos = map(categoryERP.frequent[i], -30, 30, h - 10, 10);
+     vertex(xPos, yPos);
+   }
+   endShape();
+
+
+   // Rare = green
+   stroke(0, 150, 0);
+   noFill();
+   beginShape();
+   for (let i = 0; i < epochLength; i++) {
+     let xPos = map(i, 0, epochLength - 1, 0, w);
+     let yPos = map(categoryERP.rare[i], -30, 30, h - 10, 10);
+     vertex(xPos, yPos);
+   }
+   endShape();
+
+
+ // Trial counters
+   noStroke();
+   fill(0);
+   text(`Frequent: ${trialCounts.frequent}`, 10, h + 35);
+   text(`Rare: ${trialCounts.rare}`, 200, h + 35);
+ }
+ pop();
+}
+
+
+// === Stimulus Monitor ===
+function drawStimulusMonitor(x, y, w, h) {
+ push();
+ translate(x, y);
+ fill(255);
+ stroke(0);
+ rect(0, 0, w, h);
+ fill(0);
+ text("Stimulus Monitor", 10, 15);
+
+
+ let cx = w / 2;
+ let cy = h / 2 + 10;
+ let radius = 30;
+
+
+ let stimColor = (currentCategory === "frequent") ? color(255, 0, 0) : color(0, 150, 0);
+
+
+
+
+ noStroke();
+ if (stimState === "circle") {
+   fill(stimColor);
+   ellipse(cx, cy, radius * 2);
+ } else if (stimState === "annulus") {
+   fill(stimColor);
+   ellipse(cx, cy, radius * 3);
+   fill(255);
+   ellipse(cx, cy, radius * 2);
+ }
+
+
+ // Display total trial count under the stimulus monitor
+ let totalTrials = trialCounts.frequent + trialCounts.rare;  // Sum of frequent and rare trials
+ textSize(10);
+ fill(0);
+ text(`Total Trials: ${totalTrials}`, 1, h + 10);
+
+
+ pop();
+}
+
+
+// ===== Stimulus Timing Logic =====
+function updateStimulus() {
+ let now = millis();
+
+
+ // start a new stimulus every 1s
+ if (now - stimTimer >= stimInterval) {
+   stimTimer = now;
+   circleOnsetTime = now;
+
+
+   // Pick random category (frequent or rare)
+   currentCategory = random() < 0.8 ? "frequent" : "rare";
+   isRare = (currentCategory === "rare");
+  
+   // Sequence: Baseline -> Circle -> Annulus -> Wait
+   stimState = "circle";  // Start with the circle stimulus
+
+
+   // Extract EEG epoch for this category
+   extractEpoch(currentCategory);
+ }
+
+
+ let stimElapsed = now - circleOnsetTime;
+  if (stimState === "circle" && stimElapsed > 100) {
+   stimState = "off";
+ } else if (stimState === "off" && stimElapsed > 200) {
+   stimState = "baseline";
+ }
+}
+
+
+// === Extract EEG epoch and average ===
+function extractEpoch(category) {
+ let totalSamples = epochLength;     // 256 samples total (~1s)
+ let preSamples = preStimSamples;    // 51 samples (~200ms)
+
+
+ if (runningEEG.length < epochLength + preStimSamples) return;
+
+
+ // Align window to current onset (latest EEG sample = stimulus onset)
+ let endIndex = runningEEG.length;   // end of buffer = now
+ let startIndex = endIndex - totalSamples; // start 1s before now
+
+
+ // Extract epoch from buffer
+ let epoch = runningEEG.slice(startIndex, endIndex);
+
+
+ if (epoch.length !== epochLength) return; // sanity check
+
+
+ // Store it
+ categoryEpochs[category].push(epoch);
+ trialCounts[category]++;
+
+
+ // Update averaged ERP
+ for (let i = 0; i < epochLength; i++) {
+   let oldAvg = categoryERP[category][i] * (trialCounts[category] - 1);
+   categoryERP[category][i] = (oldAvg + epoch[i]) / trialCounts[category];
+ }
+}

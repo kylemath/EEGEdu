@@ -1,0 +1,298 @@
+// === Final Version - MMN Display and ERP Data ===
+
+// ---- EEG Epoch Parameters ----
+let epochData = [];
+let fs = 256;          // EEG sampling rate (Hz)
+let preTime = 200;     // ms before stimulus onset
+let postTime = 800;    // ms after stimulus onset
+let preSamples = Math.floor((preTime / 1000) * fs);
+let postSamples = Math.floor((postTime / 1000) * fs);
+
+let epochLength = preSamples + postSamples;
+let maxEpochs = 50;
+
+// ---- Stimulus / MMN Parameters ----
+let isDeviant = false;
+let trial = 0;
+let showStim = false;
+let stimOn = false;
+let stimStartTime = 0;
+let stimInterval = 1000;   // one stimulus every 1000 ms
+let stimDuration = 200;    // visible for 200 ms
+
+function setup() {
+  colorMode(HSB, 360, 100, 100);
+  frameRate(30);
+  textFont("monospace");
+}
+
+function draw() {
+  background(0, 0, 10);
+  let topH = height * 0.6;
+
+  // --- Top panel: ERP ---
+  drawERP(topH);
+
+  // --- Bottom panel: Stimulus ---
+  drawStimulus(topH);
+
+  // --- Stimulus timing with millis() ---
+  let now = millis();
+
+  if (!stimOn && now - stimStartTime >= stimInterval) {
+    stimOn = true;
+    stimStartTime = now;
+    showStim = true;
+    triggerStimulus();
+  }
+
+  if (stimOn && now - stimStartTime >= stimDuration) {
+    showStim = false;
+    stimOn = false;
+  }
+}
+
+// ----------------------------
+// Stimulus display (MMN paradigm)
+// ----------------------------
+function drawStimulus(topH) {
+  push();
+  translate(0, topH);
+  let h = height - topH;
+  fill(0, 0, 15);
+  rect(0, 0, width, h);
+
+  if (showStim) {
+    noStroke();
+    fill(isDeviant ? color(45, 80, 100) : color(220, 40, 100));
+    let size = isDeviant ? 80 : 50;
+    ellipse(width / 2, h / 2, size, size);
+
+    stroke(0, 0, 100);
+    strokeWeight(2);
+    noFill();
+    for (let i = 0; i < 3; i++) ellipse(width / 2, h / 2, size / 2 + 5 + i * 8);
+
+    noStroke();
+    fill(0, 0, 100);
+    textAlign(CENTER);
+    textSize(12);
+    text(isDeviant ? "DEVIANT" : "STANDARD", width / 2, h - 20);
+    text("Trial " + (trial + 1), width / 2, 20);
+  } else {
+    fill(0, 0, 60);
+    textAlign(CENTER, CENTER);
+    textSize(10);
+    text("ITI", width / 2, h / 2);
+  }
+  pop();
+}
+
+// ----------------------------
+// Stimulus trigger + EEG epoch collection
+// ----------------------------
+function triggerStimulus() {
+  isDeviant = random() < 0.15; // 15% chance of deviant
+
+  if (eegData && eegData.connected) {
+    let totalSamples = epochLength;
+    let recentEpoch = eegData.getRecentEpoch(totalSamples);
+
+    if (recentEpoch && recentEpoch.length >= totalSamples) {
+      recentEpoch = baselineCorrect(recentEpoch);
+      epochData.push({
+        data: recentEpoch,
+        deviant: isDeviant,
+        timestamp: millis(),
+      });
+      if (epochData.length > maxEpochs) epochData.shift();
+    }
+  }
+
+  trial++;
+}
+
+// ----------------------------
+// ERP Averaging Panel (4 channels)
+// ----------------------------
+function drawERP(topH) {
+  push();
+  fill(0, 0, 10);
+  rect(0, 0, width, topH);
+
+  if (epochData.length > 0) {
+    let stdEpochs = epochData.filter((e) => !e.deviant);
+    let devEpochs = epochData.filter((e) => e.deviant);
+    let avgStd = averageEpochs(stdEpochs);
+    let avgDev = averageEpochs(devEpochs);
+
+    let colors = {
+      std: color(210, 70, 100), // Blue
+      dev: color(45, 90, 100),  // Yellow
+    };
+
+    let channelNames = ['TP9', 'AF7', 'AF8', 'TP10'];
+    let channelOffsets = [-1.5, -0.5, 0.5, 1.5];
+    let midY = topH / 2;
+    let leftX = 60;
+    let rightX = width - 60;
+    let tickSpacing = 100;
+    let spacing = 70;
+
+    // --- Shared x-axis position ---
+    let axisY = midY + (2.2) * spacing;
+
+    // --- Vertical 0 ms line (grey, now extends to touch x-axis) ---
+    stroke(0, 0, 50);
+    strokeWeight(2);
+    let zeroX = map(0, -preTime, postTime, leftX, rightX);
+    line(zeroX, midY - 2 * spacing - 30, zeroX, axisY);
+
+    // --- Draw 4 channels ---
+    for (let ch = 0; ch < 4; ch++) {
+      let offsetY = midY + channelOffsets[ch] * spacing;
+
+      // Standard (blue)
+      if (avgStd.length > 0) {
+        stroke(colors.std);
+        strokeWeight(2);
+        noFill();
+        beginShape();
+        for (let i = 0; i < avgStd.length; i++) {
+          let t = map(i, 0, avgStd.length - 1, -preTime, postTime);
+          let x = map(t, -preTime, postTime, leftX, rightX);
+          let y = offsetY + map(avgStd[i][ch], -50, 50, 30, -30);
+          vertex(x, y);
+        }
+        endShape();
+      }
+
+      // Deviant (yellow)
+      if (avgDev.length > 0) {
+        stroke(colors.dev);
+        strokeWeight(2);
+        noFill();
+        beginShape();
+        for (let i = 0; i < avgDev.length; i++) {
+          let t = map(i, 0, avgDev.length - 1, -preTime, postTime);
+          let x = map(t, -preTime, postTime, leftX, rightX);
+          let y = offsetY + map(avgDev[i][ch], -50, 50, 30, -30);
+          vertex(x, y);
+        }
+        endShape();
+      }
+
+      // Channel label
+      noStroke();
+      fill(0, 0, 100);
+      textAlign(LEFT, CENTER);
+      textSize(12);
+      text(channelNames[ch], 10, offsetY);
+    }
+
+    // --- Shared x-axis (time) ---
+    stroke(0, 0, 50);
+    strokeWeight(1);
+    line(leftX, axisY, rightX, axisY);
+
+    // Tick marks + labels
+    textAlign(CENTER, TOP);
+    textSize(10);
+    fill(0, 0, 70);
+    for (let t = -preTime; t <= postTime; t += tickSpacing) {
+      let x = map(t, -preTime, postTime, leftX, rightX);
+      line(x, axisY - 5, x, axisY + 5);
+      text(`${t} ms`, x, axisY + 8);
+    }
+
+    // --- Titles + trial counters ---
+    fill(0, 0, 100);
+    textAlign(CENTER, TOP);
+    textSize(16);
+    text("ERP Averaging (Channels TP9, AF7, AF8, TP10)", width / 2, 10);
+    textSize(12);
+    text(
+      `Standards: ${stdEpochs.length}   Deviants: ${devEpochs.length}`,
+      width / 2,
+      30
+    );
+
+    // --- Legend (top-right corner) ---
+    drawLegend(colors, topH);
+  } else {
+    fill(0, 0, 70);
+    textAlign(CENTER, CENTER);
+    textSize(18);
+    text("Collecting epochs...", width / 2, topH / 2);
+  }
+
+  pop();
+}
+
+// ----------------------------
+// Averaging utilities
+// ----------------------------
+function averageEpochs(list) {
+  if (list.length === 0) return [];
+  let len = list[0].data.length;
+  let avg = [];
+  for (let i = 0; i < len; i++) {
+    let sum = [0, 0, 0, 0];
+    let count = 0;
+    for (let e = 0; e < list.length; e++) {
+      if (list[e].data[i]) {
+        for (let ch = 0; ch < 4; ch++) sum[ch] += list[e].data[i][ch] || 0;
+        count++;
+      }
+    }
+    if (count > 0) avg.push(sum.map((s) => s / count));
+  }
+  return avg;
+}
+
+// ----------------------------
+// Baseline correction utility
+// ----------------------------
+function baselineCorrect(epoch) {
+  let baseSamples = preSamples;
+  let baseMean = [0, 0, 0, 0];
+  for (let i = 0; i < baseSamples; i++) {
+    for (let ch = 0; ch < 4; ch++) baseMean[ch] += epoch[i][ch];
+  }
+  for (let ch = 0; ch < 4; ch++) baseMean[ch] /= baseSamples;
+
+  let corrected = epoch.map((sample) =>
+    sample.map((v, ch) => v - baseMean[ch])
+  );
+  return corrected;
+}
+
+// ----------------------------
+// Legend (top-right corner)
+// ----------------------------
+function drawLegend(colors, topH) {
+  let x0 = width - 160;
+  let y0 = 40; // top-right
+  textSize(12);
+  noStroke();
+  fill(0, 0, 100);
+  textAlign(LEFT, CENTER);
+  text("Legend:", x0, y0 - 10);
+
+  fill(colors.std);
+  rect(x0, y0 + 5, 15, 3);
+  fill(0, 0, 100);
+  text("Standard", x0 + 25, y0 + 5);
+
+  fill(colors.dev);
+  rect(x0, y0 + 25, 15, 3);
+  fill(0, 0, 100);
+  text("Deviant", x0 + 25, y0 + 25);
+}
+
+// ----------------------------
+// Window resize
+// ----------------------------
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+}

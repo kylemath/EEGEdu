@@ -1,0 +1,219 @@
+// 💧 EEG Ocean Rainfall — Smooth Breathing Ocean + Alpha–Theta Adaptive Splash Radius (BrainImation Safe)
+let raindrops = [];
+let ripples = [];
+let pendingRipples = [];
+let splashes = [];
+let t = 0;
+let hueShift = 0;
+
+function setup() {
+  colorMode(HSB, 360, 100, 100);
+  frameRate(30);
+  noStroke();
+}
+
+function draw() {
+  // --- EEG Inputs ---
+  let alpha = constrain(eegData?.alpha ?? 0.3, 0, 1);
+  let beta  = constrain(eegData?.beta  ?? 0.2, 0, 1);
+  let theta = constrain(eegData?.theta ?? 0.2, 0, 1);
+
+  // --- Brain ratios ---
+  let relaxRatio  = alpha / (beta + 0.001);
+  let stressRatio = theta / (beta + 0.001);
+  let relaxLevel  = constrain(map(relaxRatio, 0.5, 4, 0, 1), 0, 1);
+  let stressLevel = constrain(map(stressRatio, 0.5, 4, 0, 1), 0, 1);
+  let storminess  = relaxLevel * (1 - stressLevel);
+
+  // ---------- 🌊 BACKGROUND (Smooth Deep Breathing Ocean) ----------
+  t += 0.005 + alpha * 0.015;  // slower baseline drift, modulated by relaxation
+
+  // Smooth hue transition between aqua and deep blue
+  let hueBase = map(sin(t * 0.25 + alpha * 0.5), -1, 1, 190, 225);
+
+  // Slow “breathing” cycle for brightness (~6s per full oscillation)
+  let breath = 0.5 + 0.5 * sin(t * (0.1 + alpha * 0.3));
+
+  // Saturation and brightness modulated by alpha (relaxation)
+  let saturation = 65 + alpha * 25;
+  let brightness = 18 + breath * 45 + alpha * 20;
+
+  // Apply smooth, oceanic breathing background
+  background(hueBase, saturation, brightness);
+
+  // ---------- 🌧️ CREATE RAINDROPS ----------
+  let rainChance = lerp(0.02, 0.25, storminess);
+  if (random() < rainChance) {
+    let count = floor(1 + storminess * 8);
+    for (let i = 0; i < count; i++) {
+      let depth = random(0.5, 1.3);
+      raindrops.push({
+        x: random(width),
+        y: random(-120, -20),
+        targetY: random(height * 0.3, height * 0.95),
+        vy: random(4, 10) * depth,
+        ay: random(0.05, 0.15) * depth,
+        hue: hueBase + random(-8, 8),
+        alpha: random(0.6, 1) * depth,
+        size: random(6, 14) * depth,
+        windPhase: random(TWO_PI),
+        windAmp: random(0.5, 2.5),
+        splash: false
+      });
+    }
+  }
+
+  // ---------- ☔ DRAW RAINDROPS ----------
+  let windDrift = map(beta, 0, 1, 0.5, 3);
+  for (let i = raindrops.length - 1; i >= 0; i--) {
+    let r = raindrops[i];
+    r.x += sin(frameCount * 0.05 + r.windPhase) * r.windAmp * 0.2 * windDrift;
+
+    fill(r.hue, 50, 100, r.alpha * (0.15 + beta * 0.1));
+    ellipse(r.x, r.y, r.size * 1.4, r.size * 1.9);
+    drawTeardrop(r.x, r.y, r.size, r.hue, r.alpha);
+
+    r.vy += r.ay;
+    if (r.y > r.targetY * 0.8) r.vy *= 0.98;
+    r.y += r.vy;
+
+    // --- SPLASH + RIPPLE CREATION ---
+    if (!r.splash && r.y >= r.targetY) {
+      r.splash = true;
+      fill(210, 40, 100, 0.8);
+      ellipse(r.x, r.targetY, 8, 4);
+
+      // EEG-driven ripple color
+      hueShift += 0.25;
+      let alphaDominance = constrain((alpha - theta) * 1.5 + 0.5, 0, 1);
+      let hueTheta = lerp(215, 235, random());
+      let hueAlpha = lerp(180, 205, random());
+      let rippleHue = lerp(hueTheta, hueAlpha, alphaDominance);
+      let rippleBright = lerp(65, 95, alphaDominance);
+      let rippleSat = lerp(60, 90, alphaDominance);
+
+      // --- Add ripple ---
+      pendingRipples.push({
+        x: r.x,
+        y: r.targetY,
+        hue: rippleHue,
+        sat: rippleSat,
+        brightness: rippleBright,
+        alpha: 0.85 + random(0.25),
+        speed: lerp(1, 8, storminess),
+        timestamp: millis(),
+        delay: random(150, 350)
+      });
+
+      // --- Add splash particles ---
+      let splashBalance = constrain((alpha - theta) * 1.5 + 0.5, 0, 1);
+      let splashCount = floor(lerp(3, 15, splashBalance));
+      let splashRadius = lerp(1.2, 3.0, splashBalance); // alpha widens splash spread
+
+      for (let s = 0; s < splashCount; s++) {
+        let angle = random(TWO_PI);
+        let speed = random(1, 3.5) * splashRadius;
+        splashes.push({
+          x: r.x,
+          y: r.targetY,
+          vx: cos(angle) * speed,
+          vy: sin(angle) * speed * -0.6,
+          hue: rippleHue + random(-5, 5),
+          sat: rippleSat + random(-10, 10),
+          brightness: rippleBright + random(0, 10),
+          alpha: 1,
+          size: random(2, 4),
+          life: random(25, 40)
+        });
+      }
+
+      raindrops.splice(i, 1);
+    }
+  }
+
+  // ---------- 💦 UPDATE SPLASH PARTICLES ----------
+  for (let i = splashes.length - 1; i >= 0; i--) {
+    let p = splashes[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.12;
+    p.alpha *= 0.94;
+    p.life--;
+    fill(p.hue, p.sat, p.brightness, p.alpha);
+    ellipse(p.x, p.y, p.size);
+    if (p.life <= 0 || p.alpha < 0.05) splashes.splice(i, 1);
+  }
+
+  // ---------- ⏳ ACTIVATE PENDING RIPPLES ----------
+  for (let i = pendingRipples.length - 1; i >= 0; i--) {
+    let p = pendingRipples[i];
+    if (millis() - p.timestamp > p.delay) {
+      ripples.push({
+        x: p.x,
+        y: p.y,
+        r: 0,
+        hue: p.hue,
+        sat: p.sat,
+        brightness: p.brightness,
+        alpha: p.alpha,
+        speed: p.speed
+      });
+      pendingRipples.splice(i, 1);
+    }
+  }
+
+  // ---------- 💙 DRAW COLOR-ADAPTIVE RIPPLES ----------
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    let rp = ripples[i];
+    fill(rp.hue, rp.sat, rp.brightness, rp.alpha * 0.45);
+    noStroke();
+    ellipse(rp.x, rp.y, rp.r * 2.8);
+    noFill();
+    stroke(rp.hue, rp.sat + 10, 100, rp.alpha * (1.0 + beta * 0.3));
+    strokeWeight(2.5 + beta * 3);
+    ellipse(rp.x, rp.y, rp.r * 2);
+    rp.r += rp.speed;
+    rp.alpha *= 0.96;
+    if (rp.alpha < 0.02 || rp.r > width * 1.5) ripples.splice(i, 1);
+  }
+
+  // ---------- 🌫️ EDGE VIGNETTE ----------
+  let fadeStrength = 0.15 + (1 - alpha) * 0.25;
+  for (let j = 0; j < 5; j++) {
+    fill(210, 60, 10, fadeStrength * (j + 1) * 0.15);
+    rect(0, 0, width, height);
+  }
+
+  // ---------- ✨ SHIMMER WHEN BETA ACTIVE ----------
+  if (beta > 0.05) {
+    fill(210, 40, 100, 0.02 + beta * 0.05);
+    rect(0, 0, width, height);
+  }
+
+  // ---------- INFO ----------
+  fill(0, 0, 100);
+  textSize(12);
+  textAlign(LEFT, TOP);
+  text(
+    `α:${alpha.toFixed(2)} β:${beta.toFixed(2)} θ:${theta.toFixed(2)}
+Relax:${relaxLevel.toFixed(2)} Stress:${stressLevel.toFixed(2)}
+Rain:${raindrops.length} | Ripples:${ripples.length} | Splash:${splashes.length}`,
+    10, 10
+  );
+}
+
+// --- Helper: Teardrop shape ---
+function drawTeardrop(x, y, size, hue, alpha) {
+  push();
+  translate(x, y);
+  rotate(PI);
+  beginShape();
+  fill(hue, 60, 100, alpha);
+  vertex(0, -size * 0.5);
+  bezierVertex(size * 0.5, -size * 0.2, size * 0.4, size * 0.9, 0, size * 1.1);
+  bezierVertex(-size * 0.4, size * 0.9, -size * 0.5, -size * 0.2, 0, -size * 0.5);
+  endShape(CLOSE);
+  fill(0, 0, 100, alpha * 0.35);
+  ellipse(-size * 0.2, -size * 0.2, size * 0.35, size * 0.35);
+  pop();
+}

@@ -1,0 +1,37 @@
+Example_ID,Title,Category,Executable_LOC,Alpha,Beta,Theta,Delta,Gamma,Attention,Meditation,Raw_256Hz_Epoch,Audio_Synth
+basic,Basic Animation,Getting Started,11,1,0,0,0,0,1,0,0,0
+basicShapes,Basic Shapes,Getting Started,19,1,1,1,0,0,0,0,0,0
+functionExample,Function Example,Getting Started,27,0,0,0,0,0,1,1,0,0
+alpha,Alpha Waves,Brain Wave Visualizations,27,1,0,0,0,0,0,0,0,0
+waves,Wave Visualization,Brain Wave Visualizations,36,1,1,1,1,0,0,0,0,0
+BasicFrequencyBands,Basic Frequency Bands,Brain Wave Visualizations,28,1,1,1,1,1,0,0,0,0
+bandOrbitz,Band Orbitz,Brain Wave Visualizations,30,1,1,1,1,1,1,0,0,0
+piWedges,Pi Wedges,Brain Wave Visualizations,31,1,1,1,1,1,0,0,0,0
+spectra,Spectra,Brain Wave Visualizations,36,1,1,1,1,1,0,0,0,0
+attention,Attention Meter,Attention & Meditation,20,0,0,0,0,0,1,0,0,0
+mandala,Neural Mandala,Attention & Meditation,25,1,0,0,0,0,1,1,0,0
+particles,Brain Particles,Particle Systems,32,1,1,1,0,1,0,0,0,0
+ColourBalls,Colour Balls,Particle Systems,29,0,0,0,0,0,1,1,0,0
+MultipleBalls,Multiple Balls,Particle Systems,35,1,1,1,1,1,0,0,0,0
+3dTorus,3D Torus,3D & Advanced,28,1,1,1,0,0,1,1,0,0
+AlphaSnake,Alpha Snake,3D & Advanced,27,1,1,0,0,0,1,0,0,0
+SplineBounce,Spline Bounce,3D & Advanced,38,1,0,0,0,0,1,1,0,0
+BrainDraw,Brain Draw,Drawing & Interaction,36,1,1,1,0,0,1,1,0,0
+bouncingLine,Bouncing Line,Drawing & Interaction,38,1,0,1,0,0,1,0,0,0
+ghostLines,Ghost Lines,Drawing & Interaction,33,1,0,0,0,0,1,1,0,0
+eegtrace,EEG Trace,Raw EEG Data,44,0,0,0,0,0,0,0,1,0
+multichannel,Multi-Channel EEG,Raw EEG Data,44,0,0,0,0,0,0,0,1,0
+epochs,Epoch View,Raw EEG Data,85,0,0,0,0,0,1,0,1,0
+perlinNoise,Perlin Noise,Noise & Generative,27,1,0,0,0,0,1,0,0,0
+organicHeatmap,Organic Heatmap,Noise & Generative,20,0,1,0,0,0,1,1,0,0
+noiseDetail,Noise With Detail,Noise & Generative,35,1,0,1,0,0,1,0,0,0
+discreteColors,Discrete Colors,Noise & Generative,23,1,0,0,0,0,1,1,0,0
+smoothColors,Smooth Colors,Noise & Generative,23,1,1,0,0,0,0,1,0,0
+animatingNoise,Animating Noise,Noise & Generative,27,1,0,0,0,0,1,1,0,0
+bouncingCircles,Bouncing Circles,Animation & Motion,36,1,1,0,0,0,1,1,0,0
+waveAnimation,Wave Animation,Animation & Motion,35,1,1,1,0,0,0,1,0,0
+colorfulGrid,Animated Grid,Animation & Motion,32,1,0,1,0,0,1,1,0,0
+webcamInput,Webcam Input,Animation & Motion,42,1,0,1,0,0,1,0,0,0
+brainBeats,Brain Beats (Sound Test),Sound & Music,75,1,1,0,0,0,1,0,0,1
+alphaMusic,Alpha Wave Music,Sound & Music,94,1,1,1,1,1,1,1,0,1
+brainSynth,Brain Synthesizer,Sound & Music,111,1,1,1,0,0,1,0,0,1

@@ -1,0 +1,574 @@
+﻿// 🧠 Multi-State Neurofeedback on top of your four-lane viz
+// Features
+// 1) Eyes open vs eyes closed, alpha spike detection with hysteresis
+// 2) Arousal state, relaxed vs focused vs stressed via band ratios
+// 3) Visualization modes driven by state, calm, focus, stress
+// 4) Controls, space pause, G grid, T trainer, [ ] threshold, click lane sets target,
+//    C toggle classifier, M cycle mode manually, E toggle eyes in simulation
+
+
+// ------------- config -------------
+const LANE_NAMES = ["alpha", "beta", "theta", "delta"];
+const LANE_HUES  = [140, 15, 260, 200];   // HSB hues per lane
+const SMOOTH     = 0.85;                  // exponential smoothing
+const HISTORY    = 900;                   // on-screen samples
+const AUTO_SECS  = 6;                     // window for auto scale
+const HOLD_SECS  = 3;                     // time above threshold to score
+
+
+// classifier windows and thresholds
+const WIN_SHORT_S   = 2.0;   // short window for current level
+const WIN_BASE_S    = 8.0;   // longer window for baseline
+const EYES_T_HI     = 1.25;  // alpha ratio threshold to call eyes closed
+const EYES_T_LO     = 1.05;  // lower threshold to return to eyes open
+const FOCUS_T       = 1.15;  // beta to alpha+theta threshold
+const STRESS_T      = 1.60;  // high beta to alpha threshold, stressed
+const RELAX_T       = 1.20;  // (alpha+theta) to beta threshold for relaxed
+const CLASS_FADE    = 0.12;  // smoothing for state confidences
+const STATE_HOLD_S  = 1.2;   // hysteresis to reduce mode flicker
+
+
+// ------------- state -------------
+let smooth = { alpha:0, beta:0, theta:0, delta:0, attention:0, meditation:0 };
+let hist = [];                     // {a,b,t,d,att,med}
+let ring = [];                     // circular buffer for window stats
+let ringIdx = 0;
+
+
+let paused = false;
+let showGrid = true;
+
+
+// target trainer from your code, kept intact
+let target = { band:"alpha", threshold:0.60, held:0, hits:0, enabled:true };
+
+
+// classifier state
+let clf = {
+ enabled: true,
+ eyes: "open",          // "open" or "closed"
+ arousal: "neutral",    // "relaxed", "focused", "stressed", "neutral"
+ conf: { open:0.5, closed:0.5, relaxed:0.33, focused:0.33, stressed:0.33 },
+ lastChangeT: 0,
+ mode: "calm"           // "calm", "focus", "stress"
+};
+
+
+// simulation helpers so you can test without hardware
+let sim = { eyesClosed:false, t0:0 };
+
+
+// ------------- setup -------------
+function setup() {
+ // Canvas may be created by the platform. If not, create one.
+ if (typeof createCanvas === "function" && typeof width === "undefined") {
+   createCanvas(windowWidth, windowHeight);
+ }
+ colorMode(HSB, 360, 100, 100, 1);
+ textFont("system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans");
+ ring = new Array(900).fill({a:0,b:0,t:0,d:0,att:0,med:0}); // about 15 s at 60 fps
+ sim.t0 = millis();
+}
+
+
+// ------------- draw -------------
+function draw() {
+ // live or simulated EEG
+ const e = typeof eegData !== "undefined" ? eegData : simEEG();
+
+
+ if (!paused) {
+   // exponential smoothing
+   smooth.alpha = lerp(e.alpha,                    smooth.alpha, SMOOTH);
+   smooth.beta  = lerp(e.beta,                     smooth.beta,  SMOOTH);
+   smooth.theta = lerp(e.theta,                    smooth.theta, SMOOTH);
+   smooth.delta = lerp(e.delta,                    smooth.delta, SMOOTH);
+   smooth.attention  = lerp(e.attention ?? 0.5,    smooth.attention,  SMOOTH);
+   smooth.meditation = lerp(e.meditation ?? 0.5,   smooth.meditation, SMOOTH);
+
+
+   // history and ring
+   const row = { a:smooth.alpha, b:smooth.beta, t:smooth.theta, d:smooth.delta,
+                 att:smooth.attention, med:smooth.meditation };
+   hist.push(row);
+   if (hist.length > HISTORY) hist.shift();
+   ring[ringIdx] = row;
+   ringIdx = (ringIdx + 1) % ring.length;
+
+
+   // trainer logic
+   if (target.enabled) updateTargetHold();
+
+
+   // classifier
+   if (clf.enabled) classifyStates();
+   updateVisModeFromState();
+ }
+
+
+ // visuals
+ drawBackgroundByMode();
+ if (showGrid) drawGrid();
+ drawWaves();
+ drawTargetBar();
+ drawHUD();
+ drawStateBadge();
+}
+
+
+// ------------- classification -------------
+function classifyStates() {
+ // compute short and baseline window stats
+ const fps = max(30, frameRate() || 60);
+ const shortN = constrain(floor(WIN_SHORT_S * fps), 10, ring.length);
+ const baseN  = constrain(floor(WIN_BASE_S  * fps), shortN + 1, ring.length);
+
+
+ const short = windowStats(shortN);
+ const base  = windowStats(baseN);
+
+
+ // eyes open vs closed using alpha spike relative to baseline and ratio to beta
+ const alphaRelShort = ratioSafe(short.a, short.b + 0.15); // alpha to beta
+ const alphaRelBase  = ratioSafe(base.a,  base.b + 0.15);
+ // dynamic threshold using baseline
+ const dyn = alphaRelBase;
+ const hiGate = dyn * EYES_T_HI;
+ const loGate = dyn * EYES_T_LO;
+
+
+ let pClosed = smoothstep(loGate, hiGate, alphaRelShort);
+ let pOpen   = 1 - pClosed;
+
+
+ // smooth confidences
+ clf.conf.closed = lerp(pClosed, clf.conf.closed, 1 - CLASS_FADE);
+ clf.conf.open   = lerp(pOpen,   clf.conf.open,   1 - CLASS_FADE);
+
+
+ // hysteresis on the discrete label
+ const now = millis() / 1000;
+ const dwell = now - clf.lastChangeT;
+
+
+ if (clf.eyes === "open" && clf.conf.closed > 0.65 && dwell > STATE_HOLD_S) {
+   clf.eyes = "closed";
+   clf.lastChangeT = now;
+ } else if (clf.eyes === "closed" && clf.conf.open > 0.65 && dwell > STATE_HOLD_S) {
+   clf.eyes = "open";
+   clf.lastChangeT = now;
+ }
+
+
+ // arousal, relaxed vs focused vs stressed using ratios
+ const betaToAT   = ratioSafe(short.b, short.a + short.t + 0.15); // focus proxy
+ const betaToA    = ratioSafe(short.b, short.a + 0.10);           // stress proxy
+ const atToBeta   = ratioSafe(short.a + short.t, short.b + 0.10); // relax proxy
+
+
+ let pFocused  = smoothstep(FOCUS_T - 0.10,  FOCUS_T + 0.10,  betaToAT);
+ let pStressed = smoothstep(STRESS_T - 0.15, STRESS_T + 0.15, betaToA);
+ let pRelaxed  = smoothstep(RELAX_T - 0.10,  RELAX_T + 0.10,  atToBeta);
+
+
+ // adjust with attention and meditation if present
+ pFocused  = clamp01(pFocused  * (0.75 + 0.5 * short.att));
+ pRelaxed  = clamp01(pRelaxed  * (0.75 + 0.5 * short.med));
+ pStressed = clamp01(pStressed * (0.70 + 0.6 * max(0, short.att - short.med)));
+
+
+ // normalize light
+ const s = pRelaxed + pFocused + pStressed + 1e-6;
+ pRelaxed  /= s;
+ pFocused  /= s;
+ pStressed /= s;
+
+
+ // smooth the arousal confidences
+ clf.conf.relaxed  = lerp(pRelaxed,  clf.conf.relaxed,  1 - CLASS_FADE);
+ clf.conf.focused  = lerp(pFocused,  clf.conf.focused,  1 - CLASS_FADE);
+ clf.conf.stressed = lerp(pStressed, clf.conf.stressed, 1 - CLASS_FADE);
+
+
+ // choose label with hysteresis
+ const ar = clf.arousal;
+ const best = argmax({ relaxed:clf.conf.relaxed, focused:clf.conf.focused, stressed:clf.conf.stressed });
+ const confBest = clf.conf[best];
+ const gap = confBest - (best === "relaxed" ? max(clf.conf.focused, clf.conf.stressed)
+                                            : best === "focused" ? max(clf.conf.relaxed, clf.conf.stressed)
+                                                                 : max(clf.conf.relaxed, clf.conf.focused));
+ if (best !== ar && confBest > 0.45 && gap > 0.08 && dwell > STATE_HOLD_S) {
+   clf.arousal = best;
+   clf.lastChangeT = now;
+ }
+}
+
+
+function windowStats(n) {
+ // gather last n items from ring
+ const out = { a:0, b:0, t:0, d:0, att:0.5, med:0.5 };
+ if (n <= 0) return out;
+ for (let k = 0; k < n; k++) {
+   const idx = (ringIdx - 1 - k + ring.length) % ring.length;
+   const r = ring[idx];
+   out.a += r.a; out.b += r.b; out.t += r.t; out.d += r.d;
+   out.att += r.att; out.med += r.med;
+ }
+ out.a /= n; out.b /= n; out.t /= n; out.d /= n;
+ out.att /= n; out.med /= n;
+ return out;
+}
+
+
+function ratioSafe(num, den) { return den <= 0.0001 ? 0 : num / den; }
+function clamp01(x) { return max(0, min(1, x)); }
+function smoothstep(edge0, edge1, x) {
+ const t = clamp01((x - edge0) / max(1e-6, edge1 - edge0));
+ return t * t * (3 - 2 * t);
+}
+function argmax(obj) {
+ let bestKey = null, bestVal = -1;
+ for (const k in obj) if (obj[k] > bestVal) { bestVal = obj[k]; bestKey = k; }
+ return bestKey;
+}
+
+
+// ------------- mode and visuals -------------
+function updateVisModeFromState() {
+ // eyes closed nudges calm mode, eyes open leaves as is
+ // arousal sets the base mode
+ if (clf.arousal === "relaxed") clf.mode = "calm";
+ else if (clf.arousal === "focused") clf.mode = "focus";
+ else if (clf.arousal === "stressed") clf.mode = "stress";
+ // small bias, if eyes are closed and not stressed, prefer calm
+ if (clf.eyes === "closed" && clf.arousal !== "stressed") clf.mode = "calm";
+}
+
+
+function drawBackgroundByMode() {
+ const closenessMed = smooth.meditation;
+ const t = frameCount;
+ if (clf.mode === "calm") {
+   const hue = map(smooth.theta, 0, 1, 195, 300);
+   const sat = 24 + closenessMed * 30;
+   const a   = map(closenessMed, 0, 1, 0.06, 0.18);
+   background(hue, sat, 12, a);
+   noStroke();
+   fill(180, 70, 90, 0.16);
+   const size = 40 + smooth.attention * 120;
+   ellipse(width/2, height/2, size);
+ } else if (clf.mode === "focus") {
+   const hue = 60 + 20 * sin(t * 0.01);
+   background(hue, 40, 14, 0.18);
+   // subtle concentric focus rings
+   noFill();
+   stroke(55, 60, 100, 0.35);
+   strokeWeight(2);
+   const base = 60 + smooth.attention * 160;
+   ellipse(width/2, height/2, base);
+   ellipse(width/2, height/2, base * 0.66);
+ } else {
+   // stress
+   background(12, 60, 16, 0.20);
+   // mild alert pulse
+   noStroke();
+   fill(10, 80, 90, 0.10 + 0.06 * (0.5 + 0.5 * sin(t * 0.12)));
+   const s = 120 + 80 * sin(t * 0.05);
+   ellipse(width/2, height/2, s);
+ }
+}
+
+
+// ------------- drawing helpers -------------
+function drawGrid() {
+ stroke(0, 0, 70, clf.mode === "focus" ? 0.35 : 0.25);
+ strokeWeight(1);
+ const lanes = 4;
+ for (let i = 0; i <= lanes; i++) {
+   const y = map(i, 0, lanes, 0, height);
+   line(0, y, width, y);
+ }
+ const cols = clf.mode === "focus" ? 16 : 12;
+ for (let i = 1; i < cols; i++) {
+   const x = i * width / cols;
+   line(x, 0, x, height);
+ }
+}
+
+
+function drawWaves() {
+ if (hist.length < 2) return;
+
+
+ const laneH = height / 4;
+ const pad = laneH * 0.12;
+
+
+ // auto scale from recent window
+ const win = constrain(floor(AUTO_SECS * max(30, frameRate() || 60)), 30, ring.length);
+ const start = (ringIdx - win + ring.length) % ring.length;
+ const scale = autoScale(start, win);
+
+
+ const lanes = [
+   { key:"a", name:"alpha", hue:LANE_HUES[0], scale:scale.a },
+   { key:"b", name:"beta",  hue:LANE_HUES[1], scale:scale.b },
+   { key:"t", name:"theta", hue:LANE_HUES[2], scale:scale.t },
+   { key:"d", name:"delta", hue:LANE_HUES[3], scale:scale.d },
+ ];
+
+
+ for (let i = 0; i < lanes.length; i++) {
+   const laneTop = i * laneH;
+   const baseY = laneTop + laneH * 0.5;
+
+
+   // baseline
+   stroke(0, 0, 70, 0.35);
+   strokeWeight(1);
+   line(0, baseY, width, baseY);
+
+
+   // label
+   noStroke();
+   fill(0, 0, 95);
+   textSize(12);
+   textAlign(LEFT, TOP);
+   const isTarget = lanes[i].name === target.band;
+   const label = `${lanes[i].name}  ±${to2(lanes[i].scale)} ${isTarget ? "  thr " + to2(target.threshold) : ""}`;
+   text(label, 8, laneTop + 6);
+
+
+   // target line for active band
+   if (isTarget && target.enabled) {
+     const thr = lanes[i].scale * target.threshold;
+     stroke(55, 60, 100, 0.6);
+     strokeWeight(2);
+     const yThr = baseY - map(thr, 0, lanes[i].scale, 0, laneH * 0.35);
+     line(0, yThr, width, yThr);
+   }
+
+
+   // wave
+   const satBoost = clf.mode === "calm" ? 0 : clf.mode === "focus" ? 15 : 5;
+   const hueShift = clf.mode === "stress" ? -10 : 0;
+   stroke(lanes[i].hue + hueShift, 70 + satBoost, 90, 0.95);
+   strokeWeight(clf.mode === "focus" ? 2.4 : 2);
+   noFill();
+   beginShape();
+   for (let j = 0; j < hist.length; j++) {
+     const h = hist[j];
+     const x = map(j, 0, hist.length - 1, 0, width);
+     const val = h[lanes[i].key];
+     const y = baseY - map(val, 0, lanes[i].scale, 0, laneH * 0.35);
+     vertex(x, constrain(y, laneTop + pad, laneTop + laneH - pad));
+   }
+   endShape();
+
+
+   // live dot
+   const live = hist[hist.length - 1][lanes[i].key];
+   const yLive = baseY - map(live, 0, lanes[i].scale, 0, laneH * 0.35);
+   noStroke();
+   fill(lanes[i].hue + hueShift, 80 + satBoost, 100);
+   ellipse(width - 6, constrain(yLive, laneTop + pad, laneTop + laneH - pad), 6);
+ }
+}
+
+
+function autoScale(startIdx, count) {
+ const A=[],B=[],T=[],D=[];
+ for (let k = 0; k < count; k++) {
+   const idx = (startIdx + k) % ring.length;
+   const r = ring[idx];
+   A.push(r.a); B.push(r.b); T.push(r.t); D.push(r.d);
+ }
+ A.sort((x,y)=>x-y); B.sort((x,y)=>x-y); T.sort((x,y)=>x-y); D.sort((x,y)=>x-y);
+ const q = arr => arr[Math.floor(arr.length*0.95)] || 1;
+ const clampMin = 0.2;
+ return {
+   a: max(q(A), clampMin),
+   b: max(q(B), clampMin),
+   t: max(q(T), clampMin),
+   d: max(q(D), clampMin),
+ };
+}
+
+
+function drawTargetBar() {
+ if (!target.enabled) return;
+ const last = hist[hist.length - 1];
+ if (!last) return;
+
+
+ const v = target.band === "alpha" ? last.a :
+           target.band === "beta"  ? last.b :
+           target.band === "theta" ? last.t : last.d;
+
+
+ const pct = constrain(v / max(0.0001, target.threshold), 0, 1);
+
+
+ const w = width * 0.6;
+ const h = 12;
+ const x = width * 0.2;
+ const y = height - 28;
+
+
+ noStroke();
+ fill(0, 0, 20, 0.7);
+ rect(x, y, w, h, 8);
+
+
+ // color reflects mode
+ const col = clf.mode === "calm" ? [140,70,80,0.9] :
+             clf.mode === "focus" ? [60,70,90,0.9] :
+                                    [12,80,90,0.9];
+ fill(...col);
+ rect(x, y, w * pct, h, 8);
+
+
+ // hold progress
+ const holdPct = constrain(target.held / HOLD_SECS, 0, 1);
+ fill(60, 60, 100, 0.6);
+ rect(x, y - 6, w * holdPct, 3, 6);
+
+
+ // label
+ fill(0, 0, 95);
+ textSize(12);
+ textAlign(CENTER, BOTTOM);
+ text(`target ${target.band}  thr ${to2(target.threshold)}  held ${target.held.toFixed(1)}s  hits ${target.hits}`, x + w / 2, y - 8);
+}
+
+
+function drawHUD() {
+ const pad = 10;
+ const boxW = 300;
+ const boxH = 172;
+ noStroke();
+ fill(0, 0, 0, 0.35);
+ rect(pad, pad, boxW, boxH, 10);
+
+
+ fill(0, 0, 95);
+ textSize(12);
+ textAlign(LEFT, TOP);
+
+
+ let y = pad + 8;
+ text(`alpha ${to2(smooth.alpha)}   beta ${to2(smooth.beta)}`, pad + 10, y); y += 16;
+ text(`theta ${to2(smooth.theta)}   delta ${to2(smooth.delta)}`, pad + 10, y); y += 16;
+ text(`attention ${to2(smooth.attention)}   meditation ${to2(smooth.meditation)}`, pad + 10, y); y += 16;
+
+
+ text(`eyes ${clf.eyes}   conf closed ${to2(clf.conf.closed)}`, pad + 10, y); y += 16;
+ text(`arousal ${clf.arousal}  R ${to2(clf.conf.relaxed)}  F ${to2(clf.conf.focused)}  S ${to2(clf.conf.stressed)}`, pad + 10, y); y += 16;
+
+
+ text(`mode ${clf.mode}   C classifier ${clf.enabled ? "on" : "off"}   M next mode`, pad + 10, y); y += 16;
+
+
+ text(`space pause   G grid   click lane sets target`, pad + 10, y); y += 16;
+ text(`[ ] threshold   T toggle trainer   E sim eyes`, pad + 10, y);
+}
+
+
+function drawStateBadge() {
+ // small badge top center
+ const title = clf.mode === "calm" ? "CALM" : clf.mode === "focus" ? "FOCUS" : "STRESS";
+ const w = 120, h = 26;
+ const x = width / 2 - w / 2, y = 10;
+ noStroke();
+ const bg = clf.mode === "calm" ? [150, 35, 30, 0.45] :
+            clf.mode === "focus" ? [60, 45, 35, 0.45] :
+                                   [12, 60, 40, 0.50];
+ fill(...bg);
+ rect(x, y, w, h, 8);
+ fill(0, 0, 96);
+ textAlign(CENTER, CENTER);
+ textSize(13);
+ text(title, x + w/2, y + h/2);
+}
+
+
+// ------------- trainer logic -------------
+function updateTargetHold() {
+ const last = hist[hist.length - 1];
+ if (!last) return;
+
+
+ const v = target.band === "alpha" ? last.a :
+           target.band === "beta"  ? last.b :
+           target.band === "theta" ? last.t : last.d;
+
+
+ const dt = 1 / max(1, frameRate());
+ if (v >= target.threshold) {
+   target.held += dt;
+   if (target.held >= HOLD_SECS) {
+     target.hits += 1;
+     target.held = 0;
+   }
+ } else {
+   target.held = max(0, target.held - dt * 0.5);
+ }
+}
+
+
+// ------------- input -------------
+function keyPressed() {
+ const k = (key || "").toLowerCase();
+ if (k === ' ') paused = !paused;
+ if (k === 'g') showGrid = !showGrid;
+ if (k === 't') target.enabled = !target.enabled;
+ if (k === '[') target.threshold = max(0.05, target.threshold - 0.02);
+ if (k === ']') target.threshold = min(0.95, target.threshold + 0.02);
+ if (k === 'c') clf.enabled = !clf.enabled;
+ if (k === 'm') clf.mode = clf.mode === "calm" ? "focus" : clf.mode === "focus" ? "stress" : "calm";
+ if (k === 'e') sim.eyesClosed = !sim.eyesClosed; // simulation only
+}
+
+
+function mousePressed() {
+ // click a lane to make it the target band
+ const laneH = height / 4;
+ const i = floor(mouseY / laneH);
+ if (i < 0 || i > 3) return;
+ target.band = LANE_NAMES[i];
+ target.held = 0;
+}
+
+
+// ------------- utility -------------
+function to2(v) { return Number(v).toFixed(2); }
+
+
+// simple sim so it runs without a headset
+function simEEG() {
+ const t = (millis() - sim.t0) * 0.001;
+ // base noise fields
+ let alpha = noise(t*0.50) * 0.9;
+ let beta  = noise(1000 + t*0.70) * 0.9;
+ let theta = noise(2000 + t*0.40) * 0.9;
+ let delta = noise(3000 + t*0.25) * 0.9;
+
+
+ // simulate eyes closed by boosting alpha and theta and reducing beta
+ if (sim.eyesClosed) {
+   alpha = min(1.0, alpha * 0.5 + 0.7);
+   theta = min(1.0, theta * 0.6 + 0.4);
+   beta  = max(0.05, beta  * 0.5);
+ } else {
+   // eyes open, a little more beta
+   beta = min(1.0, beta * 0.7 + 0.25);
+ }
+
+
+ // attention and meditation proxies
+ const attention  = clamp01(0.35 + 0.65 * noise(4000 + t*1.20) + (sim.eyesClosed ? -0.08 : 0.10));
+ const meditation = clamp01(0.35 + 0.65 * noise(5000 + t*1.00) + (sim.eyesClosed ? 0.15 : -0.05));
+
+
+ return { alpha, beta, theta, delta, attention, meditation };
+}

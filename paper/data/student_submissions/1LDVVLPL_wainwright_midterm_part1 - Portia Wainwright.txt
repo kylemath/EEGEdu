@@ -1,0 +1,252 @@
+// ---------- CONFIG ----------
+let targetRatio = 0.8;
+let ratioTolerance = 0.12;
+let smoothingTau = 1.5;
+let visualSmoothingTau = 1.0;
+let meditationSmoothingTau = 2.0;
+let holdTimeRequired = 2.0;
+let showDebug = false;
+
+let notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25]; // C4-C5
+let noteNames = ['C4', 'D4', 'E4', 'G4', 'A4', 'C5'];
+
+let smoothed = { alpha: 0.1, theta: 0.1, beta: 0.1 };
+let lastTime = 0;
+let inTargetSince = null;
+let heldThisReward = false;
+let sessionStart;
+let sessionData = [];
+
+let rewardOsc = null;
+let rewardGain = null;
+let rewardCooldown = 1500;
+let lastRewardAt = -10000;
+
+let lastSampleAt = 0;
+let sampleInterval = 200;
+
+let visualAlpha = 0;
+let smoothedCloseness = 0;
+let baseVolume = 0.15;
+let smoothedMeditation = 0;
+
+let synth;
+let lastNoteTime = 0;
+let isPlaying = true;
+
+// ---------- p5: setup ----------
+function setup() {
+  colorMode(HSB, 220, 80, 100);
+  frameRate(60);
+  lastTime = millis();
+  sessionStart = millis();
+
+  // Setup synthesizer
+  synth = new p5.PolySynth();
+  let reverb = new p5.Reverb();
+  reverb.process(synth, 3, 2);
+
+  // Reward oscillator
+  rewardOsc = new p5.Oscillator('sine');
+  rewardGain = new p5.Gain();
+  rewardGain.disconnect();
+  rewardGain.connect();
+  rewardGain.amp(0, 0);
+  rewardOsc.disconnect();
+  rewardOsc.connect(rewardGain);
+}
+
+// ---------- EEG FETCH ----------
+function getEEG() {
+  if (typeof eegData !== 'undefined' &&
+      eegData.alpha !== undefined &&
+      eegData.beta !== undefined &&
+      eegData.theta !== undefined) {
+    return {
+      alpha: Math.max(0.01, eegData.alpha),
+      theta: Math.max(0.01, eegData.theta),
+      beta: Math.max(0.01, eegData.beta)
+    };
+  }
+  return smoothed;
+}
+
+// ---------- HELPER: exponential smoothing ----------
+function smoothExponential(prev, sample, dt, tau) {
+  let alpha = dt <= 0 ? 1 : 1 - Math.exp(-dt / Math.max(1e-6, tau));
+  return prev + alpha * (sample - prev);
+}
+
+// ---------- MAIN LOOP ----------
+function draw() {
+  background(220, 20, 12);
+  let now = millis();
+  let dt = (now - lastTime) / 1000.0;
+  lastTime = now;
+
+  // --- EEG smoothing ---
+  let raw = getEEG();
+  smoothed.alpha = smoothExponential(smoothed.alpha, raw.alpha, dt, smoothingTau);
+  smoothed.theta = smoothExponential(smoothed.theta, raw.theta, dt, smoothingTau);
+  smoothed.beta  = smoothExponential(smoothed.beta,  raw.beta,  dt, smoothingTau);
+
+  let ratio = smoothed.alpha / Math.max(1e-6, smoothed.theta);
+  let distance = Math.abs(ratio - targetRatio) / (targetRatio + 1e-6);
+  let rawCloseness = constrain(1 - distance, 0, 1);
+  smoothedCloseness = smoothExponential(smoothedCloseness, rawCloseness, dt, visualSmoothingTau);
+
+  // --- Meditation score ---
+  let rawMeditation = smoothed.alpha - smoothed.beta;
+  let normalizedMeditation = map(rawMeditation, -0.3, 0.5, 0, 1, true);
+  smoothedMeditation = smoothExponential(smoothedMeditation, normalizedMeditation, dt, meditationSmoothingTau);
+
+  // --- Play synth note based on EEG ---
+if (isPlaying && smoothedMeditation >= 0.6 && now - lastNoteTime > map(smoothed.alpha, 0, 1, 800, 200)) {
+    playBrainNote();
+    lastNoteTime = now;
+}
+
+  // --- Visual Fading Logic ---
+  let targetVisualAlpha = (smoothed.alpha >= 0.6) ? 1 : 0;
+  visualAlpha = lerp(visualAlpha, targetVisualAlpha, 0.04);
+
+  if (visualAlpha < 0.01) {
+    background(0, 0, 10);
+    fill(0, 0, 100);
+    textAlign(CENTER, CENTER);
+    textSize(20);
+    text("Relax your mind… raise your alpha waves (≥ 0.6)", width / 2, height / 2);
+  }
+
+  if (visualAlpha > 0.01) {
+    let inTarget = (distance <= ratioTolerance);
+    if (inTarget) {
+      if (inTargetSince === null) inTargetSince = now;
+    } else {
+      inTargetSince = null;
+      heldThisReward = false;
+    }
+
+    if (inTargetSince !== null && !heldThisReward) {
+      let heldFor = (now - inTargetSince) / 1000.0;
+      if (heldFor >= holdTimeRequired && (now - lastRewardAt) >= rewardCooldown) {
+        triggerReward();
+        heldThisReward = true;
+        lastRewardAt = now;
+      }
+    }
+
+    drawMandala(smoothedCloseness, ratio, visualAlpha);
+    drawHUD(ratio, distance, inTarget, visualAlpha);
+    drawMeditationMonitor(smoothedMeditation, visualAlpha);
+
+    if (showDebug) {
+      fill(0, 0, 100, visualAlpha * 100);
+      textAlign(LEFT, TOP);
+      textSize(12);
+      text(`α: ${smoothed.alpha.toFixed(3)}\nθ: ${smoothed.theta.toFixed(3)}\nβ: ${smoothed.beta.toFixed(3)}\nα/θ: ${ratio.toFixed(3)}\nCalm: ${smoothedMeditation.toFixed(3)}`, 10, 10);
+    }
+  }
+}
+
+// ---------- PLAY EEG NOTE ----------
+function playBrainNote() {
+  let noteIndex = floor(map(smoothed.alpha, 0, 1, 0, notes.length));
+  noteIndex = constrain(noteIndex, 0, notes.length - 1);
+
+  let duration = map(smoothed.beta, 0, 1, 0.1, 0.5);
+  let velocity = map(smoothedMeditation, 0, 1, 0.3, 1.0);
+
+  synth.play(notes[noteIndex], velocity, 0, duration);
+}
+
+// ---------- VISUALS ----------
+function drawMandala(closeness, ratio, currentAlpha) {
+  push();
+  translate(width / 2, height / 2);
+  let baseRadius = min(width, height) * 0.25 * (0.6 + 0.4 * closeness);
+  let petals = floor(6 + 10 * closeness);
+  let hue = lerp(200, 35, closeness);
+  noStroke();
+
+  for (let i = 0; i < petals; i++) {
+    push();
+    rotate(TWO_PI * i / petals);
+    fill((hue + i * 3) % 220, 70, 90 * (0.6 + 0.4 * closeness), currentAlpha * 100);
+    beginShape();
+    vertex(0, 0);
+    let r = baseRadius;
+    bezierVertex(r * 0.3, -r * 0.2, r * 0.7, -r * 0.8, 0, -r);
+    bezierVertex(-r * 0.7, -r * 0.8, -r * 0.3, -r * 0.2, 0, 0);
+    endShape(CLOSE);
+    pop();
+  }
+
+  fill(50 + 80 * closeness, 220, 90, currentAlpha * 80);
+  ellipse(0, 0, baseRadius * 0.6);
+  fill(0, 0, 100, currentAlpha * 100);
+  textAlign(CENTER, CENTER);
+  textSize(18);
+  text(`α/θ = ${ratio.toFixed(2)}`, 0, baseRadius + 30);
+  pop();
+}
+
+function drawHUD(ratio, distance, inTarget, currentAlpha) {
+  push();
+  textAlign(CENTER, TOP);
+  fill(0, 0, 100, currentAlpha * 100);
+  textSize(14);
+  text(`Target α/θ: ${targetRatio.toFixed(2)} (±${ratioTolerance})`, width / 2, 10);
+  textAlign(CENTER, BOTTOM);
+  let statusColor = inTarget ? color(140, 70, 60) : color(0, 0, 60);
+  statusColor.setAlpha(currentAlpha * 100);
+  fill(statusColor);
+  text(inTarget ? "In target" : "Adjust your state...", width / 2, height - 50);
+  pop();
+}
+
+function drawMeditationMonitor(score, currentAlpha) {
+  push();
+  let barWidth = width * 0.4;
+  let barHeight = 12;
+  let x = (width - barWidth) / 2;
+  let y = height - 30;
+
+  noStroke();
+  fill(0, 0, 20, currentAlpha * 100);
+  rect(x, y, barWidth, barHeight, 6);
+
+  let currentWidth = barWidth * score;
+  let barHue = lerp(180, 110, score * score);
+  fill(barHue, 60, 80, currentAlpha * 100);
+  rect(x, y, currentWidth, barHeight, 6);
+
+  textAlign(CENTER, CENTER);
+  fill(0, 0, 100, currentAlpha * 100);
+  textSize(12);
+  text("Mind Calmness", width / 2, y + barHeight / 2);
+  pop();
+}
+
+// ---------- REWARD ----------
+function triggerReward() {
+  try {
+    rewardOsc.freq(880);
+    rewardGain.amp(0, 0);
+    rewardOsc.start();
+    rewardGain.amp(0.45, 0.02);
+    rewardOsc.freq(880, 0.05);
+    rewardOsc.freq(1320, 0.25);
+    setTimeout(() => {
+      rewardGain.amp(0, 0.35);
+      setTimeout(() => { try { rewardOsc.stop(); } catch (e) {} }, 400);
+    }, 700);
+  } catch (e) {}
+}
+
+// ---------- KEYS ----------
+function keyPressed() {
+  if (key === 'H') showDebug = !showDebug;
+  if (key === '1') targetRatio = max(0.1, targetRatio - 0.05);
+  if (key === '2') targetRatio += 0.05;
+}

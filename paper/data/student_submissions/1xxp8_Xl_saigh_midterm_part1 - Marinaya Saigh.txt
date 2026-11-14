@@ -1,0 +1,113 @@
+// Brain Particles — Calm Bloom extension
+// Calm (Meditation > Attention): dark bg, rainbow, slow, progress fills
+// Stress (Attention > Meditation): white bg, red, fast, progress drains
+
+let particles = [];
+
+let calmProgress = 0;
+let calmGoal = 600;          // ~10 seconds at 60 fps
+let calmHistory = [];        // for the mini line graph
+
+function setup() {
+  // HSB in 0..1
+  colorMode(HSB, 1, 1, 1);
+
+  // particles (same feel as original)
+  for (let i = 0; i < 100; i++) {
+    particles.push({
+      x: random(width),
+      y: random(height),
+      vx: random(0, 50),     // your fast base velocities kept
+      vy: random(-2, 50),
+      life: 1.0,
+      seed: random(1)        // per-particle hue for rainbow
+    });
+  }
+}
+
+function draw() {
+  // BrainImation sliders: Attention ≈ beta, Meditation ≈ alpha
+  const alpha = (eegData.meditation ?? eegData.alpha ?? 0);
+  const beta  = (eegData.attention  ?? eegData.beta  ?? 0);
+  const theta = (eegData.theta ?? 0);
+  const gamma = (eegData.gamma ?? 0);
+
+  // stress: true when attention > meditation (small margin reduces flicker)
+  const stressed = beta > alpha + 0.02;
+
+  // background: stressed = white, calm = dark
+  if (stressed) background(0, 0, 1, 0.15);
+  else          background(0, 0, 0.06, 0.10);
+
+  // --- Neurofeedback progress + calmness history ---
+  if (!stressed) calmProgress += 1;
+  else           calmProgress -= 2;
+
+  calmProgress = constrain(calmProgress, 0, calmGoal);
+
+  // calm value for graph (higher = calmer)
+  let calmValue = constrain(1 - (beta - alpha), 0, 1);
+  calmHistory.push(calmValue);
+  if (calmHistory.length > width / 2) calmHistory.shift();
+
+  // --- Calm progress bar ---
+  noStroke();
+  fill(0, 0, 1);
+  rect(width/2 - 150, height - 30, 300, 10, 4);
+  fill(0.4, 1, 1);
+  rect(width/2 - 150, height - 30, map(calmProgress, 0, calmGoal, 0, 300), 10, 4);
+
+  // --- Calmness mini line graph (above bar) ---
+  noFill();
+  stroke(0.6, 1, 1);
+  beginShape();
+  for (let i = 0; i < calmHistory.length; i++) {
+    let y = map(calmHistory[i], 0, 1, height - 80, height - 120);
+    vertex(width/2 - calmHistory.length + i * 2, y);
+  }
+  endShape();
+  noStroke();
+
+  // --- Feedback messages ---
+  if (calmProgress >= calmGoal) {
+    textAlign(CENTER, CENTER);
+    fill(0.3, 1, 1);
+    textSize(22);
+    text("🌸 Calm Bloom Reached!", width / 2, height / 2);
+  } else if (stressed) {
+    textAlign(CENTER, CENTER);
+    fill(0, 1, 1);
+    textSize(18);
+    text("⚠️ Calm Breaking — Breathe", width / 2, height / 2);
+  }
+
+  // --- Particles ---
+  // speed: calm slow, stressed fast
+  const speed = stressed ? 1.0 : 0.18;
+
+  for (let p of particles) {
+    // movement influenced by brain waves (kept your structure)
+    p.vx += (random(-1, 1) * alpha * 0.1);
+    p.vy += (random(-1, 1) * beta  * 0.1);
+
+    // apply speed scaling
+    p.x += p.vx * speed;
+    p.y += p.vy * speed;
+
+    // wrap
+    if (p.x < 0) p.x = width;
+    if (p.x > width) p.x = 0;
+    if (p.y < 0) p.y = height;
+    if (p.y > height) p.y = 0;
+
+    // color: stressed = red; calm = rainbow (HSB in 0..1)
+    let hue = stressed ? 0.0 : (p.seed + frameCount * 0.002) % 1.0;
+    fill(hue, 0.9, 0.95, p.life);
+    noStroke();
+    ellipse(p.x, p.y, 5 + gamma * 10);
+
+    // life fade
+    p.life *= 0.995;
+    if (p.life < 0.1) p.life = 1.0;
+  }
+}

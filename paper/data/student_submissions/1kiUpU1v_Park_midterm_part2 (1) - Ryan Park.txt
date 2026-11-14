@@ -1,0 +1,336 @@
+﻿// Closed-Loop MMN ERP, attention-adaptive, header legend removed
+// BrainImation safe, full window, no createCanvas, clean UI
+
+
+let trial = 0;
+let isDeviant = false;
+let showStim = false;
+let nextSwitchAt = 0;
+
+
+// Base timings
+let baseStimDurMs = 250;
+let baseITIMs = 700;
+
+
+// ERP window
+let preMs = -200;
+let postMs = 800;
+
+
+// Sample rate and epoch sizes
+let sampleRate = 256;
+let preSamp = 0, postSamp = 0, epochSamp = 0;
+
+
+// Online stats
+let meanStd = [], meanDev = [];
+let M2Std = [], M2Dev = [];
+let nStd = 0, nDev = 0;
+let lastEpoch = null;
+
+
+// UI
+let fontScale = 1;
+let pxPerUv = 3.0;
+let errorText = "";
+
+
+// Adaptive state
+let devProb = 0.20;
+let stimDurMs = baseStimDurMs;
+let itiMinMs = baseITIMs;
+let attSmooth = 0.5;
+let simAttention = 0.5;
+
+
+// Colors
+const BG = [12,13,15], PANEL = [22,24,27];
+const GRID = [55,58,64], GRID_FAINT = [40,42,46];
+const AXIS = [170,176,186], TXT = [220,226,235], TXT_DIM = [170,176,186];
+const STD_COL = [120,190,255], DEV_COL = [255,205,120], DIFF_COL = [255,140,170];
+const BAND_COL = [255,140,170,60], LAST_COL = [190,190,190], ZERO_COL = [235,235,235];
+const GOOD_COL = [120,200,150], WARN_COL = [230,180,110];
+
+
+function setup(){ resizeCanvas(windowWidth, windowHeight); frameRate(60); textFont("monospace"); initEpoch(); scheduleNext(); }
+function windowResized(){ resizeCanvas(windowWidth, windowHeight); }
+
+
+function safeSR(){ try{ if(typeof eegData!=="undefined" && eegData.sampleRate) return eegData.sampleRate; }catch(_){} return 256; }
+function initEpoch(){
+ sampleRate = safeSR();
+ preSamp = Math.round(Math.abs(preMs)*sampleRate/1000);
+ postSamp = Math.round(postMs*sampleRate/1000);
+ epochSamp = preSamp + postSamp;
+ meanStd = new Array(epochSamp).fill(0);
+ meanDev = new Array(epochSamp).fill(0);
+ M2Std   = new Array(epochSamp).fill(0);
+ M2Dev   = new Array(epochSamp).fill(0);
+ nStd = 0; nDev = 0; lastEpoch = null;
+}
+
+
+function draw(){
+ try{
+   background(BG[0],BG[1],BG[2]);
+   fontScale = constrain(windowHeight/720, 0.85, 1.6);
+   sampleRate = safeSR();
+   adaptWithAttention();
+
+
+   const now = millis();
+   if(showStim){
+     drawStimulusCard(true, isDeviant);
+     if(now>=nextSwitchAt){ showStim=false; captureEpoch(); scheduleNext(); }
+   }else{
+     drawStimulusCard(false, null);
+     if(now>=nextSwitchAt){ isDeviant = random()<devProb; showStim=true; nextSwitchAt = now + stimDurMs; }
+   }
+
+
+   drawHeader();     // legend removed from here
+   drawERPPanel();
+
+
+   if(errorText){ fill(255,90,90); textSize(14*fontScale); textAlign(LEFT,BOTTOM); text("Error: "+errorText,14,height-12); }
+ }catch(e){
+   background(0); fill(255,80,80); textSize(16*fontScale); textAlign(LEFT,TOP); text("Sketch error: "+e.message,10,10);
+ }
+}
+
+
+// Closed loop via attention
+function adaptWithAttention(){
+ let att = simAttention;
+ try{
+   if(typeof eegData!=="undefined" && typeof eegData.attention==="number") att = constrain(eegData.attention,0,1);
+   else { simAttention = constrain(simAttention + random(-0.005,0.005), 0.1, 0.9); att = simAttention; }
+ }catch(_){}
+ attSmooth = 0.9*attSmooth + 0.1*att;
+ devProb = lerp(0.10, 0.35, attSmooth);
+ itiMinMs = floor( lerp(baseITIMs*1.3, baseITIMs*0.7, attSmooth) );
+ stimDurMs = baseStimDurMs;
+}
+
+
+// Stimulus card
+function drawStimulusCard(isOn, kind){
+ const p = layout().stim;
+ noStroke(); fill(PANEL[0],PANEL[1],PANEL[2]); rect(p.x,p.y,p.w,p.h,16);
+
+
+ fill(TXT[0],TXT[1],TXT[2]); textAlign(LEFT,TOP); textSize(16*fontScale); text("Stimulus", p.x+16, p.y+12);
+ fill(TXT_DIM[0],TXT_DIM[1],TXT_DIM[2]); textSize(12*fontScale);
+ text(`Dev prob ${nf(devProb,1,2)}   ITI ≥ ${itiMinMs} ms   Stim ${stimDurMs} ms`, p.x+16, p.y+32);
+
+
+ const cx = p.x + p.w*0.5, cy = p.y + p.h*0.58;
+ const base = min(p.w,p.h)*0.52;
+ const size = kind===true ? base*0.55 : kind===false ? base*0.42 : base*0.36;
+
+
+ noStroke(); fill(0,0,0,30); ellipse(cx, cy+4, size*1.02, size*1.02);
+ if(kind===true) fill(DEV_COL[0],DEV_COL[1],DEV_COL[2]);
+ else if(kind===false) fill(STD_COL[0],STD_COL[1],STD_COL[2]);
+ else fill(95);
+ ellipse(cx, cy, size, size);
+
+
+ noFill(); stroke(230); strokeWeight(2); ellipse(cx, cy, size*0.66, size*0.66);
+ noStroke(); fill(TXT_DIM[0],TXT_DIM[1],TXT_DIM[2]); textAlign(CENTER,TOP); textSize(14*fontScale);
+ let label = "Inter-trial"; if(kind===true) label="Deviant"; if(kind===false) label="Standard"; text(label, cx, p.y+p.h-30*fontScale);
+
+
+ const t = isOn? constrain(map(nextSwitchAt-millis(),0,stimDurMs,1,0),0,1) : constrain((nextSwitchAt-millis())/max(itiMinMs,1),0,1);
+ const barX=p.x+16, barW=p.w-32, barY=p.y+p.h-10*fontScale-8, barH=6*fontScale;
+ noStroke(); fill(GRID_FAINT[0],GRID_FAINT[1],GRID_FAINT[2]); rect(barX,barY,barW,barH,4);
+ if(kind===true) fill(DEV_COL[0],DEV_COL[1],DEV_COL[2]); else if(kind===false) fill(STD_COL[0],STD_COL[1],STD_COL[2]); else fill(TXT_DIM[0],TXT_DIM[1],TXT_DIM[2]);
+ rect(barX,barY,barW*t,barH,4);
+}
+
+
+// Capture and average
+function captureEpoch(){
+ errorText = "";
+ let chanName = "Fp1";
+ try{
+   if(typeof eegData!=="undefined" && eegData.getChannelNames){
+     const names = eegData.getChannelNames(); if(names && names.length) chanName = names[0];
+   }
+ }catch(_){}
+
+
+ let epoch = [];
+ try{
+   if(typeof eegData!=="undefined" && eegData.connected && eegData.getRawChannel){
+     const raw = eegData.getRawChannel(chanName, epochSamp+16);
+     if(raw && raw.length>=epochSamp) epoch = raw.slice(raw.length-epochSamp);
+   }
+ }catch(e){ errorText = e.message; }
+ if(epoch.length!==epochSamp) epoch = simulateEpoch(isDeviant);
+
+
+ const baseline = mean(epoch.slice(0, preSamp));
+ const corr = epoch.map(v=>v-baseline);
+
+
+ if(isDeviant){
+   nDev++; for(let i=0;i<epochSamp;i++){ const d=corr[i]-meanDev[i]; meanDev[i]+=d/nDev; M2Dev[i]+=d*(corr[i]-meanDev[i]); }
+ }else{
+   nStd++; for(let i=0;i<epochSamp;i++){ const d=corr[i]-meanStd[i]; meanStd[i]+=d/nStd; M2Std[i]+=d*(corr[i]-meanStd[i]); }
+ }
+ lastEpoch = corr; trial++;
+}
+
+
+function simulateEpoch(dev){
+ const arr = new Array(epochSamp).fill(0);
+ const phase = random(TWO_PI), alphaHz=10;
+ for(let i=0;i<epochSamp;i++){ const t=i/sampleRate; const alpha=6*sin(TWO_PI*alphaHz*t+phase); const noise=10*(random()-0.5); arr[i]=alpha+noise; }
+ addGaussian(arr,80,25,+4); addGaussian(arr,120,35,-6); if(dev) addGaussian(arr,200,45,-12);
+ return arr;
+}
+function addGaussian(buf,peakMs,sigmaMs,amp){ for(let i=0;i<buf.length;i++){ const ms=(i-preSamp)*1000/sampleRate; buf[i]+=amp*Math.exp(-0.5*((ms-peakMs)/sigmaMs)**2); } }
+function mean(a){ if(!a.length) return 0; return a.reduce((s,v)=>s+v,0)/a.length; }
+
+
+// ERP panel
+function drawERPPanel(){
+ const p = layout().erp;
+ noStroke(); fill(PANEL[0],PANEL[1],PANEL[2]); rect(p.x,p.y,p.w,p.h,16);
+
+
+ fill(TXT[0],TXT[1],TXT[2]); textAlign(LEFT,TOP); textSize(16*fontScale); text("Averaged ERPs", p.x+16, p.y+12);
+
+
+ // Padded plot area
+ const xPadL = 72*fontScale, xPadR = 36*fontScale;
+ const yPadT = 48*fontScale, yPadB = 72*fontScale;
+ const x0=p.x+xPadL, x1=p.x+p.w-xPadR, yTop=p.y+yPadT, y0=p.y+p.h-yPadB;
+
+
+ // Grid and zero line
+ stroke(GRID_FAINT[0],GRID_FAINT[1],GRID_FAINT[2]);
+ for(let ms=-Math.abs(preMs); ms<=postMs; ms+=100){
+   const i=floor(map(ms,-Math.abs(preMs),postMs,0,epochSamp-1));
+   const x=map(i,0,epochSamp-1,x0,x1); line(x,yTop,x,y0);
+ }
+ const xZero=map(preSamp,0,epochSamp-1,x0,x1); stroke(ZERO_COL[0],ZERO_COL[1],ZERO_COL[2]); line(xZero,yTop,xZero,y0);
+
+
+ // Horizontal microvolt lines
+ const uvPerDiv=5;
+ for(let k=-3;k<=3;k++){
+   const y=y0-k*uvPerDiv*pxPerUv; const g=k===0?GRID:GRID_FAINT;
+   stroke(g[0],g[1],g[2]); line(x0,y,x1,y);
+   noStroke(); fill(TXT_DIM[0],TXT_DIM[1],TXT_DIM[2]); textAlign(LEFT,CENTER); textSize(12*fontScale); text(k*uvPerDiv, x0-36*fontScale, y);
+ }
+
+
+ // Averages
+ plotTrace(meanStd, STD_COL, x0,x1,y0, 3);
+ plotTrace(meanDev, DEV_COL, x0,x1,y0, 3);
+
+
+ // Diff and band
+ const diff=new Array(epochSamp), sem=new Array(epochSamp);
+ for(let i=0;i<epochSamp;i++){
+   diff[i]=meanDev[i]-meanStd[i];
+   const varS=nStd>1?M2Std[i]/(nStd-1):0, varD=nDev>1?M2Dev[i]/(nDev-1):0;
+   sem[i]=Math.sqrt((nStd>0?varS/nStd:0)+(nDev>0?varD/nDev:0));
+ }
+ drawBand(diff, sem, BAND_COL, x0,x1,y0);
+ plotTrace(diff, DIFF_COL, x0,x1,y0, 3);
+
+
+ if(lastEpoch) plotTrace(lastEpoch, LAST_COL, x0,x1,y0, 1, 70);
+
+
+ // X axis ticks and label
+ noStroke(); fill(AXIS[0],AXIS[1],AXIS[2]); textSize(12*fontScale); textAlign(CENTER,TOP);
+ for(let ms=-Math.abs(preMs); ms<=postMs; ms+=100){
+   const i=floor(map(ms,-Math.abs(preMs),postMs,0,epochSamp-1));
+   const x=map(i,0,epochSamp-1,x0,x1); text(ms, x, y0+8*fontScale);
+ }
+ textSize(13*fontScale); text("Time (ms)", (x0+x1)/2, y0+26*fontScale);
+
+
+ // SNR meter, top right inside ERP panel
+ drawSNRMeter(diff, sem, x1 - 180*fontScale, yTop + 6*fontScale);
+}
+
+
+function plotTrace(buf, rgb, x0,x1,y0, weight=3, alphaVal=255){
+ if(!buf || !buf.length) return;
+ stroke(rgb[0],rgb[1],rgb[2],alphaVal); strokeWeight(weight); noFill(); beginShape();
+ for(let i=0;i<buf.length;i++){ const x=map(i,0,buf.length-1,x0,x1); const y=y0-buf[i]*pxPerUv; vertex(x,y); }
+ endShape();
+}
+
+
+function drawBand(meanBuf, semBuf, rgba, x0,x1,y0){
+ if(!meanBuf.length) return;
+ const upper=[], lower=[];
+ for(let i=0;i<meanBuf.length;i++){ const b=1.96*(semBuf[i]||0); upper[i]=meanBuf[i]+b; lower[i]=meanBuf[i]-b; }
+ noStroke(); fill(rgba[0],rgba[1],rgba[2],rgba[3]); beginShape();
+ for(let i=0;i<upper.length;i++){ const x=map(i,0,upper.length-1,x0,x1); const y=y0-upper[i]*pxPerUv; vertex(x,y); }
+ for(let i=lower.length-1;i>=0;i--){ const x=map(i,0,lower.length-1,x0,x1); const y=y0-lower[i]*pxPerUv; vertex(x,y); }
+ endShape(CLOSE);
+}
+
+
+function drawSNRMeter(diff, sem, x, y){
+ const iStart=floor(map(150,-preMs,postMs,0,epochSamp-1));
+ const iEnd=floor(map(250,-preMs,postMs,0,epochSamp-1));
+ let maxAbs=0, meanSEM=0, count=0;
+ for(let i=iStart;i<=iEnd;i++){ maxAbs=Math.max(maxAbs,Math.abs(diff[i])); meanSEM+=sem[i]||0; count++; }
+ meanSEM = count? meanSEM/count : 0; const snr = meanSEM>0? maxAbs/meanSEM : 0;
+
+
+ const w=160*fontScale, h=60*fontScale;
+ noStroke(); fill(PANEL[0],PANEL[1],PANEL[2]); rect(x,y,w,h,10);
+ fill(TXT[0],TXT[1],TXT[2]); textAlign(LEFT,TOP); textSize(12*fontScale); text("MMN SNR", x+10, y+8);
+ const v=constrain(snr/3.0,0,1), bx=x+10, by=y+30, bw=w-20, bh=10*fontScale;
+ noStroke(); fill(GRID_FAINT[0],GRID_FAINT[1],GRID_FAINT[2]); rect(bx,by,bw,bh,4);
+ const col=v>=1?GOOD_COL:WARN_COL; fill(col[0],col[1],col[2]); rect(bx,by,bw*v,bh,4);
+ fill(TXT_DIM[0],TXT_DIM[1],TXT_DIM[2]); textAlign(RIGHT,TOP); text(nf(snr,1,2), x+w-10, y+8);
+}
+
+
+// Header, legend removed to prevent any overlap
+function drawHeader(){
+ let live=false; try{ live = typeof eegData!=="undefined" && eegData.connected; }catch(_){}
+ noStroke(); fill(TXT[0],TXT[1],TXT[2]); textAlign(LEFT,TOP); textSize(20*fontScale);
+ text("Closed-Loop MMN ERP, attention adaptive", 16, 12);
+
+
+ fill(TXT_DIM[0],TXT_DIM[1],TXT_DIM[2]); textSize(12*fontScale);
+ text(`Trials ${trial}`, 16, 36);
+ text("R reset, G gain +, H gain −", 16, 52);
+
+
+ // Status light only
+ fill(live?GOOD_COL[0]:WARN_COL[0], live?GOOD_COL[1]:WARN_COL[1], live?GOOD_COL[2]:WARN_COL[2]);
+ ellipse(width-28,22,10,10);
+ fill(TXT[0],TXT[1],TXT[2]); textAlign(RIGHT,TOP); textSize(13*fontScale); text(live?"LIVE":"SIM", width-44, 12);
+}
+
+
+function layout(){
+ const margin=16, topBar=84*fontScale, gap=16;
+ const stimW=width*0.36, erpW=width - stimW - gap - margin*2;
+ const hAvail=height - topBar - margin;
+ return {
+   stim:{x:margin, y:topBar, w:stimW, h:hAvail},
+   erp:{x:margin+stimW+gap, y:topBar, w:erpW, h:hAvail}
+ };
+}
+
+
+function scheduleNext(){ nextSwitchAt = millis() + itiMinMs + random(0,400); }
+function keyPressed(){
+ if(key==='R'||key==='r'){ initEpoch(); trial=0; }
+ else if(key==='G'||key==='g'){ pxPerUv = min(6.0, pxPerUv+0.5); }
+ else if(key==='H'||key==='h'){ pxPerUv = max(1.5, pxPerUv-0.5); }
+}

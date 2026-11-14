@@ -1,0 +1,270 @@
+// EEG Ice Cream Catch Game - Middle Zone Cone Drops with Optimal Zone Guide
+let cones = [];
+let splatters = [];
+let basket = { x: 300, y: 370, w: 100, h: 25, stack: [] };
+let score = 0;
+
+
+let magnet = false;
+let magnetTimer = 0;
+let plus3Timer = 0;
+let plus10Timer = 0;
+let fireworks = [];
+
+
+function Cone(x, y, size) {
+ this.x = x;
+ this.y = y;
+ this.size = size;
+ this.vy = 2 + Math.random() * 2.5;
+ this.caught = false;
+}
+
+
+function drawEmployee(x, y) {
+ fill(255, 224, 189);
+ ellipse(x, y - 50, 30, 30);
+ fill(101, 67, 33);
+ arc(x, y - 57, 33, 30, 3.14, 6.28);
+ fill(0);
+ ellipse(x - 6, y - 52, 4, 4);
+ ellipse(x + 6, y - 52, 4, 4);
+ noFill();
+ stroke(0);
+ strokeWeight(1.2);
+ arc(x, y - 46, 10, 5, 0, 3.14);
+ noStroke();
+ fill(173, 216, 230);
+ rect(x - 15, y - 40, 30, 60, 9);
+ fill(0);
+ rect(x - 15, y - 25, 30, 35, 3);
+ fill(173, 216, 230);
+ rect(x - 35, y - 10, 15, 10);
+ rect(x + 20, y - 10, 15, 10);
+ fill(230, 200, 180);
+ rect(x - 12, y + 10, 12, 35);
+ rect(x + 3, y + 10, 12, 35);
+ fill(50, 0, 50);
+ ellipse(x - 5, y + 45, 18, 10);
+ ellipse(x + 10, y + 45, 18, 10);
+}
+
+
+function drawBasket() {
+ fill(139, 69, 19);
+ rect(basket.x - basket.w / 2, basket.y, basket.w, basket.h, 10);
+}
+
+
+function drawSoftServe(x, y, size) {
+ fill(255, 182, 193);
+ ellipse(x, y, size * 0.8, size * 0.6);
+}
+
+
+function drawCone(x, y, size) {
+ fill(194, 134, 55);
+ triangle(x, y + size, x - size * 0.3, y, x + size * 0.3, y);
+}
+
+
+// Fireworks
+function drawFireworks() {
+ push();
+ colorMode(HSB, 360, 100, 100, 1);
+ for (let i = fireworks.length - 1; i >= 0; i--) {
+   let f = fireworks[i];
+   fill(f.hue, 100, 100, f.alpha);
+   noStroke();
+   ellipse(f.x, f.y, 4);
+   f.x += f.vx;
+   f.y += f.vy;
+   f.vy += 0.02;
+   f.alpha -= 0.02;
+   if (f.alpha <= 0) fireworks.splice(i, 1);
+ }
+ pop();
+}
+
+
+function createFireworkBurst(x, y, count) {
+ for (let i = 0; i < count; i++) {
+   let angle = random(TWO_PI);
+   let speed = random(2, 5);
+   fireworks.push({
+     x: x,
+     y: y,
+     vx: cos(angle) * speed,
+     vy: sin(angle) * speed,
+     hue: random(0, 360),
+     alpha: 1
+   });
+ }
+}
+
+
+function drawOptimalZone() {
+ stroke(0, 0, 0, 100);
+ strokeWeight(1);
+ let leftX = 300 - 80;   // 220
+ let rightX = 300 + 80;  // 380
+ for (let y = 0; y < height; y += 10) {
+   line(leftX, y, leftX, y + 5);
+   line(rightX, y, rightX, y + 5);
+ }
+}
+
+
+
+
+function draw() {
+ background(230, 230, 250);
+
+
+ // Draw optimal zone first
+ drawOptimalZone();
+
+
+ // ---- End condition ----
+ if (score >= 20) {
+   createFireworkBurst(width / 2, height / 3, 150);
+   drawFireworks();
+   textAlign(CENTER, CENTER);
+   textSize(48);
+   fill(128, 0, 128);
+   text("✨ LEVEL 1 COMPLETE! ✨", width / 2, height / 2);
+   textSize(24);
+   fill(60, 0, 90);
+   text("Amazing focus! Get ready for the next challenge...", width / 2, height / 2 + 50);
+   noLoop();
+   return;
+ }
+
+
+ let alpha = eegData.alpha || 0.4;
+ let beta = eegData.beta || 0.4;
+
+
+ // Spawn cones ONLY in the middle zone
+ if (frameCount % 25 === 0) {
+   let spawnX = 300 + random(-80, 80);
+   cones.push(new Cone(spawnX, -20, 40));
+ }
+
+
+ drawEmployee(basket.x, basket.y - 20);
+
+
+ for (let i = cones.length - 1; i >= 0; i--) {
+   let c = cones[i];
+   if (!c.caught) {
+     if (magnet) {
+       let magnetForce = 6;
+       if (c.x < basket.x) c.x += magnetForce;
+       if (c.x > basket.x) c.x -= magnetForce;
+     }
+
+
+     c.y += c.vy;
+
+
+     if (
+       c.y + c.size >= basket.y &&
+       c.x > basket.x - basket.w / 2 &&
+       c.x < basket.x + basket.w / 2
+     ) {
+       c.caught = true;
+       basket.stack.push(c);
+       score++;
+
+
+       if (score % 3 === 0) {
+         magnet = true;
+         magnetTimer = 30;
+         plus3Timer = 30;
+       }
+
+
+       if (score % 10 === 0) {
+         plus10Timer = 60;
+         createFireworkBurst(random(200, 400), random(100, 250), 100);
+       }
+
+
+       cones.splice(i, 1);
+       continue;
+     }
+
+
+     if (c.y > 400) {
+       splatters.push({ x: c.x, y: 390, size: c.size, alpha: 1 });
+       cones.splice(i, 1);
+     }
+
+
+     drawCone(c.x, c.y, c.size);
+     drawSoftServe(c.x, c.y, c.size);
+   }
+ }
+
+
+ if (magnet) {
+   magnetTimer--;
+   if (magnetTimer <= 0) magnet = false;
+ }
+
+
+ let speed = 2;
+ basket.x -= alpha * speed;
+ basket.x += beta * speed;
+ basket.x = constrain(basket.x, basket.w / 2, 600 - basket.w / 2);
+
+
+ for (let i = 0; i < basket.stack.length; i++) {
+   let c = basket.stack[i];
+   let yOffset = basket.y - (i + 1) * (c.size * 0.8);
+   drawSoftServe(basket.x, yOffset, c.size);
+   drawCone(basket.x, yOffset - c.size * 0.4, c.size);
+ }
+
+
+ for (let i = splatters.length - 1; i >= 0; i--) {
+   let s = splatters[i];
+   fill(255, 182, 193, s.alpha * 255);
+   ellipse(s.x, s.y, s.size, s.size * 0.5);
+   s.alpha -= 0.02;
+   if (s.alpha <= 0) splatters.splice(i, 1);
+ }
+
+
+ drawBasket();
+ drawFireworks();
+
+
+ if (plus3Timer > 0) {
+   plus3Timer--;
+   textSize(32);
+   fill(255, 105, 180);
+   text("+3 = magnet", basket.x + 50, basket.y - 50);
+ }
+
+
+ if (plus10Timer > 0) {
+   plus10Timer--;
+   textSize(64);
+   fill(255, 69, 0);
+   text("+10!", 250, 200);
+ }
+
+
+ // ---- Display goal and score ----
+ fill(0);
+ textSize(16);
+ text("GOAL: 20 cones", 10, 20);
+ text("Score: " + score, 10, 40);
+}
+
+
+
+
+

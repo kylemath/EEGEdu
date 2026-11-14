@@ -1,0 +1,144 @@
+let channels = ['TP9','AF7','AF8','TP10'];
+let colors = [300,180,60,120]; // Purple, Cyan, Yellow, Green
+let numSamples = 200;
+let epochBuffer = [];
+let maxEpochs = 5;
+let maxTrials = 20;
+
+let showFace = true;
+let trial = 0;
+let showStim = true;
+
+function setup() {
+  colorMode(HSB,360,100,100);
+  textFont('Arial');
+}
+
+function draw() {
+  background(0,0,0);
+
+  if (!eegData.connected) {
+    fill(0,0,100);
+    textAlign(CENTER,CENTER);
+    textSize(24);
+    text("EEG headset not connected", width/2, height/2);
+    return;
+  }
+
+  // --- get all channels ---
+  let allChannels = eegData.getAllChannels(numSamples);
+  if (!allChannels) return;
+
+  let currentEpoch = [];
+  for (let c of channels) {
+    if (allChannels[c]) currentEpoch.push(allChannels[c]);
+  }
+
+  if (currentEpoch.length === channels.length) {
+    epochBuffer.push(currentEpoch);
+    if (epochBuffer.length > maxEpochs) epochBuffer.shift();
+  }
+
+  // --- draw channels ---
+  for (let c=0;c<channels.length;c++){
+    if (currentEpoch.length===channels.length){
+      // increased spacing for taller bottom window
+      let yOffset = (c+1)*(height-200)/(channels.length+1); 
+
+      stroke(colors[c],80,90);
+      strokeWeight(1.5);
+      noFill();
+      beginShape();
+      for (let i=0;i<numSamples;i++){
+        let x = map(i,0,numSamples-1,80,width-20);
+        let y = yOffset + map(currentEpoch[c][i],-100,100,-40,40);
+        vertex(x,y);
+      }
+      endShape();
+
+      // channel label in white
+      fill(0,0,100);
+      noStroke();
+      textAlign(LEFT,CENTER);
+      textSize(16);
+      text(channels[c],10,yOffset);
+
+      // zero line
+      stroke(0,0,40);
+      strokeWeight(1);
+      line(80,yOffset,width-20,yOffset);
+    }
+  }
+
+  // --- Top label showing number of trials collected (up to 20) ---
+  fill(0,0,100);
+  noStroke();
+  textAlign(CENTER,TOP);
+  textSize(18);
+  let n = Math.min(trial, maxTrials);
+  text("Average EEG (n="+n+")", width/2,10);
+
+  // --- Live indicator ---
+  fill(120,80,90);
+  ellipse(width-30,30,10);
+  fill(0,0,100);
+  textAlign(RIGHT,CENTER);
+  textSize(14);
+  text("LIVE",width-40,30);
+
+  // --- Bottom N170 stimulus ---
+  let flashY = height-200; // slightly taller
+  let flashHeight = 180;  // slightly taller
+
+  fill(0,0,15);
+  noStroke();
+  rect(0,flashY,width,flashHeight);
+
+  fill(0,0,100);
+  textAlign(CENTER,TOP);
+  textSize(16);
+  text("STIMULUS", width/2, flashY+5);
+
+  push();
+  translate(0,flashY);
+  if (showStim){
+    fill(255);
+    noStroke();
+    if (showFace){
+      ellipse(width/2,flashHeight/2,50,60);
+      fill(20);
+      ellipse(width/2-12,flashHeight/2-8,8,8);
+      ellipse(width/2+12,flashHeight/2-8,8,8);
+      noFill();
+      stroke(20);
+      strokeWeight(2);
+      arc(width/2,flashHeight/2+8,25,15,0,PI);
+      fill(255);
+      textAlign(CENTER);
+      textSize(14);
+      text("FACE", width/2, flashHeight-20);
+    } else {
+      fill(200,80,90);
+      rectMode(CENTER);
+      rect(width/2,flashHeight/2,50,50);
+      fill(255);
+      textAlign(CENTER);
+      textSize(14);
+      text("OBJECT", width/2, flashHeight-20);
+    }
+    text("Trial "+(trial+1), width/2,15);
+  } else {
+    fill(100);
+    textAlign(CENTER,CENTER);
+    textSize(12);
+    text("ITI", width/2,flashHeight/2);
+  }
+  pop();
+
+  // toggle stimulus every 30 frames (~1 sec)
+  if (frameCount%30===0){
+    showStim=!showStim;
+    if (showStim) trial++;
+    showFace=!showFace;
+  }
+}

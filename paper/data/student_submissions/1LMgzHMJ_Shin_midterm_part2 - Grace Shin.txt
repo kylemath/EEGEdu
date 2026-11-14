@@ -1,0 +1,202 @@
+// P300 Oddball ERP Experiment
+
+let epochBufferFrequent = [];
+let epochBufferRare = [];
+let maxEpochs = 30;
+let epochLength = 384; // 1.5s @256Hz (-200 to +800 ms)
+let trialStartTime = 0;
+let stimState = "baseline";
+let isRare = false;
+let trial = 0;
+
+function setup() {
+  colorMode(HSB, 360, 100, 100);
+  textFont("monospace");
+  trialStartTime = millis();
+}
+
+function draw() {
+  background(0, 0, 8);
+  let now = millis();
+  let trialTime = now - trialStartTime;
+
+  // --- Stimulus timing ---
+  // 0–800 ms: baseline
+  // 800–830 ms: stimulus shown
+  // 830–1500 ms: rest
+  if (trialTime < 800) stimState = "baseline";
+  else if (trialTime < 830) stimState = isRare ? "rare" : "frequent";
+  else stimState = "rest";
+
+  // When trial ends (every 1500 ms)
+  if (trialTime >= 1500) {
+    trialStartTime = now;
+    recordEpoch(isRare); // capture EEG for this trial
+
+    // Determine next trial type (20% rare)
+    isRare = random() < 0.2;
+    trial++;
+  }
+
+  // panel 1 - averaged epochs
+  push();
+  drawERPPanel();
+  pop();
+
+  // panel 2 - stimulus
+  push();
+  translate(0, height * 0.65);
+  drawStimulusPanel(stimState);
+  pop();
+}
+
+// erp panel
+function drawERPPanel() {
+  let panelHeight = height * 0.6;
+  fill(0, 0, 100);
+  noStroke();
+  textAlign(CENTER, TOP);
+  textSize(16);
+  text("P300 Oddball ERP (Averaged EEG)", width / 2, 10);
+
+  // axis and ticks
+  stroke(0, 0, 40);
+  strokeWeight(1);
+  for (let ms = -200; ms <= 800; ms += 100) {
+    let x = map(ms, -200, 800, 60, width - 60);
+    line(x, 40, x, panelHeight - 20);
+    noStroke();
+    fill(0, 0, 70);
+    textAlign(CENTER, TOP);
+    text(ms, x, panelHeight - 15);
+    stroke(0, 0, 40);
+  }
+
+  // vertical line at stimulus onset
+  let zeroX = map(0, -200, 800, 60, width - 60);
+  stroke(0, 80, 80);
+  strokeWeight(2);
+  line(zeroX, 40, zeroX, panelHeight - 20);
+
+  // labels
+  fill(0, 0, 70);
+  textSize(12);
+  textAlign(LEFT, TOP);
+  text("Trials - Frequent: " + epochBufferFrequent.length + " | Rare: " + epochBufferRare.length, 60, 45);
+
+  if (epochBufferFrequent.length === 0 && epochBufferRare.length === 0) {
+    fill(0, 0, 70);
+    textAlign(CENTER, CENTER);
+    textSize(16);
+    text("Collecting ERP data...", width / 2, panelHeight / 2);
+    return;
+  }
+
+  // average epochs
+  let avgFreq = epochBufferFrequent.length ? averageEpochs(epochBufferFrequent) : null;
+  let avgRare = epochBufferRare.length ? averageEpochs(epochBufferRare) : null;
+
+  // draw ERP trace
+  let baseY = panelHeight / 2 + 40;
+  let colors = {
+    frequent: [210, 80, 90], // blue
+    rare: [0, 80, 90]        // red
+  };
+
+  if (avgFreq) drawERP(avgFreq, colors.frequent, baseY, "Frequent");
+  if (avgRare) drawERP(avgRare, colors.rare, baseY, "Rare");
+
+  // axis labels
+  fill(0, 0, 70);
+  textAlign(CENTER, TOP);
+  text("Time (ms)", width / 2, panelHeight - 5);
+}
+
+function drawERP(avg, col, baseY, label) {
+  stroke(col[0], col[1], col[2]);
+  strokeWeight(2);
+  noFill();
+  beginShape();
+  for (let i = 0; i < avg.length; i++) {
+    let x = map(i, 0, avg.length - 1, 60, width - 60);
+    let y = baseY + map(avg[i][0], -50, 50, 50, -50);
+    vertex(x, y);
+  }
+  endShape();
+
+  fill(col[0], col[1], col[2]);
+  noStroke();
+  textAlign(LEFT, CENTER);
+  textSize(12);
+  text(label, width - 110, baseY - (label === "Rare" ? 30 : 15));
+}
+
+// compute average across all stored epochs
+function averageEpochs(buffer) {
+  let avg = [];
+  let len = buffer[0].length;
+  for (let i = 0; i < len; i++) {
+    let sum = [0, 0, 0, 0];
+    for (let e = 0; e < buffer.length; e++) {
+      for (let ch = 0; ch < 4; ch++) sum[ch] += buffer[e][i][ch];
+    }
+    avg.push(sum.map(s => s / buffer.length));
+  }
+  return avg;
+}
+
+// stimulus panel
+function drawStimulusPanel(stim) {
+  let midY = height * 0.175;
+  fill(0, 0, 100);
+  noStroke();
+  textAlign(CENTER, TOP);
+  textSize(16);
+  text("Stimulus Sequence", width / 2, 10);
+
+  translate(width / 2, midY + 30);
+  noStroke();
+
+  if (stim === "rare") {
+    fill(0, 80, 90);
+    ellipse(0, 0, 100);
+  } else if (stim === "frequent") {
+    fill(210, 80, 90);
+    ellipse(0, 0, 100);
+  } else {
+    fill(0, 0, 25);
+    ellipse(0, 0, 100);
+  }
+
+  // label
+  fill(0, 0, 80);
+  textAlign(CENTER, TOP);
+  textSize(12);
+  text(stim.toUpperCase(), 0, 120);
+}
+
+// eeg capture
+function recordEpoch(isRare) {
+  let epoch = eegData.getRecentEpoch(epochLength);
+  if (epoch && epoch.length >= epochLength) {
+    if (isRare) epochBufferRare.push(epoch);
+    else epochBufferFrequent.push(epoch);
+    if (epochBufferRare.length > maxEpochs) epochBufferRare.shift();
+    if (epochBufferFrequent.length > maxEpochs) epochBufferFrequent.shift();
+  } else {
+    // fallback mock data
+    let mock = [];
+    for (let i = 0; i < epochLength; i++) {
+      mock.push([
+        sin(i / 10) * 20 + (isRare ? random(-2, 8) : random(-5, 5)),
+        cos(i / 10) * 15 + (isRare ? random(-2, 8) : random(-5, 5)),
+        sin(i / 12 + 1) * 25 + (isRare ? random(-2, 8) : random(-5, 5)),
+        cos(i / 15 + 2) * 18 + (isRare ? random(-2, 8) : random(-5, 5))
+      ]);
+    }
+    if (isRare) epochBufferRare.push(mock);
+    else epochBufferFrequent.push(mock);
+    if (epochBufferRare.length > maxEpochs) epochBufferRare.shift();
+    if (epochBufferFrequent.length > maxEpochs) epochBufferFrequent.shift();
+  }
+}

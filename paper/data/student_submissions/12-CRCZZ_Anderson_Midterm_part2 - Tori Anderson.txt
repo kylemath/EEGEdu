@@ -1,0 +1,387 @@
+// ===== N170 ERP Averaging Visualization (Dark Mode) =====
+// Compatible with BrainImation (p5.js + EEG stream)
+
+
+
+
+
+
+
+
+// ----- EEG setup -----
+let channels = ['TP9', 'AF7', 'AF8', 'TP10'];
+// Soft neon colors (cyan, magenta, lime, orange)
+let colors = [
+color(80, 255, 220),
+color(255, 120, 255),
+color(180, 255, 100),
+color(255, 180, 100)
+];
+// Tracks what each stimulus panel will show this trial
+// Each trial, randomly decides what each panel shows
+let leftStimIsFace = true;        // left panel: face or object
+let rightStimIsInvertedFace = true; // right panel: inverted face or object
+let totalTrials = 0;
+
+
+
+
+
+
+
+
+let sampleRate = 256;
+let epochLength = 512;   // 2 s window (1 s pre + 1 s post)
+let preStimSamples = 256;
+let epochs = {};
+let trialCounts = {
+ leftFace: 0,
+ leftObject: 0,
+ rightInvertedFace: 0,
+ rightObject: 0
+};
+let maxTrials = 20;
+
+
+
+
+
+
+
+
+// ----- Stimulus state -----
+let trialStartTime = 0;
+let trial = 0;
+let showFace = true;
+let stimulusState = "baseline";
+
+
+
+
+
+
+
+
+// Timing (ms)
+let baselineDur = 1000;   // baseline before stimulus
+let stimDur = 500;        // face/object visible
+let itiDur = 1000;        // inter-trial interval
+let trialInterval = baselineDur + stimDur + itiDur;
+
+
+
+
+
+
+
+
+function setup() {
+colorMode(RGB, 255);
+textFont('monospace');
+for (let ch of channels) epochs[ch] = [];
+trialStartTime = millis();
+}
+
+
+
+
+
+
+
+
+function draw() {
+background(0);
+let tNow = millis() - trialStartTime;
+
+
+
+
+// --- Stimulus logic ---
+if (tNow < baselineDur) stimulusState = "baseline";
+else if (tNow < baselineDur + stimDur) stimulusState = "stimulus";
+else stimulusState = "iti";
+
+
+
+
+// --- At end of each trial, update state ---
+if (tNow > trialInterval) {
+  startNewTrial();
+  trialStartTime = millis();
+}
+
+
+
+
+// --- ERP Panels (smaller) ---
+let erpPanelHeight = height * 0.25; // smaller height
+drawERPPanel(60, 60, width - 120, erpPanelHeight, "Event-Related Potentials (FACE)");
+drawERPPanel(60, 60 + erpPanelHeight + 20, width - 120, erpPanelHeight, "Event-Related Potentials (INVERTED FACE)");
+
+
+
+
+
+
+// --- Stimulus Panels ---
+let stimY = 70 + erpPanelHeight * 2 + 100;
+let stimSize = 100;
+
+
+
+
+// Left panel: random face or object
+drawFaceStimulus(width * 0.25, stimY, stimSize, leftStimIsFace, false);
+
+
+
+
+// Right panel: random inverted face or object
+drawFaceStimulus(width * 0.75, stimY, stimSize, rightStimIsInvertedFace, true);
+
+
+
+
+
+
+
+
+
+
+
+
+// --- EEG connection indicator ---
+fill(200);
+textAlign(LEFT, TOP);
+textSize(12);
+if (typeof eegData === "undefined") {
+  text("EEG not detected — demo mode", 10, 10);
+} else if (!eegData.connected) {
+  text("EEG disconnected — waiting...", 10, 10);
+} else {
+  text("EEG connected", 10, 10);
+  fill(0, 255, 0);
+  ellipse(width - 30, 25, 10);
+}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===== ERP Panel =====
+function drawERPPanel(x, y, w, h, panelTitle) {
+ push();
+ translate(x, y);
+
+
+ // --- ERP panel title ---
+ fill(200);
+ noStroke();
+ textAlign(CENTER);
+ textSize(14);
+ text(panelTitle, w / 2, -25);
+
+
+ // --- Total trial count below title ---
+ textSize(12);
+ text(`Total Trials: ${totalTrials}`, w / 2, -10);
+
+
+ // --- Background grid lines ---
+ stroke(40);
+ for (let i = 0; i < h; i += 40) line(0, i, w, i);
+
+
+ // ...rest of your ERP plotting code...
+
+
+
+
+
+
+
+
+
+
+// Draw average ERP traces
+for (let c = 0; c < channels.length; c++) {
+ let ch = channels[c];
+ let trials = epochs[ch];
+ let avg;
+ if (trials.length > 0) avg = averageEpochs(trials);
+ else {
+   avg = [];
+   for (let i = 0; i < epochLength; i++) {
+     let t = i / sampleRate;
+     avg.push(30 * sin(TWO_PI * 10 * t + c));
+   }
+ }
+
+
+
+
+
+
+
+
+ let yOffset = (c + 1) * h / (channels.length + 1);
+ stroke(colors[c]);
+ strokeWeight(2);
+ noFill();
+ beginShape();
+ for (let i = 0; i < avg.length; i++) {
+   let xPos = map(i, 0, avg.length - 1, 0, w);
+   let yVal = yOffset + map(avg[i], -100, 100, -40, 40);
+   vertex(xPos, yVal);
+ }
+ endShape();
+
+
+
+
+
+
+
+
+ noStroke();
+ fill(colors[c]);
+ textAlign(LEFT, CENTER);
+ text(ch, 5, yOffset);
+}
+
+
+
+
+
+
+
+
+pop();
+}
+
+
+
+
+
+
+
+
+// ===== Stimulus Panel (Face/Object) =====
+// isFace = show face/object
+// inverted = true if it's inverted face panel
+// isFace = true if showing face (or inverted face), false = object
+// inverted = true if panel is inverted face panel
+function drawFaceStimulus(cx, cy, stimSize, isFace, inverted=false) {
+push();
+rectMode(CENTER);
+textAlign(CENTER);
+noStroke();
+fill(180);
+
+
+
+
+// Label matches the panel type
+text(inverted ? "INVERTED FACE" : "FACE", cx, cy - 80);
+
+
+
+
+stroke(100);
+noFill();
+rect(cx, cy, 180, 180);
+noStroke();
+
+
+
+
+if (stimulusState === "stimulus") {
+  if (isFace) {
+    push();
+    translate(cx, cy);      // move origin to center of panel
+    if (inverted) rotate(PI); // rotate around center
+
+
+
+
+    fill(255);
+    ellipse(0, 0, stimSize * 0.5, stimSize * 0.6); // head
+    fill(0);
+    ellipse(-12, -8, 8, 8); // eyes
+    ellipse(12, -8, 8, 8);
+    noFill();
+    stroke(0);
+    strokeWeight(2);
+    arc(0, 8, 25, 15, 0, PI); // mouth
+
+
+
+
+    pop(); // reset transform
+  } else {
+    fill(255);
+    rect(cx, cy, stimSize * 0.5, stimSize * 0.5); // object
+  }
+} else if (stimulusState === "iti") {
+  fill(100);
+  textSize(10);
+  text("ITI", cx, cy);
+}
+pop();
+}
+
+
+
+
+
+
+
+
+// ===== Trial Handling =====
+function startNewTrial() {
+totalTrials++;
+
+
+ // Randomly choose left panel: face or object
+ leftStimIsFace = random() < 0.5;
+
+
+ // Randomly choose right panel: inverted face or object
+ rightStimIsInvertedFace = random() < 0.5;
+
+
+ // ---- ADD COUNTERS HERE ----
+ if (leftStimIsFace) trialCounts.leftFace++;
+ else trialCounts.leftObject++;
+
+
+ if (rightStimIsInvertedFace) trialCounts.rightInvertedFace++;
+ else trialCounts.rightObject++;
+
+
+ // collect EEG epoch
+ if (typeof eegData !== "undefined" && eegData.connected) {
+   let recent = eegData.getAllChannels(epochLength);
+   for (let ch of channels) {
+     if (recent[ch] && recent[ch].length === epochLength) {
+       epochs[ch].push(recent[ch]);
+       if (epochs[ch].length > maxTrials) epochs[ch].shift();
+     }
+   }
+ }
+}
+
+
+

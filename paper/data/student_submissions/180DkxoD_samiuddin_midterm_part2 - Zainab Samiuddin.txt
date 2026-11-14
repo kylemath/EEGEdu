@@ -1,0 +1,235 @@
+let epochLength = 256; // 1-second epochs at 256 Hz
+let maxTrials = 20;    // keep the last 20 trials
+let channels = ['TP9','AF7','AF8','TP10'];
+let trialData = {};    // store trials per channel
+let trialStartTime = 0; // for stimulus timing
+let currentTrial = 0;
+// Stimulus timing (in ms)
+let baselineDur = 1000;      // 1 s baseline
+let circleDur = 30;           // 30 ms circle
+let annulusDelay = 60;        // 60 ms after circle offset
+let annulusDur = 30;          // 30 ms annulus
+let trialDur = 1000;          // 1 s total per trial
+let stimPanelY = 100; // top y position of stimulus panel
+let stimPanelH = 50;  // height of stimulus panel
+let trialCategory = [];  // stores "face" or "object" for each trial in order
+let totalTrialCounts = { face: 0, object: 0 };  // NEW: tracks total trials ever presented
+
+
+function setup() {
+  colorMode(HSB, 360, 100, 100);
+
+  // Initialize empty arrays for each channel
+  for (let ch of channels) {
+trialData[ch] = [];
+  }
+
+  trialStartTime = millis(); // start the first trial
+}
+
+function draw() {
+  background(0, 0, 5);
+   // --- Step 5: Check if it's time for a new trial ---
+  if (millis() - trialStartTime >= 1000) { // 1000 ms ITI
+   // Determine category of current trial
+let showFace = Math.floor(currentTrial % 2) === 0; // alternate trials
+let category = showFace ? "face" : "object";
+
+// Store epoch with category
+addEpoch(category);
+
+trialStartTime = millis(); // reset timer for next trial
+currentTrial++;
+
+    }
+  let channels = ['TP9', 'AF7', 'AF8', 'TP10'];
+  let colors = [300, 180, 60, 120]; // Purple, Cyan, Yellow, Green
+  
+  // Draw each channel
+  // --- Step 6: Draw ERP averages ---
+let topPanelHeight = height * 0.6;  // top 60% for ERP
+for (let c = 0; c < channels.length; c++) {
+  let yOffset = (c + 1) * topPanelHeight / (channels.length + 1);
+  
+  // Skip if no trials yet
+  if (trialData[channels[c]].length === 0) continue;
+let categories = ["face", "object"];
+let catColors = [0, 200]; // red = face, blue = object
+let catYOffset = [-10, 10]; // vertical offset for clarity
+
+for (let catIdx = 0; catIdx < categories.length; catIdx++) {
+  let cat = categories[catIdx];
+
+  // collect trials of this category
+  let catTrials = [];
+  for (let t = 0; t < trialData[channels[c]].length; t++) {
+    if (trialCategory[t] === cat) catTrials.push(trialData[channels[c]][t]);
+  }
+
+  if (catTrials.length === 0) continue;
+
+  // compute average
+  let avgData = new Array(epochLength).fill(0);
+  for (let t = 0; t < catTrials.length; t++) {
+    for (let i = 0; i < epochLength; i++) {
+      avgData[i] += catTrials[t][i] / catTrials.length;
+    }
+  }
+
+// baseline correction: use first 20% of samples as pre-stimulus
+let preStimSamples = Math.floor(0.2 * epochLength);
+let baselineMean = 0;
+for (let i = 0; i < preStimSamples; i++) baselineMean += avgData[i]/preStimSamples;
+for (let i = 0; i < avgData.length; i++) avgData[i] -= baselineMean;
+
+// draw ERP trace with vertical offset
+stroke(catColors[catIdx], 80, 90);
+strokeWeight(1.5);
+noFill();
+beginShape();
+for (let i = 0; i < avgData.length; i++) {
+// x-axis: 0 to trialDur
+let x = map(i, 0, epochLength - 1, 80, width - 20);
+
+  let y = yOffset + catYOffset[catIdx] + map(avgData[i], -100, 100, -40, 40);
+  vertex(x, y);
+}
+endShape();
+
+
+// display trial count above the trace
+noStroke();
+fill(catColors[catIdx], 80, 90);
+textSize(12);
+textAlign(RIGHT, CENTER);
+let yOffsetCount = yOffset - 19;         
+if (cat === "object") yOffsetCount += 20; 
+text(cat + ": " + totalTrialCounts[cat] + " trials", width - 10, yOffsetCount);
+
+}
+
+
+  
+  // Channel label
+  fill(colors[c], 80, 90);
+  noStroke();
+  textAlign(LEFT, CENTER);
+  textSize(14);
+  text(channels[c], 10, yOffset);
+  
+  // Zero line
+  stroke(0, 0, 20);
+  strokeWeight(1);
+  line(80, yOffset, width - 20, yOffset)
+
+  // --- Step 7: Draw stimulus panel ---
+let bottomPanelY = height * 0.6;  // bottom 40% of canvas
+let bottomPanelHeight = height * 0.4;
+
+// panel background
+fill(0,0,10);
+noStroke();
+rect(0, bottomPanelY, width, bottomPanelHeight);
+
+// Compute elapsed time in current trial
+let t = millis() - trialStartTime;
+
+// Draw N170 stimulus (face/object) in bottom panel
+let showFace = Math.floor(currentTrial % 2) === 0; // alternate every trial
+let cx = width / 2;
+let cy = bottomPanelY + bottomPanelHeight / 2;
+
+fill(255);
+noStroke();
+
+if (showFace) {
+  // Simple face
+  ellipse(cx, cy, 50, 60);
+  fill(20);
+  ellipse(cx - 12, cy - 8, 8, 8);
+  ellipse(cx + 12, cy - 8, 8, 8);
+  arc(cx, cy + 8, 25, 15, 0, PI);
+  fill(255);
+  textAlign(CENTER);
+  textSize(10);
+  text("FACE", cx, bottomPanelY + bottomPanelHeight - 10);
+} else {
+  // Object
+  rect(cx - 25, cy - 25, 50, 50);
+  fill(255);
+  textAlign(CENTER);
+  textSize(10);
+  text("OBJECT", cx, bottomPanelY + bottomPanelHeight - 10);
+}
+
+
+// --- Time axis setup ---
+let preStimMs = 200;   // 200 ms before stimulus
+let postStimMs = 800;  // 800 ms after stimulus
+let totalMs = preStimMs + postStimMs; // 1000 ms epoch
+let samplesPerMs = epochLength / trialDur; // 256 samples / 1000 ms
+let preStimSamples = Math.floor(preStimMs * samplesPerMs);
+
+// Draw vertical line at stimulus onset (0 ms)
+stroke(0,0,80);
+strokeWeight(1);
+let zeroX = map(0, -preStimMs, postStimMs, 80, width-20);
+line(zeroX, 0, zeroX, bottomPanelY + bottomPanelHeight);
+
+// Draw tick marks every 100 ms from -200 to +800
+for (let ms = -preStimMs; ms <= postStimMs; ms += 100) {
+  let x = map(ms, -preStimMs, postStimMs, 80, width-20);
+  stroke(0,0,50);
+  line(x, bottomPanelY, x, bottomPanelY + 10);
+  noStroke();
+  fill(0,0,100);
+  textAlign(CENTER, TOP);
+  textSize(10);
+  text(ms + "ms", x, bottomPanelY + 12);
+}
+
+  }
+  
+  // Main x-axis label
+fill(0,0,100);
+textAlign(CENTER, BOTTOM);
+textSize(12);
+text("Time (ms)", width/2, height - 249);
+
+
+  // Title
+  fill(0, 0, 100);
+  noStroke();
+  textAlign(CENTER, TOP);
+  textSize(16);
+  text("Multi-Channel EEG: Face vs Object ERPs", width/2, 10);
+  
+  // Real-time indicator
+  if (eegData.connected) {
+    fill(120, 80, 90);
+    ellipse(width - 30, 30, 10);
+    textAlign(RIGHT, CENTER);
+    textSize(12);
+    text("LIVE", width - 40, 30);
+
+  }
+}
+
+function addEpoch(category) {
+  for (let ch of channels) {
+    let epoch = eegData.getRawChannel(ch, epochLength);
+    if (epoch.length === epochLength) {
+      trialData[ch].push(epoch);  // numeric array stays intact
+    }
+  }
+  
+  trialCategory.push(category);        // keep last maxTrials for ERP averaging
+  totalTrialCounts[category]++;        // track total number of trials ever presented
+
+  if (trialCategory.length > maxTrials) {
+    trialCategory.shift();             // remove oldest category
+    for (let ch of channels) {
+      trialData[ch].shift();           // remove oldest trial from each channel
+    }
+  }
+}

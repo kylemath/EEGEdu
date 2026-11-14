@@ -1,0 +1,179 @@
+// ✅ WORKING P300 ERP SIMULATION (for BrainImation, no device needed)
+
+let epochData = { standard: [], rare: [] };
+let epochLength = 256; // ~1 second at 256Hz
+let maxEpochs = 20;
+let frameCounter = 0;
+
+let showStim = false;
+let stimType = "standard";
+let stimTimer = 0;
+let stimDuration = 15; // show stimulus for ~250ms
+let iti = 60; // inter-trial interval ~1s
+
+function setup() {
+  colorMode(HSB, 360, 100, 100);
+  textFont("sans-serif");
+}
+
+function draw() {
+  background(0, 0, 10);
+  frameCounter++;
+
+  // --- Stimulus timing control ---
+  if (!showStim && frameCounter % iti === 0) {
+    startTrial();
+  }
+
+  if (showStim) {
+    stimTimer++;
+    if (stimTimer > stimDuration) {
+      showStim = false;
+      stimTimer = 0;
+    }
+  }
+
+  drawERP();
+  drawStimulus();
+}
+
+// --- Start a simulated trial ---
+function startTrial() {
+  showStim = true;
+  stimType = random() < 0.2 ? "rare" : "standard";
+  let newEpoch = simulateEEG(stimType);
+
+  epochData[stimType].push(newEpoch);
+  if (epochData[stimType].length > maxEpochs) epochData[stimType].shift();
+}
+
+// --- Simulated EEG data with P300 component for "rare" ---
+function simulateEEG(type) {
+  let epoch = [];
+  for (let i = 0; i < epochLength; i++) {
+    let sample = [];
+    for (let ch = 0; ch < 4; ch++) {
+      let noise = random(-0.3, 0.3);
+      let signal = 0;
+      if (type === "rare" && i > 75 && i < 150) {
+        // Simulated P300 bump
+        signal = 0.8 * sin((i - 75) / 75 * PI);
+      }
+      sample.push(noise + signal);
+    }
+    epoch.push(sample);
+  }
+  return epoch;
+}
+
+// --- Draw averaged ERP traces for both categories ---
+function drawERP() {
+  let avgStandard = averageEpochs(epochData.standard);
+  let avgRare = averageEpochs(epochData.rare);
+
+  let channelNames = ['TP9', 'AF7', 'AF8', 'TP10'];
+  let colors = [300, 180, 60, 120];
+  let midY = height * 0.45;
+
+  // --- Draw axes and timing ---
+  stroke(0, 0, 40);
+  line(60, midY, width - 60, midY); // zero line
+
+  // Tick marks every 100ms (-200 to +800)
+  for (let ms = -200; ms <= 800; ms += 100) {
+    let x = map(ms + 200, 0, 1000, 60, width - 60);
+    stroke(0, 0, 30);
+    line(x, midY - 120, x, midY + 120);
+    noStroke();
+    fill(0, 0, 60);
+    textSize(10);
+    textAlign(CENTER);
+    text(ms + "ms", x, midY + 130);
+  }
+
+  // Stimulus onset (0 ms)
+  stroke(60, 100, 100);
+  line(map(200, 0, 1000, 60, width - 60), midY - 120, map(200, 0, 1000, 60, width - 60), midY + 120);
+
+  // --- Plot averaged signals ---
+  for (let ch = 0; ch < 4; ch++) {
+    if (avgStandard.length > 0) {
+      stroke(200, 80, 90); // blue-ish for standard
+      noFill();
+      beginShape();
+      for (let i = 0; i < avgStandard.length; i++) {
+        let x = map(i, 0, epochLength - 1, 60, width - 60);
+        let y = midY + (ch - 1.5) * 50 + map(avgStandard[i][ch], -1, 1, 30, -30);
+        vertex(x, y);
+      }
+      endShape();
+    }
+
+    if (avgRare.length > 0) {
+      stroke(0, 80, 90); // red-ish for rare
+      noFill();
+      beginShape();
+      for (let i = 0; i < avgRare.length; i++) {
+        let x = map(i, 0, epochLength - 1, 60, width - 60);
+        let y = midY + (ch - 1.5) * 50 + map(avgRare[i][ch], -1, 1, 30, -30);
+        vertex(x, y);
+      }
+      endShape();
+    }
+
+    // Channel labels
+    noStroke();
+    fill(colors[ch], 80, 90);
+    textAlign(LEFT, CENTER);
+    textSize(12);
+    text(channelNames[ch], 10, midY + (ch - 1.5) * 50);
+  }
+
+  // --- Counters and title ---
+  fill(0, 0, 100);
+  textSize(16);
+  textAlign(CENTER);
+  text("Simulated P300 ERP Averaging", width / 2, 20);
+
+  textSize(12);
+  text(
+    "Standard (blue): " + epochData.standard.length + "   Rare (red): " + epochData.rare.length,
+    width / 2,
+    40
+  );
+}
+
+// --- Average a list of epochs ---
+function averageEpochs(list) {
+  if (list.length === 0) return [];
+  let avg = [];
+  for (let i = 0; i < epochLength; i++) {
+    let sampleAvg = [0, 0, 0, 0];
+    for (let e = 0; e < list.length; e++) {
+      for (let ch = 0; ch < 4; ch++) {
+        sampleAvg[ch] += list[e][i][ch];
+      }
+    }
+    for (let ch = 0; ch < 4; ch++) {
+      sampleAvg[ch] /= list.length;
+    }
+    avg.push(sampleAvg);
+  }
+  return avg;
+}
+
+// --- Draw current stimulus at bottom ---
+function drawStimulus() {
+  let yStart = height * 0.75;
+  fill(20);
+  rect(0, yStart, width, height * 0.25);
+
+  if (showStim) {
+    fill(stimType === "rare" ? color(0, 80, 90) : color(200, 80, 90));
+    ellipse(width / 2, yStart + height * 0.12, 80, 80);
+    fill(0, 0, 100);
+    textSize(16);
+    textAlign(CENTER, CENTER);
+    text(stimType.toUpperCase(), width / 2, yStart + height * 0.22);
+  }
+}

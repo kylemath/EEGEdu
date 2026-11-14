@@ -1,0 +1,163 @@
+// ✅ Working P300 ERP Simulation with Baseline Correction (BrainImation version)
+
+let epochLength = 384; // ~1.5 s at 256 Hz (-200 to +800 ms)
+let preStimSamples = 51; // ~200 ms baseline
+let maxEpochs = 20;
+
+let standardEpochs = [];
+let rareEpochs = [];
+
+let trial = 0;
+let isRare = false;
+let showStim = false;
+let stimFrames = 15; // stimulus visible ~250 ms
+let stimCounter = 0;
+let itiFrames = 90;  // ~1.5 s inter-trial interval
+
+function setup() {
+  colorMode(HSB, 360, 100, 100);
+  frameRate(60);
+}
+
+function draw() {
+  background(0, 0, 8);
+
+  // Trial timing
+  if (!showStim && frameCount % itiFrames === 0) startTrial();
+
+  if (showStim) {
+    stimCounter++;
+    if (stimCounter >= stimFrames) {
+      showStim = false;
+      stimCounter = 0;
+    }
+  }
+
+  drawERP();
+  drawStimulus();
+}
+
+function startTrial() {
+  trial++;
+  showStim = true;
+  isRare = random() < 0.2; // 20% rare
+
+  // Simulate EEG data [samples][channels]
+  let epoch = [];
+  for (let i = 0; i < epochLength; i++) {
+    let sample = [];
+    for (let ch = 0; ch < 4; ch++) {
+      let noise = random(-0.2, 0.2);
+      let signal = 0;
+      // Simulated P300 bump for rare condition (300–600 ms)
+      if (isRare && i >= preStimSamples + 77 && i <= preStimSamples + 154) {
+        signal = 0.7 * sin((i - preStimSamples - 77) / 77 * PI);
+      }
+      sample.push(noise + signal);
+    }
+    epoch.push(sample);
+  }
+
+  // Baseline correction (subtract pre-stim mean)
+  let baseline = Array(4).fill(0);
+  for (let i = 0; i < preStimSamples; i++) {
+    for (let ch = 0; ch < 4; ch++) {
+      baseline[ch] += epoch[i][ch];
+    }
+  }
+  for (let ch = 0; ch < 4; ch++) baseline[ch] /= preStimSamples;
+  for (let i = 0; i < epochLength; i++) {
+    for (let ch = 0; ch < 4; ch++) epoch[i][ch] -= baseline[ch];
+  }
+
+  if (isRare) {
+    rareEpochs.push(epoch);
+    if (rareEpochs.length > maxEpochs) rareEpochs.shift();
+  } else {
+    standardEpochs.push(epoch);
+    if (standardEpochs.length > maxEpochs) standardEpochs.shift();
+  }
+}
+
+function drawERP() {
+  let h = height * 0.6;
+
+  fill(15);
+  rect(0, 0, width, h);
+
+  // Timing axis (-200 to +800 ms)
+  stroke(100);
+  for (let ms = -200; ms <= 800; ms += 100) {
+    let x = map(ms + 200, 0, 1000, 60, width - 60);
+    line(x, h * 0.1, x, h * 0.9);
+    noStroke();
+    fill(220);
+    textSize(10);
+    textAlign(CENTER);
+    text(ms + "ms", x, h * 0.95);
+    stroke(100);
+  }
+
+  // 0 ms onset line
+  stroke(60, 100, 100);
+  let zeroX = map(200, 0, 1000, 60, width - 60);
+  line(zeroX, h * 0.1, zeroX, h * 0.9);
+
+  // Helper to draw averaged ERP
+  function drawAvg(epochs, hue) {
+    if (epochs.length === 0) return;
+    stroke(hue, 80, 90);
+    strokeWeight(2);
+    noFill();
+    beginShape();
+    for (let i = 0; i < epochLength; i++) {
+      let sum = 0;
+      for (let e = 0; e < epochs.length; e++) {
+        sum += epochs[e][i][1]; // use AF7 channel
+      }
+      let val = sum / epochs.length;
+      let x = map(i, 0, epochLength - 1, 60, width - 60);
+      let y = h / 2 - val * 100;
+      vertex(x, y);
+    }
+    endShape();
+  }
+
+  drawAvg(standardEpochs, 180); // blue
+  drawAvg(rareEpochs, 0);       // red
+
+  // Axis & labels
+  stroke(100);
+  line(60, h / 2, width - 60, h / 2);
+  noStroke();
+  fill(0, 0, 100);
+  textAlign(CENTER, TOP);
+  textSize(16);
+  text("ERP Averaging (Simulated P300)", width / 2, 8);
+  textSize(12);
+  text("Standard = Blue | Rare = Red | 0 ms = Stimulus Onset", width / 2, 28);
+
+  // Counters
+  textAlign(LEFT);
+  fill(180, 80, 90);
+  text("Standard n=" + standardEpochs.length, 20, 40);
+  fill(0, 80, 90);
+  text("Rare n=" + rareEpochs.length, 20, 60);
+}
+
+function drawStimulus() {
+  let y0 = height * 0.65;
+  fill(20);
+  rect(0, y0, width, height * 0.35);
+
+  if (showStim) {
+    fill(isRare ? color(0, 80, 90) : color(180, 80, 90));
+    ellipse(width / 2, y0 + height * 0.17, 80, 80);
+
+    fill(255);
+    textSize(16);
+    textAlign(CENTER, CENTER);
+    text(isRare ? "RARE" : "STANDARD", width / 2, y0 + height * 0.27);
+    text("Trial " + trial, width / 2, y0 + height * 0.33);
+  }
+}

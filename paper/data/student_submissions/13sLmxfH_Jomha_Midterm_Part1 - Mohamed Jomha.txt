@@ -1,0 +1,142 @@
+// === BrainImation Midterm: Target Brain State Training with Pitch-Scaled Ding (fixed) ===
+// Works inside BrainImation: no createCanvas(), and audio starts after user interaction.
+
+let particles = [];
+let targetAlpha = 0.5; // set to match your simulated range
+let progressLevel = 0;
+let dingSound = null;
+let audioEnabled = false;
+let lastDingTime = 0;
+
+function setup() {
+  // BrainImation handles the canvas, so do NOT call createCanvas()
+  colorMode(RGB, 255);
+
+  // Init particle system
+  for (let i = 0; i < 100; i++) {
+    particles.push({
+      x: random(width),
+      y: random(height),
+      vx: random(-2, 2),
+      vy: random(-2, 2),
+      life: 1.0
+    });
+  }
+
+  // Show hint text until user enables audio
+  textSize(16);
+}
+
+function draw() {
+  background(0, 0, 0, 25);
+
+  // --- EEG simulated data (replace with live eegData.alpha if available) ---
+  let alpha = eegData?.alpha ?? random(0.2, 0.45); // simulate in your observed range
+  let beta  = eegData?.beta  ?? 0.3;
+  let gamma = eegData?.gamma ?? 0.2;
+
+  // --- Neurofeedback logic ---
+  let normTarget = max(targetAlpha, 0.0001);
+  let diff = abs(alpha - targetAlpha);
+  let proximity = constrain(1 - diff / normTarget, 0, 1);
+  let targetProgress = proximity * 100;
+  progressLevel += (targetProgress - progressLevel) * 0.04;
+  progressLevel = constrain(progressLevel, 0, 100);
+
+  // ✅ Play ding when alpha >= targetAlpha (with 1s cooldown) AND audio is enabled
+  if (alpha >= targetAlpha && millis() - lastDingTime > 1000) {
+    if (audioEnabled) {
+      // pitch rises with alpha — clamp mapping input range to avoid weird values
+      let pitch = map(alpha, targetAlpha, max(targetAlpha, 0.6), 600, 1000);
+      pitch = constrain(pitch, 200, 2000);
+      playDing(pitch);
+    }
+    lastDingTime = millis();
+  }
+
+  // --- Particles ---
+  for (let p of particles) {
+    p.vx += (random(-1, 1) * beta * 0.1);
+    p.vy += (random(-1, 1) * alpha * 0.1);
+    p.x += p.vx;
+    p.y += p.vy;
+
+    if (p.x < 0) p.x = width;
+    if (p.x > width) p.x = 0;
+    if (p.y < 0) p.y = height;
+    if (p.y > height) p.y = 0;
+
+    let r = map(proximity, 0, 1, 60, 255);
+    let g = map(proximity, 0, 1, 100, 40);
+    let b = map(proximity, 0, 1, 255, 70);
+    let size = map(proximity, 0, 1, 15, 80);
+
+    noStroke();
+    fill(r, g, b, 200 * p.life);
+    ellipse(p.x, p.y, size + gamma * 10);
+
+    p.life *= 0.995;
+    if (p.life < 0.1) p.life = 1.0;
+  }
+
+  // --- UI text ---
+  fill(255);
+  noStroke();
+  textAlign(LEFT);
+  textSize(16);
+  text(`Target Calmness: ${targetAlpha.toFixed(2)}`, 20, 30);
+  text(`Current Alpha: ${alpha.toFixed(2)}`, 20, 50);
+  text(`Progress: ${progressLevel.toFixed(0)}%`, 20, 70);
+
+  // If audio not enabled, show small prompt
+  if (!audioEnabled) {
+    push();
+    textAlign(CENTER);
+    textSize(14);
+    fill(255, 200);
+    text('Click or tap anywhere to enable sound for ding feedback', width / 2, height - 50);
+    pop();
+  }
+
+  // --- Progress bar (bottom) ---
+  let barWidth = map(progressLevel, 0, 100, 0, width);
+  let barR = map(progressLevel, 0, 100, 50, 255);
+  let barG = progressLevel > 50 ? map(progressLevel, 50, 100, 200, 60)
+                                : map(progressLevel, 0, 50, 120, 200);
+  let barB = map(progressLevel, 0, 100, 220, 80);
+
+  noStroke();
+  fill(barR, barG, barB, 220);
+  rect(0, height - 25, barWidth, 20, 10);
+  noFill();
+  stroke(255);
+  strokeWeight(1.5);
+  rect(0, height - 25, width, 20, 10);
+}
+
+// Start audio on first user interaction (click/tap/keypress)
+function mousePressed() { enableAudio(); }
+function touchStarted() { enableAudio(); return false; } // return false to prevent mobile double events
+function keyPressed() { enableAudio(); }
+
+function enableAudio() {
+  if (audioEnabled) return;
+  audioEnabled = true;
+
+  // Create and start oscillator now that the user interacted
+  dingSound = new p5.Oscillator('sine');
+  dingSound.start();
+  dingSound.amp(0); // silent until playDing ramps it up
+}
+
+// play variable-pitch ding (only works after audioEnabled true)
+function playDing(pitch = 880) {
+  if (!audioEnabled || !dingSound) return;
+
+  dingSound.freq(pitch);
+  // quick attack to 0.25, then release
+  dingSound.amp(0.25, 0.02);
+  setTimeout(() => {
+    if (dingSound) dingSound.amp(0, 0.3);
+  }, 220);
+}

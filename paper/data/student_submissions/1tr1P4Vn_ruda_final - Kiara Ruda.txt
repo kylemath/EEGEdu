@@ -1,0 +1,227 @@
+// NeuroWeather STEP 7: add fog (theta-driven)
+let particles = [];
+let raindrops = [];
+let stressLevel = 0;
+
+// lightning state
+let lightningFlash = 0;
+let lightningBolt = [];
+
+function setup() {
+  colorMode(HSB, 250, 10, 100);
+
+  // Clouds
+  for (let i = 0; i < 55; i++) {
+    particles.push({
+      x: random(width),
+      y: random(height * 0.6),
+      vx: random(0.2, 1.2),
+      vy: random(-0.15, 0.15),
+      life: random(0.5, 1.0),
+      r: random(50, 140),
+      s: random(1000)
+    });
+  }
+
+  // Rain pool
+  for (let i = 0; i < 500; i++) {
+    raindrops.push(makeDrop(true));
+  }
+}
+
+function draw() {
+  background(0, 0, 0, 0.1);
+
+  // --- stress detection ---
+  let stressTarget = constrain(
+    map(eegData.beta - eegData.alpha, -0.1, 0.4, 0, 1),
+    0, 1
+  );
+  stressLevel = lerp(stressLevel, stressTarget, 0.05);
+  let stressed = eegData.beta > eegData.alpha;
+
+  // ===== SUN GLOW =====
+  drawSunGlow(eegData.alpha, stressLevel);
+
+  if (stressed) {
+    push();
+    translate(random(-5, 5) * stressLevel, random(-5, 5) * stressLevel);
+  }
+
+  // ===== CLOUDS =====
+  const wind = 0.4 + stressLevel * 3.8;
+
+  for (let p of particles) {
+    const wobble =
+      (noise(p.s, frameCount * 0.004) - 0.5) *
+      (2 + 30 * stressLevel);
+
+    p.x += p.vx * wind;
+    p.y += p.vy + wobble * 0.02;
+
+    if (p.x > width + p.r) p.x = -p.r;
+    if (p.y < 0) p.y = height * 0.6;
+    if (p.y > height * 0.65) p.y = random(height * 0.1, height * 0.6);
+
+    let cloudBri = lerp(95, 45, stressLevel);
+    let cloudAlpha =
+      lerp(0.30, 0.60, 1 - eegData.alpha) + 0.15 * stressLevel;
+
+    noStroke();
+    fill(0, 0, cloudBri, cloudAlpha);
+
+    ellipse(p.x, p.y, p.r);
+    ellipse(p.x + p.r * 0.35, p.y + p.r * 0.05, p.r * 0.85);
+    ellipse(p.x - p.r * 0.35, p.y + p.r * 0.05, p.r * 0.85);
+    ellipse(p.x, p.y - p.r * 0.25, p.r * 0.7);
+  }
+
+  // ===== RAIN =====
+  drawRain(stressLevel, wind);
+
+  // ===== LIGHTNING =====
+  updateLightning(stressLevel);
+  drawLightning();
+
+  if (stressed) pop();
+
+  // ===== FOG (NEW) =====
+  drawFog(eegData.theta);
+
+  // HUD
+  noStroke();
+  fill(0, 0, 100);
+  textSize(12);
+  text(
+    `Clouds + Rain + Lightning + Sun + Fog | a:${eegData.alpha.toFixed(2)} b:${eegData.beta.toFixed(2)} t:${eegData.theta.toFixed(2)} stress:${stressLevel.toFixed(2)}`,
+    12, 18
+  );
+}
+
+// ---------- Sun glow ----------
+function drawSunGlow(alpha, stress) {
+  const calm = constrain(map(alpha, 0.05, 0.75, 0, 1), 0, 1);
+  const glow = calm * (1 - 0.85 * stress);
+  if (glow < 0.05) return;
+
+  const x = width * 0.82;
+  const y = height * 0.18;
+
+  noStroke();
+  for (let i = 0; i < 7; i++) {
+    const r = 90 + i * 55;
+    fill(45, 8, 100, 0.06 * glow);
+    ellipse(x, y, r);
+  }
+  fill(45, 8, 100, 0.18 * glow);
+  ellipse(x, y, 70);
+}
+
+// ---------- Fog (NEW) ----------
+function drawFog(theta) {
+  // Theta up = foggier
+  const fog = constrain(map(theta, 0.05, 0.75, 0, 1), 0, 1);
+  if (fog < 0.02) return;
+
+  // Bottom-heavy fog gradient
+  noStroke();
+  for (let y = 0; y < height; y += 10) {
+    const p = y / height;
+    const a = fog * pow(p, 1.7) * 0.30; // heavier near bottom
+    fill(0, 0, 100, a);
+    rect(0, y, width, 10);
+  }
+
+  // Soft fog blobs to make it feel alive
+  const blobs = floor(25 + 65 * fog);
+  for (let i = 0; i < blobs; i++) {
+    fill(0, 0, 100, 0.02 * fog);
+    ellipse(
+      random(width),
+      random(height),
+      random(80, 220),
+      random(50, 160)
+    );
+  }
+}
+
+// ---------- Rain helpers ----------
+function makeDrop(fromTop) {
+  return {
+    x: random(width),
+    y: fromTop ? random(-height, 0) : random(-200, -20),
+    vy: random(10, 22),
+    vx: random(-1.5, 1.5),
+    len: random(10, 22)
+  };
+}
+
+function drawRain(stress, wind) {
+  const active = floor(lerp(0, raindrops.length, pow(stress, 1.4)));
+  if (active <= 0) return;
+
+  const slant = lerp(0, 6, stress) * (wind * 0.3);
+  stroke(0, 0, 100, lerp(0, 0.55, stress));
+  strokeWeight(2);
+
+  for (let i = 0; i < active; i++) {
+    const d = raindrops[i];
+    d.x += d.vx + slant;
+    d.y += d.vy;
+
+    line(d.x, d.y, d.x - slant, d.y - d.len);
+
+    if (d.y > height + 20 || d.x > width + 20) {
+      raindrops[i] = makeDrop(false);
+    }
+  }
+
+  noStroke();
+}
+
+// ---------- Lightning helpers ----------
+function updateLightning(stress) {
+  const chance = 0.015 * pow(stress, 2.4);
+
+  if (lightningFlash <= 0.01 && random() < chance) {
+    lightningFlash = 1.0;
+    lightningBolt = makeBolt();
+  }
+
+  lightningFlash *= 0.85;
+}
+
+function makeBolt() {
+  let bolt = [];
+  let x = random(width * 0.2, width * 0.8);
+  let y = 0;
+
+  bolt.push({ x, y });
+
+  for (let i = 0; i < 16; i++) {
+    x += random(-25, 25);
+    y += random(20, 55);
+    bolt.push({ x, y });
+    if (y > height * 0.75) break;
+  }
+  return bolt;
+}
+
+function drawLightning() {
+  if (lightningFlash <= 0.02) return;
+
+  noStroke();
+  fill(0, 0, 100, 0.22 * lightningFlash);
+  rect(0, 0, width, height);
+
+  stroke(0, 0, 100, 0.9 * lightningFlash);
+  strokeWeight(3);
+
+  for (let i = 0; i < lightningBolt.length - 1; i++) {
+    const a = lightningBolt[i];
+    const b = lightningBolt[i + 1];
+    line(a.x, a.y, b.x, b.y);
+  }
+
+  noStroke();
+}

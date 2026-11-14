@@ -1,0 +1,114 @@
+Last login: Tue Sep 16 23:41:42 on ttys000
+mohamedjomha@Mohameds-MacBook-Air-5 ~ % mkdir -p ~/Desktop/EEG_Assignment
+open ~/Desktop/EEG_Assignment
+
+mohamedjomha@Mohameds-MacBook-Air-5 ~ % python3 -m pip install --user matplotlib numpy scipy
+
+Requirement already satisfied: matplotlib in ./Library/Python/3.9/lib/python/site-packages (3.9.4)
+Requirement already satisfied: numpy in ./Library/Python/3.9/lib/python/site-packages (2.0.2)
+Requirement already satisfied: scipy in ./Library/Python/3.9/lib/python/site-packages (1.13.1)
+Requirement already satisfied: contourpy>=1.0.1 in ./Library/Python/3.9/lib/python/site-packages (from matplotlib) (1.3.0)
+Requirement already satisfied: cycler>=0.10 in ./Library/Python/3.9/lib/python/site-packages (from matplotlib) (0.12.1)
+Requirement already satisfied: fonttools>=4.22.0 in ./Library/Python/3.9/lib/python/site-packages (from matplotlib) (4.59.2)
+Requirement already satisfied: kiwisolver>=1.3.1 in ./Library/Python/3.9/lib/python/site-packages (from matplotlib) (1.4.7)
+Requirement already satisfied: packaging>=20.0 in ./Library/Python/3.9/lib/python/site-packages (from matplotlib) (25.0)
+Requirement already satisfied: pillow>=8 in ./Library/Python/3.9/lib/python/site-packages (from matplotlib) (11.3.0)
+Requirement already satisfied: pyparsing>=2.3.1 in ./Library/Python/3.9/lib/python/site-packages (from matplotlib) (3.2.4)
+Requirement already satisfied: python-dateutil>=2.7 in ./Library/Python/3.9/lib/python/site-packages (from matplotlib) (2.9.0.post0)
+Requirement already satisfied: importlib-resources>=3.2.0 in ./Library/Python/3.9/lib/python/site-packages (from matplotlib) (6.5.2)
+Requirement already satisfied: zipp>=3.1.0 in ./Library/Python/3.9/lib/python/site-packages (from importlib-resources>=3.2.0->matplotlib) (3.23.0)
+Requirement already satisfied: six>=1.5 in /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/site-packages (from python-dateutil>=2.7->matplotlib) (1.15.0)
+mohamedjomha@Mohameds-MacBook-Air-5 ~ % cd ~/Desktop/EEG_Assignment
+python3 assignment1_eeg.py
+
+cd: no such file or directory: /Users/mohamedjomha/Desktop/EEG_Assignment
+/Library/Developer/CommandLineTools/usr/bin/python3: can't open file '/Users/mohamedjomha/assignment1_eeg.py': [Errno 2] No such file or directory
+mohamedjomha@Mohameds-MacBook-Air-5 ~ % mkdir -p ~/Desktop/EEG_Assignment
+cd ~/Desktop/EEG_Assignment
+
+mohamedjomha@Mohameds-MacBook-Air-5 EEG_Assignment % >....                            
+    axes[0].set_title("Raw EEG")
+    axes[1].set_title("Filtered EEG 1-40Hz")
+    axes[1].set_xlabel("Time (s)")
+    pdf.savefig(fig)
+    plt.close(fig)
+
+    # PSD
+    fig, ax = plt.subplots(figsize=(10,5))
+    for data,label in zip([raw, filtered], ['Raw','Filtered']):
+        freqs, psd = welch(data, sfreq, nperseg=256, axis=1)
+        psd_mean = psd.mean(axis=0)
+        ax.semilogy(freqs, psd_mean, label=label)
+    ax.set_xlim(1,60)
+    ax.set_xlabel("Frequency (Hz)")
+    ax.set_ylabel("PSD")
+    ax.set_title("Power Spectral Density")
+    ax.legend()
+    pdf.savefig(fig)
+    plt.close(fig)
+
+print("Done! assignment1_plots.pdf created. Submit this PDF and this script.")
+EOF
+
+mohamedjomha@Mohameds-MacBook-Air-5 EEG_Assignment % python3 -m pip install --user matplotlib numpy scipy
+
+Requirement already satisfied: matplotlib in /Users/mohamedjomha/Library/Python/3.9/lib/python/site-packages (3.9.4)
+Requirement already satisfied: numpy in /Users/mohamedjomha/Library/Python/3.9/lib/python/site-packages (2.0.2)
+Requirement already satisfied: scipy in /Users/mohamedjomha/Library/Python/3.9/lib/python/site-packages (1.13.1)
+Requirement already satisfied: contourpy>=1.0.1 in /Users/mohamedjomha/Library/Python/3.9/lib/python/site-packages (from matplotlib) (1.3.0)
+Requirement already satisfied: cycler>=0.10 in /Users/mohamedjomha/Library/Python/3.9/lib/python/site-packages (from matplotlib) (0.12.1)
+Requirement already satisfied: fonttools>=4.22.0 in /Users/mohamedjomha/Library/Python/3.9/lib/python/site-packages (from matplotlib) (4.59.2)
+Requirement already satisfied: kiwisolver>=1.3.1 in /Users/mohamedjomha/Library/Python/3.9/lib/python/site-packages (from matplotlib) (1.4.7)
+Requirement already satisfied: packaging>=20.0 in /Users/mohamedjomha/Library/Python/3.9/lib/python/site-packages (from matplotlib) (25.0)
+Requirement already satisfied: pillow>=8 in /Users/mohamedjomha/Library/Python/3.9/lib/python/site-packages (from matplotlib) (11.3.0)
+Requirement already satisfied: pyparsing>=2.3.1 in /Users/mohamedjomha/Library/Python/3.9/lib/python/site-packages (from matplotlib) (3.2.4)
+Requirement already satisfied: python-dateutil>=2.7 in /Users/mohamedjomha/Library/Python/3.9/lib/python/site-packages (from matplotlib) (2.9.0.post0)
+Requirement already satisfied: importlib-resources>=3.2.0 in /Users/mohamedjomha/Library/Python/3.9/lib/python/site-packages (from matplotlib) (6.5.2)
+Requirement already satisfied: zipp>=3.1.0 in /Users/mohamedjomha/Library/Python/3.9/lib/python/site-packages (from importlib-resources>=3.2.0->matplotlib) (3.23.0)
+Requirement already satisfied: six>=1.5 in /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/site-packages (from python-dateutil>=2.7->matplotlib) (1.15.0)
+mohamedjomha@Mohameds-MacBook-Air-5 EEG_Assignment % python3 assignment1_eeg.py
+
+python3 assignment1_eeg.py
+
+python3 assignment1_eeg.py
+
+python3 assignment1_eeg.py
+
+python3 assignment1_eeg.py
+
+python3 assignment1_eeg.py
+
+python3 assignment1_eeg.py
+
+python3 assignment1_eeg.py
+
+python3 assignment1_eeg.py
+
+Done! assignment1_plots.pdf created. Submit this PDF and this script.
+mohamedjomha@Mohameds-MacBook-Air-5 EEG_Assignment % python3 assignment1_eeg.py
+Done! assignment1_plots.pdf created. Submit this PDF and this script.
+mohamedjomha@Mohameds-MacBook-Air-5 EEG_Assignment % 
+mohamedjomha@Mohameds-MacBook-Air-5 EEG_Assignment % python3 assignment1_eeg.py
+Done! assignment1_plots.pdf created. Submit this PDF and this script.
+mohamedjomha@Mohameds-MacBook-Air-5 EEG_Assignment % 
+mohamedjomha@Mohameds-MacBook-Air-5 EEG_Assignment % python3 assignment1_eeg.py
+Done! assignment1_plots.pdf created. Submit this PDF and this script.
+mohamedjomha@Mohameds-MacBook-Air-5 EEG_Assignment % 
+mohamedjomha@Mohameds-MacBook-Air-5 EEG_Assignment % python3 assignment1_eeg.py
+Done! assignment1_plots.pdf created. Submit this PDF and this script.
+mohamedjomha@Mohameds-MacBook-Air-5 EEG_Assignment % 
+mohamedjomha@Mohameds-MacBook-Air-5 EEG_Assignment % python3 assignment1_eeg.py
+Done! assignment1_plots.pdf created. Submit this PDF and this script.
+mohamedjomha@Mohameds-MacBook-Air-5 EEG_Assignment % 
+mohamedjomha@Mohameds-MacBook-Air-5 EEG_Assignment % python3 assignment1_eeg.py
+Done! assignment1_plots.pdf created. Submit this PDF and this script.
+mohamedjomha@Mohameds-MacBook-Air-5 EEG_Assignment % 
+mohamedjomha@Mohameds-MacBook-Air-5 EEG_Assignment % python3 assignment1_eeg.py
+Done! assignment1_plots.pdf created. Submit this PDF and this script.
+mohamedjomha@Mohameds-MacBook-Air-5 EEG_Assignment % 
+mohamedjomha@Mohameds-MacBook-Air-5 EEG_Assignment % python3 assignment1_eeg.py
+Done! assignment1_plots.pdf created. Submit this PDF and this script.
+mohamedjomha@Mohameds-MacBook-Air-5 EEG_Assignment % 
+mohamedjomha@Mohameds-MacBook-Air-5 EEG_Assignment % open assignment1_plots.pdf
+
+mohamedjomha@Mohameds-MacBook-Air-5 EEG_Assignment % 

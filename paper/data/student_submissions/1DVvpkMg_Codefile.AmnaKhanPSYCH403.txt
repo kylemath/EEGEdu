@@ -1,0 +1,118 @@
+// 🪼 Jellyfish Aquarium — BrainImation Visual
+// Tentacle sway slows with high delta (deep meditation)
+// Jellyfish glow with alpha and grow with attention
+
+
+
+
+let jellyfish = [];
+
+
+
+
+function setup() {
+  colorMode(HSB, 360, 100, 100);
+  noStroke();
+
+
+
+
+  // Create multiple jellyfish objects
+  for (let i = 0; i < 8; i++) {
+    jellyfish.push({
+  x: random(width),
+  y: random(height * 0.2, height * 0.8),
+  size: random(50, 100),
+  swayOffset: random(TWO_PI),
+  tentacleCount: floor(random(5, 10)) // ✅ Fixed here
+});
+  }
+}
+
+
+
+
+function draw() {
+  // 🧠 Real-time brain data
+  let delta = constrain(eegData.delta, 0, 1);        // Deep rest
+  let alpha = constrain(eegData.alpha, 0, 1);        // Calm/meditation
+  let attention = constrain(eegData.attention, 0, 1); // Focus
+
+
+
+
+  // 🌊 Background — darker with higher delta
+  let bgHue = map(delta, 0, 1, 200, 240);       // Blue to deep purple
+  let bgBright = map(delta, 0, 1, 30, 10);
+  background(bgHue, 30, bgBright);
+
+
+
+
+  for (let j of jellyfish) {
+    drawJellyfish(j, delta, alpha, attention);
+  }
+
+
+
+
+  // 🧠 Show delta level
+  fill(0, 0, 100);
+  textAlign(CENTER, CENTER);
+  textSize(20);
+  text("Delta: " + (delta * 100).toFixed(1) + "%", width / 2, 30);
+}
+
+
+
+
+function drawJellyfish(j, delta, alpha, attention) {
+  push();
+  translate(j.x, j.y);
+
+
+
+
+  let glow = map(alpha, 0, 1, 30, 80);
+  let size = j.size * map(attention, 0, 1, 0.8, 1.3); // size changes with attention
+
+
+
+
+  // 🪩 Jellyfish body
+  fill(200, 60, glow, 0.7); // Glowy fill
+  ellipse(0, 0, size, size * 0.7);
+
+
+
+
+  // 👁 Tentacle sway speed slows with high delta
+  let swaySpeed = map(delta, 0, 1, 0.2, 0.02); // Fast at low delta, slow at high
+  let time = frameCount * swaySpeed + j.swayOffset;
+
+
+
+
+  stroke(200, 40, glow + 20);
+  strokeWeight(1.5);
+  noFill();
+
+
+
+
+  // 🧵 Tentacles
+  for (let i = 0; i < j.tentacleCount; i++) {
+    let xOffset = map(i, 0, j.tentacleCount - 1, -size / 3, size / 3);
+    beginShape();
+    for (let y = 0; y < size * 1.2; y += 5) {
+      let wave = sin(time + y * 0.05 + i) * 5 * (1 - delta); // smaller sway at high delta
+      curveVertex(xOffset + wave, y);
+    }
+    endShape();
+  }
+
+
+
+
+  pop();
+}

@@ -1,0 +1,373 @@
+// === Brainimation p5.js sketch ===
+// Cat-themed cognitive ERP with proper timing & plotting requirements.
+// Epochs: -200..+800 ms (256 samples at 256 Hz), baseline-corrected.
+// Two categories: Standard (80%) vs Oddball (20%).
+// Stimuli each trial (onset-to-onset = 1000 ms):
+//   0–30 ms: black FILLED CIRCLE (radius R)
+//   30–90 ms: blank
+//   90–120 ms: ANNULUS (inner radius = R, outer = 2R)
+//   120–1000 ms: blank (ITI)
+// At each onset we schedule epoch capture at onset+800 ms so getRecentEpoch(256) == [-200..+800].
+
+// ---------- CONFIG ----------
+const STD_PROB = 0.80;
+let sr = 256;                        // sampling rate (Muse default; will pull from eegData.sampleRate if present)
+const PRE_MS = 200, POST_MS = 800;   // epoch spans
+let preSamp = 51, postSamp = 205;    // will recompute from sr in setup()
+let epochLen = 256;                  // PRE+POST in samples (recalc if sr changes)
+const MAX_EPOCHS = 60;               // rolling avg per condition
+const TRIAL_MS = 1000;
+const CIRCLE_MS = 30, ISI_MS = 60, ANNULUS_MS = 30;
+
+// ---------- STATE ----------
+let trialIndex = 0;
+let nextOnset = 0;
+let lastOnset = -1;
+let currentCond = null; // "standard" | "oddball"
+
+// pending epochs waiting for post-window to finish before capture
+let pending = []; // {onset: ms, cond: string}
+
+// epoch stores (each epoch is Array(epochLen) of [ch0..ch3])
+let epStd = [];
+let epOdd = [];
+
+// ---------- UI ----------
+let chHues = [300, 180, 60, 120]; // TP9, AF7, AF8, TP10
+let hueStd = 210; // blue-gray
+let hueOdd = 45;  // gold
+let pad = 20;
+let topFrac = 0.60; // fraction height for ERP plot
+
+function setup() {
+  colorMode(HSB, 360, 100, 100);
+  textFont('ui-sans-serif, system-ui, -apple-system');
+
+  if (typeof eegData !== 'undefined' && eegData && eegData.sampleRate) {
+    sr = eegData.sampleRate || 256;
+  }
+  preSamp  = Math.round(PRE_MS * sr / 1000);
+  postSamp = Math.round(POST_MS * sr / 1000);
+  epochLen = preSamp + postSamp; // should be ~256 at 256 Hz
+
+  nextOnset = millis() + 600; // brief lead-in
+}
+
+function draw() {
+  background(0, 0, 8);
+
+  const now = millis();
+
+  // ---------- TRIAL ENGINE ----------
+  if (now >= nextOnset) {
+    // choose condition and start a new trial
+    currentCond = (Math.random() < STD_PROB) ? "standard" : "oddball";
+    trialIndex += 1;
+    lastOnset = now;
+
+    // schedule epoch capture for onset+POST_MS (so the full [-PRE..+POST] exists)
+    pending.push({ onset: now, cond: currentCond });
+
+    nextOnset += TRIAL_MS;
+  }
+
+  // Handle pending epoch captures (when we have reached onset+POST_MS)
+  for (let i = pending.length - 1; i >= 0; i--) {
+    const item = pending[i];
+    if (now >= item.onset + POST_MS) {
+      // At this instant, last  (PRE+POST) ms == our epoch window
+      if (eegData && eegData.getRecentEpoch) {
+        const recent = eegData.getRecentEpoch(epochLen);
+        if (recent && recent.length >= epochLen) {
+          // Baseline-correct per channel using first preSamp samples
+          const corrected = baselineCorrect(recent, preSamp);
+          if (item.cond === "standard") {
+            pushTrim(epStd, corrected, MAX_EPOCHS);
+          } else {
+            pushTrim(epOdd, corrected, MAX_EPOCHS);
+          }
+        }
+      }
+      pending.splice(i, 1);
+    }
+  }
+
+  // ---------- LAYOUT ----------
+  const topH = height * topFrac;
+  const botH = height - topH;
+
+  drawERPPanel(topH);
+  push(); translate(0, topH); drawMonitor(botH); pop();
+
+  drawFooter();
+}
+
+// ---------- HELPERS ----------
+function pushTrim(arr, item, maxLen) {
+  arr.push(item);
+  if (arr.length > maxLen) arr.shift();
+}
+
+function baselineCorrect(epoch, nBase) {
+  // epoch: Array(epochLen) of [ch0..ch3]
+  const means = [0,0,0,0];
+  for (let i = 0; i < Math.min(nBase, epoch.length); i++) {
+    means[0] += epoch[i][0] || 0;
+    means[1] += epoch[i][1] || 0;
+    means[2] += epoch[i][2] || 0;
+    means[3] += epoch[i][3] || 0;
+  }
+  for (let c = 0; c < 4; c++) means[c] /= Math.min(nBase, epoch.length);
+
+  const out = new Array(epoch.length);
+  for (let i = 0; i < epoch.length; i++) {
+    const row = epoch[i] || [0,0,0,0];
+    out[i] = [
+      row[0] - means[0],
+      row[1] - means[1],
+      row[2] - means[2],
+      row[3] - means[3]
+    ];
+  }
+  return out;
+}
+
+function avgEpoch(list) {
+  if (!list.length) return null;
+  const L = list[0].length;
+  const out = new Array(L);
+  for (let i = 0; i < L; i++) {
+    let s0=0,s1=0,s2=0,s3=0,n=0;
+    for (let e = 0; e < list.length; e++) {
+      const row = list[e][i]; if (!row) continue;
+      s0 += row[0]||0; s1 += row[1]||0; s2 += row[2]||0; s3 += row[3]||0; n++;
+    }
+    out[i] = n ? [s0/n, s1/n, s2/n, s3/n] : [0,0,0,0];
+  }
+  return out;
+}
+
+// ---------- ERP PANEL ----------
+function drawERPPanel(topH) {
+  const left = pad * 3, right = width - pad * 3;
+  const top = pad, bottom = topH - pad * 1.6;
+  // frame
+  noStroke(); fill(0,0,12); rect(pad, pad, width-2*pad, topH-1.5*pad, 14);
+
+  // titles
+  fill(0,0,100); textAlign(CENTER, TOP); textSize(16);
+  text("Averaged ERPs (Baseline-corrected, −200..+800 ms)", width/2, top + 6);
+  textSize(12);
+  text("Standard n=" + epStd.length + "   •   Oddball n=" + epOdd.length, width/2, top + 26);
+
+  // 0 ms line + 100 ms ticks and labels −200..+800
+  const mid = (top + bottom) / 2;
+  stroke(0,0,28); strokeWeight(1); line(left, mid, right, mid); // overall zero ref
+  const axisYTop = top + 42;
+  const axisYBot = bottom - 10;
+
+  // x mapping: samples 0..epochLen-1 → ms −PRE..+POST
+  const msFromIndex = i => map(i, 0, epochLen-1, -PRE_MS, POST_MS);
+  const xFromMs = ms => map(ms, -PRE_MS, POST_MS, left, right);
+
+  // grid ticks every 100 ms
+  stroke(0,0,25); strokeWeight(1);
+  for (let ms = -PRE_MS; ms <= POST_MS; ms += 100) {
+    const x = xFromMs(ms);
+    line(x, axisYTop, x, axisYBot);
+  }
+  // 0 ms vertical
+  stroke(0,0,75); strokeWeight(2);
+  line(xFromMs(0), axisYTop, xFromMs(0), axisYBot);
+
+  // time labels
+  noStroke(); fill(0,0,70); textAlign(CENTER, TOP); textSize(11);
+  for (let ms = -PRE_MS; ms <= POST_MS; ms += 100) {
+    text(ms + " ms", xFromMs(ms), axisYBot + 4);
+  }
+  // axis title
+  textAlign(RIGHT, TOP);
+  text("Time (ms)   −200 … +800", right, axisYTop - 18);
+
+  // compute averages
+  const avgStd = avgEpoch(epStd);
+  const avgOdd = avgEpoch(epOdd);
+
+  // draw per-channel stacked rows; overlay Std vs Odd on each row
+  const rowGap = 68;
+  const baseY = (top + bottom) / 2;
+  const names = ['TP9', 'AF7', 'AF8', 'TP10'];
+
+  for (let ch = 0; ch < 4; ch++) {
+    const rowY = baseY + (ch - 1.5) * rowGap;
+
+    // Row zero line
+    stroke(0,0,22); strokeWeight(1); line(left, rowY, right, rowY);
+
+    // labels
+    noStroke(); fill(chHues[ch], 30, 90); textAlign(LEFT, CENTER); textSize(12);
+    text(names[ch], pad*1.2, rowY);
+
+    // helper to draw one condition
+    const drawCond = (avg, hue, weight) => {
+      if (!avg) return;
+      stroke(hue, hue===hueOdd?80:40, 90); strokeWeight(weight); noFill();
+      beginShape();
+      for (let i = 0; i < avg.length; i++) {
+        const x = map(i, 0, avg.length-1, left, right);
+        const y = rowY + map(avg[i][ch], -50, 50, 32, -32); // scale μV-ish
+        vertex(x, y);
+      }
+      endShape();
+    };
+
+    // overlay: Standard (cool) vs Oddball (gold)
+    drawCond(avgStd, hueStd, 2);
+    drawCond(avgOdd, hueOdd, 2);
+  }
+
+  // legend
+  const lx = right - 220, ly = top + 10;
+  noStroke();
+  fill(hueStd, 40, 90); rect(lx, ly, 18, 8, 2);
+  fill(0,0,92); textAlign(LEFT, TOP); textSize(12); text("Standard (gray cat)", lx + 26, ly - 4);
+  fill(hueOdd, 80, 90); rect(lx, ly + 18, 18, 8, 2);
+  fill(0,0,92); text("Oddball (gold cat)", lx + 26, ly + 14);
+}
+
+// ---------- MONITOR / STIMULI ----------
+function drawMonitor(botH) {
+  const w = width - 2*pad, h = botH - pad*1.2, x0 = pad, y0 = 0 + pad*0.7;
+
+  // bezel + screen
+  noStroke(); fill(0,0,12); rect(x0, y0, w, h, 14);
+  const inset = 14;
+  fill(210,5,12); rect(x0+inset, y0+inset, w-2*inset, h-2*inset, 10);
+
+  const innerX = x0+inset, innerY = y0+inset, innerW = w-2*inset, innerH = h-2*inset;
+  const leftW = innerW*0.30, rightW = innerW-leftW;
+
+  // left dials
+  push(); translate(innerX, innerY); drawDials(leftW, innerH); pop();
+
+  // right stimulus window
+  push(); translate(innerX+leftW, innerY); drawStimWindow(rightW, innerH); pop();
+}
+
+function drawDials(w, h) {
+  fill(0,0,96); textAlign(LEFT, TOP); textSize(14); text("Cat ERP Monitor", 8, 6);
+  fill(0,0,88); textSize(12);
+  text("Trial #: " + trialIndex, 8, 28);
+  text("Condition:", 8, 46);
+
+  // lamps
+  const lampR = 9, lineH = 22, yBase = 62;
+  noStroke();
+  // standard
+  fill(hueStd, 25, 85); ellipse(14, yBase, lampR*2, lampR*2);
+  fill(0,0,92); text("Standard (gray cat)", 32, yBase - 8);
+  // oddball
+  fill(hueOdd, 80, 90); ellipse(14, yBase+lineH, lampR*2, lampR*2);
+  fill(0,0,92); text("Oddball (gold cat)", 32, yBase+lineH - 8);
+
+  // active ring
+  stroke(0,0,96); noFill(); strokeWeight(2);
+  if (currentCond === "standard") ellipse(14, yBase, lampR*2.6, lampR*2.6);
+  else if (currentCond === "oddball") ellipse(14, yBase+lineH, lampR*2.6, lampR*2.6);
+
+  // counters
+  noStroke(); fill(0,0,90); textSize(12);
+  text("Captured epochs — Std: " + epStd.length + " | Odd: " + epOdd.length, 8, yBase + lineH*2 + 8);
+
+  // CRT scanlines
+  stroke(0,0,20);
+  for (let y = h-34; y < h-10; y += 4) line(8, y, w-8, y);
+}
+
+function drawStimWindow(w, h) {
+  // screen
+  noStroke(); fill(0,0,6); rect(0, 0, w, h, 8);
+
+  // faint grid
+  stroke(0,0,18); strokeWeight(1);
+  for (let x = 16; x < w; x += 16) line(x, 0, x, h);
+  for (let y = 16; y < h; y += 16) line(0, y, w, y);
+
+  const cx = w/2, cy = h/2 + 6;
+  const R = Math.min(w,h) * 0.13;
+  const Rin = R, Rout = 2*R;
+
+  // determine current phase
+  const now = millis();
+  const t = (lastOnset < 0) ? -1 : (now - lastOnset);
+  const showCircle  = (t >= 0 && t < CIRCLE_MS);
+  const showAnnulus = (t >= (CIRCLE_MS + ISI_MS) && t < (CIRCLE_MS + ISI_MS + ANNULUS_MS));
+
+  // label
+  noStroke(); fill(0,0,88); textAlign(CENTER, TOP); textSize(12);
+  const tDisp = (t >= 0) ? nf(t,1,0)+" ms" : "—";
+  text("Trial time: " + tDisp + "   •   Onset every 1000 ms", cx, 8);
+
+  // oddball halo
+  if (currentCond === "oddball") {
+    noStroke(); fill(hueOdd, 70, 35, 40);
+    ellipse(cx, cy, Rout*2.6, Rout*2.6);
+  }
+
+  // circle (always black fill per spec)
+  if (showCircle) {
+    noStroke(); fill(0,0,0); ellipse(cx, cy, R*2, R*2);
+    drawCatFace(cx, cy, R, currentCond === "oddball");
+  }
+
+  // annulus: inner radius Rin, outer radius Rout (thickness = R)
+  if (showAnnulus) {
+    noFill(); stroke(0,0,96); strokeWeight(Rout - Rin);
+    ellipse(cx, cy, Rin + Rout, Rin + Rout); // stroke-centered ring
+    drawCatRing(cx, cy, R, currentCond === "oddball");
+  }
+
+  // phase label
+  noStroke(); fill(0,0,85); textAlign(CENTER, BOTTOM); textSize(11);
+  const phase = showCircle ? "CIRCLE 30 ms" : showAnnulus ? "ANNULUS 30 ms" :
+                (t>=0 && t<TRIAL_MS ? "ITI" : "waiting…");
+  text("Phase: " + phase + "   •   Circle 30 → gap 60 → Annulus 30", cx, h-8);
+}
+
+// cat overlays (style only; geometry unchanged)
+function drawCatFace(cx, cy, R, odd) {
+  push(); translate(cx, cy);
+  noStroke(); fill(0,0, odd?80:70);
+  triangle(-R*0.75, -R*0.35, -R*0.35, -R*1.0, -R*0.05, -R*0.25);
+  triangle( R*0.75, -R*0.35,  R*0.35, -R*1.0,  R*0.05, -R*0.25);
+  stroke(0,0,85); strokeWeight(2);
+  line(-R*0.2, R*0.25, -R*1.1, R*0.15);
+  line(-R*0.2, R*0.32, -R*1.1, R*0.32);
+  line(-R*0.2, R*0.39, -R*1.1, R*0.49);
+  line( R*0.2, R*0.25,  R*1.1, R*0.15);
+  line( R*0.2, R*0.32,  R*1.1, R*0.32);
+  line( R*0.2, R*0.39,  R*1.1, R*0.49);
+  pop();
+}
+function drawCatRing(cx, cy, R, odd) {
+  push(); translate(cx, cy); noStroke();
+  fill(odd ? hueOdd : 0, odd ? 70 : 0, odd ? 90 : 85);
+  const bean = R*0.16;
+  for (let k=0;k<4;k++){
+    const a = -HALF_PI + k*(TWO_PI/4);
+    ellipse(Math.cos(a)*R*1.6, Math.sin(a)*R*1.6, bean*1.2, bean*1.5);
+  }
+  pop();
+}
+
+// footer
+function drawFooter() {
+  fill(0,0,65); textAlign(CENTER, BOTTOM); textSize(11);
+  text("Epochs: −200..+800 ms • Baseline-corrected (−200..0) • 256 Hz • Two conditions: Standard vs Oddball",
+       width/2, height - 6);
+}
+
+// optional key: clear
+function keyPressed() {
+  if (key === 'c' || key === 'C') { epStd = []; epOdd = []; }
+}

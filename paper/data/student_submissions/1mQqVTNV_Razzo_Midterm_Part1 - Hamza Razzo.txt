@@ -1,0 +1,155 @@
+// Brain Flow — Flappy Bird with Adaptive Difficulty
+// SIMPLIFIED VERSION - Testing if basic p5.js works
+
+let bird;
+let pipes = [];
+let score = 0;
+let gameOver = false;
+
+function setup() {
+  colorMode(HSB, 1, 1, 1);
+  
+  bird = {
+    y: height / 2,
+    velocity: 0,
+    size: 30
+  };
+  
+  pipes.push({
+    x: width,
+    gapY: height / 2,
+    gapSize: 200,
+    passed: false
+  });
+}
+
+function draw() {
+  // Get brain state
+  const alpha = (eegData.meditation ?? eegData.alpha ?? 0.5);
+  const beta = (eegData.attention ?? eegData.beta ?? 0.5);
+  
+  // Calculate stress: beta > alpha = stressed
+  const stress = beta - alpha;
+  
+  // ADAPTIVE DIFFICULTY
+  const gapSize = 180 + stress * 80;      // stressed = bigger gap (easier)
+  const speed = 2.5 - stress * 1.0;       // stressed = slower (easier)
+  
+  // Background
+  background(0.55 - stress * 0.15, 0.3, 0.1, 0.15);
+  
+  if (gameOver) {
+    // Game over screen
+    fill(0, 0.8, 1);
+    textAlign(CENTER, CENTER);
+    textSize(48);
+    text("GAME OVER", width / 2, height / 2 - 40);
+    textSize(32);
+    text("Score: " + score, width / 2, height / 2 + 20);
+    textSize(16);
+    text("Click to restart", width / 2, height / 2 + 70);
+    return;
+  }
+  
+  // Bird physics
+  bird.velocity += 0.4;  // gravity
+  bird.y += bird.velocity;
+  
+  // Draw bird
+  noStroke();
+  fill(0.15, 0.9, 1);
+  ellipse(width / 2, bird.y, bird.size);
+  
+  // Update pipes
+  for (let i = pipes.length - 1; i >= 0; i--) {
+    let p = pipes[i];
+    p.gapSize = gapSize;
+    p.x -= speed;
+    
+    // Draw pipes
+    fill(0.3, 0.6, 0.6);
+    rect(p.x, 0, 60, p.gapY - p.gapSize / 2);
+    rect(p.x, p.gapY + p.gapSize / 2, 60, height);
+    
+    // Collision check
+    if (p.x < width / 2 + bird.size / 2 && p.x + 60 > width / 2 - bird.size / 2) {
+      if (bird.y < p.gapY - p.gapSize / 2 || bird.y > p.gapY + p.gapSize / 2) {
+        gameOver = true;
+      }
+    }
+    
+    // Score
+    if (!p.passed && p.x + 60 < width / 2) {
+      p.passed = true;
+      score++;
+    }
+    
+    // Remove off-screen pipes
+    if (p.x < -60) {
+      pipes.splice(i, 1);
+    }
+  }
+  
+  // Add new pipes
+  if (frameCount % 90 === 0) {
+    pipes.push({
+      x: width,
+      gapY: random(height * 0.3, height * 0.7),
+      gapSize: gapSize,
+      passed: false
+    });
+  }
+  
+  // Boundaries
+  if (bird.y < 0 || bird.y > height) {
+    gameOver = true;
+  }
+  
+  // UI
+  fill(0, 0, 1);
+  textAlign(CENTER, TOP);
+  textSize(48);
+  text(score, width / 2, 20);
+  
+  // Show brain values
+  textAlign(LEFT, TOP);
+  textSize(14);
+  text("Meditation: " + nf(alpha, 1, 2), 20, 20);
+  text("Attention: " + nf(beta, 1, 2), 20, 40);
+  text("Gap: " + nf(gapSize, 1, 0), 20, 60);
+  text("Speed: " + nf(speed, 1, 1), 20, 80);
+  
+  if (stress > 0.1) {
+    text("STRESSED - EASIER", 20, 100);
+  } else if (stress < -0.1) {
+    text("RELAXED - HARDER", 20, 100);
+  } else {
+    text("BALANCED", 20, 100);
+  }
+}
+
+function mousePressed() {
+  if (gameOver) {
+    // Reset
+    bird.y = height / 2;
+    bird.velocity = 0;
+    pipes = [];
+    pipes.push({
+      x: width,
+      gapY: height / 2,
+      gapSize: 200,
+      passed: false
+    });
+    score = 0;
+    gameOver = false;
+  } else {
+    // Flap
+    bird.velocity = -8;
+  }
+}
+
+function keyPressed() {
+  if (key === ' ') {
+    mousePressed();
+  }
+}

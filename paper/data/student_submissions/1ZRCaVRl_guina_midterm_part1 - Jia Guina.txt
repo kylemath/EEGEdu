@@ -1,0 +1,149 @@
+let waves = [];
+
+function draw() {
+  // Determine mental state directly from eegData.alpha
+  let state = getAlphaState(eegData);
+  drawStateBackground(state);
+
+  // Add new wave every few frames
+  if (frameCount % 6 === 0 && eegData && eegData.alpha !== undefined) {
+    let config = getStateVisualConfig(state);
+
+    waves.push({
+      x: width / 2,
+      y: height / 2,
+      r: 0,
+      alpha: constrain(eegData.alpha * config.alphaScale, 0, 1),
+      phase: random(TWO_PI),
+      colorOffset: config.colorOffset,
+      speed: config.speed,
+      hueShift: config.hueShift
+    });
+  }
+
+  // Draw and animate waves
+  for (let i = waves.length - 1; i >= 0; i--) {
+    let w = waves[i];
+    drawNeonRibbon(w.x, w.y, w.r, w.alpha, w.phase, w.colorOffset, w.hueShift);
+
+    w.r += w.alpha * 12 + w.speed;
+    w.alpha *= 0.97;
+    w.phase += 0.03;
+
+    if (w.alpha < 0.01) waves.splice(i, 1);
+  }
+}
+
+// --- ALPHA-ONLY CLASSIFICATION ---
+function getAlphaState(eeg) {
+  if (!eeg || eeg.alpha === undefined) return "idle";
+
+  let a = eeg.alpha;
+
+  if (a > 0.75) return "eyesClosed";
+  if (a > 0.55) return "relaxed";
+  if (a > 0.35) return "focused";
+  if (a > 0.15) return "eyesOpen";
+  return "stressed";
+}
+
+// --- VISUAL CONFIG FOR EACH ALPHA STATE ---
+function getStateVisualConfig(state) {
+  switch (state) {
+    case "eyesClosed":
+      return { colorOffset: 280, hueShift: 40, speed: 1.5, alphaScale: 1.3 }; // deep violet/pink
+    case "eyesOpen":
+      return { colorOffset: 150, hueShift: 50, speed: 3, alphaScale: 1.0 }; // teal/green
+    case "relaxed":
+      return { colorOffset: 200, hueShift: 30, speed: 2, alphaScale: 1.1 }; // blue-cyan
+    case "focused":
+      return { colorOffset: 45, hueShift: 25, speed: 3.5, alphaScale: 0.9 }; // orange/gold
+    case "stressed":
+      return { colorOffset: 0, hueShift: 60, speed: 5, alphaScale: 0.8 }; // red/orange flashing
+    default:
+      return { colorOffset: 200, hueShift: 20, speed: 2.5, alphaScale: 1.0 };
+  }
+}
+
+// --- BACKGROUND VISUALS ---
+function drawStateBackground(state) {
+  noStroke();
+  let c1, c2;
+
+  switch (state) {
+    case "eyesClosed":
+      c1 = color(120, 0, 180, 60);
+      c2 = color(255, 180, 255, 20);
+      break;
+    case "eyesOpen":
+      c1 = color(0, 255, 180, 60);
+      c2 = color(100, 255, 255, 15);
+      break;
+    case "relaxed":
+      c1 = color(0, 100, 255, 50);
+      c2 = color(0, 0, 100, 15);
+      break;
+    case "focused":
+      c1 = color(255, 180, 50, 60);
+      c2 = color(255, 80, 0, 20);
+      break;
+    case "stressed":
+      c1 = color(255, 0, 0, 80);
+      c2 = color(255, 60, 0, 40);
+      break;
+    default:
+      c1 = color(30, 30, 30, 60);
+      c2 = color(0, 0, 0, 20);
+  }
+
+  setGradient(0, 0, width, height, c1, c2);
+}
+
+function setGradient(x, y, w, h, c1, c2) {
+  for (let i = y; i <= y + h; i++) {
+    let inter = map(i, y, y + h, 0, 1);
+    let c = lerpColor(c1, c2, inter);
+    stroke(c);
+    line(x, i, x + w, i);
+  }
+}
+
+// --- DRAWING RIBBONS ---
+function drawNeonRibbon(x, y, r, alpha, phase, colorOffset, hueShift) {
+  push();
+  translate(x, y);
+  noFill();
+
+  let layers = 6;
+  for (let g = layers; g > 0; g--) {
+    let glowAlpha = alpha * (g / layers) * 0.4;
+    let glowWeight = g * 3;
+    let hueVal = (colorOffset + g * hueShift) % 360;
+    let col = color(`hsl(${hueVal}, 100%, 60%)`);
+
+    stroke(red(col), green(col), blue(col), glowAlpha * 255);
+    strokeWeight(glowWeight);
+    drawWavyCircle(r + g * 10, phase);
+  }
+
+  // Core bright line
+  let coreCol = color(`hsl(${colorOffset}, 100%, 80%)`);
+  stroke(red(coreCol), green(coreCol), blue(coreCol), alpha * 255);
+  strokeWeight(3);
+  drawWavyCircle(r, phase);
+  pop();
+}
+
+function drawWavyCircle(r, phase) {
+  noFill();
+  beginShape();
+  let points = 300;
+  for (let a = 0; a < TWO_PI; a += TWO_PI / points) {
+    let wave = sin(a * 8 + phase) * 20;
+    let x = (r + wave) * cos(a);
+    let y = (r + wave) * sin(a);
+    vertex(x, y);
+  }
+  endShape(CLOSE);
+}
+

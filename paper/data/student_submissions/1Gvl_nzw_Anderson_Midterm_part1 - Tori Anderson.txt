@@ -1,0 +1,231 @@
+let flowers = [];
+let windOffset = 0;
+let gardenMode = false;
+let frozenEEG = {};
+let smoothedEEG = {
+  alpha: 0,
+  beta: 0,
+  theta: 0,
+  delta: 0,
+  gamma: 0,
+  attention: 0,
+  meditation: 0
+};
+
+let cloudDriftOffset = 0; // for drifting clouds
+
+function setup() {
+  colorMode(HSB, 360, 100, 100, 1);
+
+  const brainwaves = ["alpha", "beta", "theta", "delta", "gamma"];
+  const spacing = width / (brainwaves.length + 1);
+
+  flowers = [];
+
+  // Lower row baseline - original order
+  const baselineLower = height * 0.98;
+  for (let i = 0; i < brainwaves.length; i++) {
+    let bw = brainwaves[i];
+    flowers.push(createFlower(bw, spacing * (i + 1), baselineLower));
+  }
+
+  // Middle row baseline - shuffled order
+  const baselineMiddle = height * 0.75;
+  let shuffledBrainwavesMiddle = shuffleArray(brainwaves.slice());
+
+  for (let i = 0; i < shuffledBrainwavesMiddle.length; i++) {
+    let bw = shuffledBrainwavesMiddle[i];
+    flowers.push(createFlower(bw, spacing * (i + 1), baselineMiddle));
+  }
+
+  // Upper row baseline - shuffled order
+  const baselineUpper = height * 0.55;
+  let shuffledBrainwavesUpper = shuffleArray(brainwaves.slice());
+
+  for (let i = 0; i < shuffledBrainwavesUpper.length; i++) {
+    let bw = shuffledBrainwavesUpper[i];
+    flowers.push(createFlower(bw, spacing * (i + 1), baselineUpper));
+  }
+}
+
+// Helper to create flower object
+function createFlower(brainwave, x, yBase) {
+  let baseHue;
+  let sat = 80;
+
+  switch (brainwave) {
+    case "alpha": baseHue = 330; break; // Pink
+    case "beta":  baseHue = 220; break; // Blue
+    case "theta": baseHue = 270; break; // Purple
+    case "delta": baseHue = 60;  break; // Yellow
+    case "gamma": baseHue = 0;   sat = 0; break; // White
+  }
+
+  return {
+    x: x,
+    yBase: yBase,
+    size: 35,
+    petalCount: 6,
+    brainwave: brainwave,
+    hue: baseHue,
+    sat: sat,
+    currentHeight: 50,
+    currentSway: 0
+  };
+}
+
+// Fisher-Yates shuffle function
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = floor(random(i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+function updateSmoothedEEG() {
+  let smoothingFactor = 0.02; // smaller = slower & smoother
+
+  for (let key in smoothedEEG) {
+    let newVal = eegData[key] !== undefined ? eegData[key] : 0;
+    smoothedEEG[key] = lerp(smoothedEEG[key], newVal, smoothingFactor);
+  }
+}
+
+function draw() {
+  updateSmoothedEEG();
+
+  let meditation = gardenMode ? frozenEEG.meditation : smoothedEEG.meditation;
+  let skyHue = map(meditation, 0, 1, 200, 140);
+  background(skyHue, 40, 95, 1);
+
+  windOffset += 0.003;
+
+  // Solid green ground
+  noStroke();
+  fill(120, 80, 40, 1);
+  rect(0, height * 0.5, width, height * 0.5);
+
+  
+
+  // --- Sun ---
+  drawSun();
+
+  // Determine strongest brainwave from smoothed data or frozen if gardenMode
+  let dataSource = gardenMode ? frozenEEG : smoothedEEG;
+  let brainwaves = ["alpha", "beta", "theta", "delta", "gamma"];
+  let strongestWave = brainwaves[0];
+  let maxVal = dataSource[strongestWave] || 0;
+
+  for (let bw of brainwaves) {
+    let val = dataSource[bw] || 0;
+    if (val > maxVal) {
+      maxVal = val;
+      strongestWave = bw;
+    }
+  }
+
+  // If beta or gamma strongest, draw drifting clouds over sun
+  if (strongestWave === "beta" || strongestWave === "gamma") {
+    drawClouds();
+  }
+
+  // Draw flowers
+  for (let flower of flowers) {
+    let waveValue = gardenMode ? frozenEEG[flower.brainwave] || 0 : smoothedEEG[flower.brainwave] || 0;
+
+    let targetHeight = map(waveValue, 0, 1, 10, 200);
+    flower.currentHeight = lerp(flower.currentHeight, targetHeight, 0.02);
+
+    let targetSway = sin(windOffset + flower.x * 0.005) * 2;
+    flower.currentSway = lerp(flower.currentSway, targetSway, 0.05);
+
+    push();
+    translate(flower.x + flower.currentSway, flower.yBase - flower.currentHeight);
+
+    // Stem (lighter green for clarity)
+    stroke(100, 60, 60);
+    strokeWeight(2);
+    line(0, 0, 0, flower.currentHeight);
+
+    // Center of flower
+    noStroke();
+    fill(40, 100, 80);
+    ellipse(0, 0, flower.size * 0.4);
+
+    // Petals (solid color)
+    fill(flower.hue, flower.sat, 90, 0.9);
+    for (let i = 0; i < flower.petalCount; i++) {
+      let angle = TWO_PI * i / flower.petalCount;
+      let px = cos(angle) * flower.size * 0.6;
+      let py = sin(angle) * flower.size * 0.6;
+      ellipse(px, py, flower.size * 0.4, flower.size * 0.6);
+    }
+    pop();
+  }
+
+  if (gardenMode) {
+    fill(0, 0, 20, 0.6);
+    noStroke();
+    rect(10, 10, 140, 30, 5);
+    fill(0, 0, 100);
+    textAlign(LEFT, CENTER);
+    textSize(14);
+    text("🌿 Garden Mode (Frozen)", 20, 25);
+  }
+
+  if (!eegData.connected) {
+    fill(0, 0, 100, 0.8);
+    textAlign(CENTER, CENTER);
+    textSize(20);
+    text("Connect your Muse headset or use 'Simulate Data'", width / 2, height / 2 - 10);
+    textSize(16);
+    fill(0, 0, 70, 0.6);
+    text("to grow a brainwave-powered flower garden", width / 2, height / 2 + 20);
+  }
+}
+
+// Sun helper
+function drawSun() {
+  push();
+  noStroke();
+  fill(50, 80, 90);  // bright yellow sun
+  ellipse(width * 0.85, height * 0.15, 100, 100);
+  pop();
+}
+
+// Drifting cloud helper
+function drawClouds() {
+  push();
+  noStroke();
+  fill(0, 0, 100, 1); // solid white
+
+  let cx = width * 0.85;
+  let cy = height * 0.15;
+
+  cloudDriftOffset = sin(frameCount * 0.01) * 30; // oscillates between -30 and +30
+
+  ellipse(cx - 40 - cloudDriftOffset, cy, 80, 60);
+  ellipse(cx, cy - 15, 100, 80);
+  ellipse(cx + 40 + cloudDriftOffset, cy, 80, 60);
+
+  pop();
+}
+
+function keyPressed() {
+  if (key === 'g' || key === 'G') {
+    gardenMode = !gardenMode;
+
+    if (gardenMode) {
+      frozenEEG = {
+        alpha: eegData.alpha || 0,
+        beta: eegData.beta || 0,
+        theta: eegData.theta || 0,
+        delta: eegData.delta || 0,
+        gamma: eegData.gamma || 0,
+        attention: eegData.attention || 0,
+        meditation: eegData.meditation || 0
+      };
+    }
+  }
+}
